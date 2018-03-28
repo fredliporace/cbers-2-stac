@@ -38,7 +38,9 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['path'] = image.find('x:path', nsp).text
     metadata['row'] = image.find('x:row', nsp).text
     metadata['processing_level'] = image.find('x:level', nsp).text
-
+    metadata['vertical_pixel_size'] = image.find('x:verticalPixelSize', nsp).text
+    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text
+    
     imagedata = image.find('x:imageData', nsp)
     metadata['ul_lat'] = imagedata.find('x:UL', nsp).find('x:latitude', nsp).text
     metadata['ul_lon'] = imagedata.find('x:UL', nsp).find('x:longitude', nsp).text
@@ -63,6 +65,12 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['sun_elevation'] = sun_position.find('x:elevation', nsp).text
     metadata['sun_azimuth'] = sun_position.find('x:sunAzimuth', nsp).text
 
+    # attitude node information
+    attitudes = image.find('x:attitudes', nsp)
+    for attitude in attitudes.findall('x:attitude', nsp):
+        metadata['roll'] = attitude.find('x:roll', nsp).text
+        break
+    
     # availableBands node information
     available_bands = root.find('x:availableBands', nsp)
     for band in available_bands.findall('x:band', nsp):
@@ -143,6 +151,14 @@ def build_stac_item_keys(cbers):
     # https://creativecommons.org/licenses/by-sa/3.0/
     stac_item['properties']['license'] = 'CC-BY-SA-3.0'
 
+    # EO section
+    stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
+    stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
+    stac_item['properties']['eo:resolution'] = float(cbers['vertical_pixel_size'])
+    stac_item['properties']['eo:off_nadir_angle'] = float(cbers['roll'])
+    # Missing fields (not available from CBERS metadata)
+    # eo:cloud_cover
+    
     return stac_item
 
 def create_json_item(stac_item, filename):
