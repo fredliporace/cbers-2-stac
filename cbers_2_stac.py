@@ -73,7 +73,9 @@ def get_keys_from_cbers(cbers_metadata):
     
     # availableBands node information
     available_bands = root.find('x:availableBands', nsp)
+    metadata['bands'] = list()
     for band in available_bands.findall('x:band', nsp):
+        metadata['bands'].append(band.text)
         key = 'band_%s_gain' % (band.text)
         metadata[key] = band.attrib['gain']
 
@@ -83,6 +85,13 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['acquisition_day'] = metadata['acquisition_date'].split(' ')[0]
 
     # derived fields
+    metadata['no_level_id'] = 'CBERS_%s_%s_%s_' \
+                              '%03d_%03d' % (metadata['number'],
+                                             metadata['sensor'],
+                                             metadata['acquisition_day'].replace('-', ''),
+                                             int(metadata['path']),
+                                             int(metadata['row']))
+
     # example: CBERS4/MUX/071/092/CBERS_4_MUX_20171105_071_092_L2
     metadata['download_url'] = 'CBERS%s/%s/%03d/%03d/%s' % (metadata['number'],
                                                             metadata['sensor'],
@@ -90,6 +99,7 @@ def get_keys_from_cbers(cbers_metadata):
                                                             int(metadata['row']),
                                                             re.sub(r'_BAND\d+.xml', '',
                                                                    os.path.basename(cbers_metadata)))
+    metadata['meta_file'] = os.path.basename(cbers_metadata)
 
     #for band in range(reference_band, reference_band + number_of_bands):
     #    key = 'band_%d_download_url' % (band)
@@ -124,6 +134,7 @@ def build_stac_item_keys(cbers):
                                          int(cbers['path']),
                                          int(cbers['row']),
                                          cbers['processing_level'])
+
     stac_item['type'] = 'Feature'
     # Order is lower left lat, lon; upper right lat, lon 
     stac_item['bbox'] = (float(cbers['bb_ll_lat']), float(cbers['bb_ll_lon']),
@@ -152,12 +163,55 @@ def build_stac_item_keys(cbers):
     stac_item['properties']['license'] = 'CC-BY-SA-3.0'
 
     # EO section
+    stac_item['properties']['eo:collection'] = 'default'
     stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
     stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
-    stac_item['properties']['eo:resolution'] = float(cbers['vertical_pixel_size'])
-    stac_item['properties']['eo:off_nadir_angle'] = float(cbers['roll'])
+    #stac_item['properties']['eo:resolution'] = float(cbers['vertical_pixel_size'])
+    stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])
     # Missing fields (not available from CBERS metadata)
     # eo:cloud_cover
+
+    # CBERS section
+    stac_item['properties']['cbers:data_type'] = 'L' + cbers['processing_level']
+    stac_item['properties']['cbers:path'] = int(cbers['path'])
+    stac_item['properties']['cbers:row'] = int(cbers['row'])
+
+    # Links
+    meta_prefix = 'https://s3.amazonaws.com/cbers-meta-pds/'
+    main_prefix = 's3://cbers-pds/'
+    # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
+    stac_item['links'] = list()
+    stac_item['links'].append(OrderedDict())
+    stac_item['links'][0]['rel'] = 'self'
+    stac_item['links'][0]['href'] = meta_prefix + \
+                                    cbers['download_url'] + '/' + stac_item['id'] + '.json'
+    stac_item['links'].append(OrderedDict())
+    stac_item['links'][1]['rel'] = 'catalog'
+    stac_item['links'][1]['href'] = meta_prefix + 'CBERS4/catalog.json'
+
+    # Assets
+    stac_item['assets'] = OrderedDict()
+    stac_item['assets']['thumbnail'] = OrderedDict()
+    stac_item['assets']['thumbnail']['href'] = meta_prefix + \
+                                               cbers['download_url'] + '/' + \
+                                               cbers['no_level_id'] + '.jpg'
+    stac_item['assets']['thumbnail']['required'] = True
+    stac_item['assets']['thumbnail']['type'] = 'jpeg'
+    stac_item['assets']['metadata'] = OrderedDict()
+    stac_item['assets']['metadata']['href'] = main_prefix + \
+                                               cbers['download_url'] + '/' + \
+                                               cbers['meta_file']
+    stac_item['assets']['metadata']['required'] = True
+    stac_item['assets']['metadata']['type'] = 'xml'
+    for band in cbers['bands']:
+        band_id = "B" + band
+        stac_item['assets'][band_id] = OrderedDict()
+        stac_item['assets'][band_id]['href'] = main_prefix + \
+                                               cbers['download_url'] + '/' + \
+                                               stac_item['id'] + '_BAND' + band + '.tif'
+        stac_item['assets'][band_id]['type'] = 'GeoTIFF'
+        stac_item['assets'][band_id]['required'] = True
+        stac_item['assets'][band_id]['eo_bands'] = [band]
     
     return stac_item
 

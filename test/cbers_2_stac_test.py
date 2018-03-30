@@ -40,11 +40,17 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['datetime'], '2017-05-28T09:01:17Z')
 
         # properties:eo
+        self.assertEqual(smeta['properties']['eo:collection'], 'default')
         self.assertEqual(smeta['properties']['eo:sun_azimuth'], 66.2923)
         self.assertEqual(smeta['properties']['eo:sun_elevation'], 70.3079)
-        self.assertEqual(smeta['properties']['eo:resolution'], 20.)
-        self.assertEqual(smeta['properties']['eo:off_nadir_angle'], -0.00744884)
-        
+        #self.assertEqual(smeta['properties']['eo:resolution'], 20.)
+        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00744884)
+
+        # properties:cbers
+        self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
+        self.assertEqual(smeta['properties']['cbers:path'], 90)
+        self.assertEqual(smeta['properties']['cbers:row'], 84)
+
     def test_create_json_item(self):
         """test_create_json_item"""
 
