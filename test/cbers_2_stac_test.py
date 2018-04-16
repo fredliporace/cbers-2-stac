@@ -10,11 +10,55 @@ class CERS2StacTest(unittest.TestCase):
 
     def test_get_keys_from_cbers(self):
         """test_get_keys_from_cbers"""
+
+        # MUX
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
         self.assertEqual(meta['sensor'], 'MUX')
 
-    def test_build_stac_item_keys(self):
-        """test_build_stac_item_keys"""
+        # AWFI
+        meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
+        self.assertEqual(meta['sensor'], 'AWFI')
+        
+    def test_build_awfi_stac_item_keys(self):
+        """test_awfi_build_stac_item_keys"""
+
+        meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
+        smeta = build_stac_item_keys(meta)
+
+        # id
+        self.assertEqual(smeta['id'], 'CBERS_4_AWFI_20170409_167_123_L4')
+
+        # bbox
+        self.assertEqual(len(smeta['bbox']), 4)
+        self.assertEqual(smeta['bbox'][0], -24.425554)
+        self.assertEqual(smeta['bbox'][1], -63.157102)
+        self.assertEqual(smeta['bbox'][2], -16.364230)
+        self.assertEqual(smeta['bbox'][3], -53.027684)
+
+        # geometry
+        self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], -63.086835)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], -63.086835)
+
+        # properties
+        self.assertEqual(smeta['properties']['datetime'], '2017-04-09T14:09:23Z')
+
+        # properties:eo
+        self.assertEqual(smeta['properties']['eo:collection'], 'default')
+        self.assertEqual(smeta['properties']['eo:sun_azimuth'], 43.9164)
+        self.assertEqual(smeta['properties']['eo:sun_elevation'], 53.4479)
+        #self.assertEqual(smeta['properties']['eo:resolution'], 20.)
+        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00828942)
+
+        # properties:cbers
+        self.assertEqual(smeta['properties']['cbers:data_type'], 'L4')
+        self.assertEqual(smeta['properties']['cbers:path'], 167)
+        self.assertEqual(smeta['properties']['cbers:row'], 123)
+
+        def test_build_mux_stac_item_keys(self):
+            """test_mux_build_stac_item_keys"""
 
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
         smeta = build_stac_item_keys(meta)
@@ -51,12 +95,19 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['cbers:path'], 90)
         self.assertEqual(smeta['properties']['cbers:row'], 84)
 
-    def test_create_json_item(self):
-        """test_create_json_item"""
+    def test_create_mux_json_item(self):
+        """test_create_mux_json_item"""
 
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
         smeta = build_stac_item_keys(meta)
         create_json_item(smeta, 'test/CBERS_4_MUX_20170528_090_084_L2.json')
+
+    def test_create_awfi_json_item(self):
+        """test_create_awfi_json_item"""
+
+        meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
+        smeta = build_stac_item_keys(meta)
+        create_json_item(smeta, 'test/CBERS_4_AWFI_20170409_167_123_L4.json')
         
 if __name__ == '__main__':
     unittest.main()

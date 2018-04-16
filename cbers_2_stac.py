@@ -99,6 +99,8 @@ def get_keys_from_cbers(cbers_metadata):
                                                             int(metadata['row']),
                                                             re.sub(r'_BAND\d+.xml', '',
                                                                    os.path.basename(cbers_metadata)))
+    metadata['sat_sensor'] = 'CBERS%s/%s' % (metadata['number'],
+                                             metadata['sensor'])
     metadata['meta_file'] = os.path.basename(cbers_metadata)
 
     #for band in range(reference_band, reference_band + number_of_bands):
@@ -160,7 +162,8 @@ def build_stac_item_keys(cbers):
     stac_item['properties']['provider'] = 'INPE'
     # License from INPE's site is
     # https://creativecommons.org/licenses/by-sa/3.0/
-    stac_item['properties']['license'] = 'CC-BY-SA-3.0'
+    # Removed from Item since this is defined at catalog level
+    # stac_item['properties']['license'] = 'CC-BY-SA-3.0'
 
     # EO section
     stac_item['properties']['eo:collection'] = 'default'
@@ -183,11 +186,14 @@ def build_stac_item_keys(cbers):
     stac_item['links'] = list()
     stac_item['links'].append(OrderedDict())
     stac_item['links'][0]['rel'] = 'self'
-    stac_item['links'][0]['href'] = meta_prefix + \
-                                    cbers['download_url'] + '/' + stac_item['id'] + '.json'
+    # Option if Item are organized by path and row
+    #stac_item['links'][0]['href'] = meta_prefix + \
+    #                                cbers['download_url'] + '/' + stac_item['id'] + '.json'
+    stac_item['links'][0]['href'] = meta_prefix + 'stac/' + \
+                                    cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
     stac_item['links'].append(OrderedDict())
     stac_item['links'][1]['rel'] = 'catalog'
-    stac_item['links'][1]['href'] = meta_prefix + 'CBERS4/catalog.json'
+    stac_item['links'][1]['href'] = meta_prefix + cbers['sat_sensor'] + '/catalog.json'
 
     # Assets
     stac_item['assets'] = OrderedDict()
