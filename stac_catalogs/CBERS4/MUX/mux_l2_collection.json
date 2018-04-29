@@ -1,0 +1,23 @@
+{
+    "properties": {
+        "collection_name": "CBERS4_MUX_L2",
+        "collection_description": "CBERS 4 MUX System Corrected data",
+        "eo:platform": "CBERS-4",
+        "eo:instrument": "MUX",
+        "eo:gsd": 20.0
+    }
+    "eo:bands": {
+        "5": {
+            "common_name": "blue"
+        },
+        "6": {
+            "common_name": "green"
+        },
+        "7": {
+            "common_name": "red"
+        },
+        "8": {
+            "common_name": "nir"
+        }
+    }
+}
