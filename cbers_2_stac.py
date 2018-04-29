@@ -10,6 +10,21 @@ from collections import OrderedDict
 
 """Converts CBERS-4 scene metadata (xml) to stac item"""
 
+def epsg_from_utm_zone( zone ):
+    """
+    Returns the WGS-84 EPSG for a given UTM zone
+    Input:
+    zone(int): Zone, positive values for North
+    Output:
+    epsg code(int).
+    """
+
+    if zone > 0:
+        epsg = 32600 + zone
+    else:
+        epsg = 32700 - zone
+    return epsg
+
 def get_keys_from_cbers(cbers_metadata):
     """
     Input:
@@ -39,7 +54,10 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['row'] = image.find('x:row', nsp).text
     metadata['processing_level'] = image.find('x:level', nsp).text
     metadata['vertical_pixel_size'] = image.find('x:verticalPixelSize', nsp).text
-    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text
+    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text    
+    metadata['projection_name'] = image.find('x:projectionName', nsp).text    
+    metadata['origin_latitude'] = image.find('x:originLatitude', nsp).text    
+    metadata['origin_longitude'] = image.find('x:originLongitude', nsp).text    
     
     imagedata = image.find('x:imageData', nsp)
     metadata['ul_lat'] = imagedata.find('x:UL', nsp).find('x:latitude', nsp).text
@@ -171,6 +189,9 @@ def build_stac_item_keys(cbers):
     stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
     #stac_item['properties']['eo:resolution'] = float(cbers['vertical_pixel_size'])
     stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])
+    assert cbers['projection_name'] == 'UTM', \
+        'Unsupported projection ' + cbers['projection_name']
+    stac_item['properties']['eo:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
     # Missing fields (not available from CBERS metadata)
     # eo:cloud_cover
 

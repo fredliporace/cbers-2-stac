@@ -43,6 +43,7 @@
     "eo:sun_azimuth": 43.9164, 
     "eo:sun_elevation": 53.4479, 
     "eo:off_nadir": -0.00828942, 
+    "eo:epsg": 32757, 
     "cbers:data_type": "L4", 
     "cbers:path": 167, 
     "cbers:row": 123

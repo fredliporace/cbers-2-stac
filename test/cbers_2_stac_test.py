@@ -3,21 +3,33 @@
 import unittest
 
 from cbers_2_stac import get_keys_from_cbers, \
-    build_stac_item_keys, create_json_item
+    build_stac_item_keys, create_json_item, \
+    epsg_from_utm_zone
 
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
 
+    def epsg_from_utm_zone(self):
+        """test_epsg_from_utm_zone"""
+        self.assertEqual( epsg_from_utm_zone(-23), 32723)
+        self.assertEqual( epsg_from_utm_zone(23), 32623)
+    
     def test_get_keys_from_cbers(self):
         """test_get_keys_from_cbers"""
 
         # MUX
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
         self.assertEqual(meta['sensor'], 'MUX')
+        self.assertEqual(meta['projection_name'], 'UTM')
+        self.assertEqual(meta['origin_longitude'], '27')
+        self.assertEqual(meta['origin_latitude'], '0')
 
         # AWFI
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
         self.assertEqual(meta['sensor'], 'AWFI')
+        self.assertEqual(meta['projection_name'], 'UTM')
+        self.assertEqual(meta['origin_longitude'], '-57')
+        self.assertEqual(meta['origin_latitude'], '0')
         
     def test_build_awfi_stac_item_keys(self):
         """test_awfi_build_stac_item_keys"""
@@ -51,6 +63,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['eo:sun_elevation'], 53.4479)
         #self.assertEqual(smeta['properties']['eo:resolution'], 20.)
         self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00828942)
+        self.assertEqual(smeta['properties']['eo:epsg'], 32757)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L4')
@@ -89,6 +102,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['eo:sun_elevation'], 70.3079)
         #self.assertEqual(smeta['properties']['eo:resolution'], 20.)
         self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00744884)
+        self.assertEqual(smeta['properties']['eo:epsg'], 32627)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
