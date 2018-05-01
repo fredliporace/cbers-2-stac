@@ -19,6 +19,8 @@ class CERS2StacTest(unittest.TestCase):
 
         # MUX
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4')
         self.assertEqual(meta['sensor'], 'MUX')
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '27')
@@ -27,6 +29,8 @@ class CERS2StacTest(unittest.TestCase):
         # AWFI
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
         self.assertEqual(meta['sensor'], 'AWFI')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4')
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-57')
         self.assertEqual(meta['origin_latitude'], '0')
@@ -35,7 +39,11 @@ class CERS2StacTest(unittest.TestCase):
         """test_awfi_build_stac_item_keys"""
 
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
-        smeta = build_stac_item_keys(meta)
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac' }
+        smeta = build_stac_item_keys(meta, buckets)
 
         # id
         self.assertEqual(smeta['id'], 'CBERS_4_AWFI_20170409_167_123_L4')
@@ -74,7 +82,11 @@ class CERS2StacTest(unittest.TestCase):
             """test_mux_build_stac_item_keys"""
 
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
-        smeta = build_stac_item_keys(meta)
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac' }
+        smeta = build_stac_item_keys(meta, buckets)
 
         # id
         self.assertEqual(smeta['id'], 'CBERS_4_MUX_20170528_090_084_L2')
@@ -109,18 +121,38 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['cbers:path'], 90)
         self.assertEqual(smeta['properties']['cbers:row'], 84)
 
+        # links
+        self.assertEqual(smeta['links'][0]['rel'], 'self')
+        self.assertEqual(smeta['links'][0]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/'
+                         'CBERS_4_MUX_20170528_090_084_L2.json')
+        self.assertEqual(smeta['links'][1]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/catalog.json')
+        self.assertEqual(smeta['links'][2]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/collections/'
+                         'CBERS_4_MUX_L2_collection.json')
+        
     def test_create_mux_json_item(self):
         """test_create_mux_json_item"""
 
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
-        smeta = build_stac_item_keys(meta)
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac' }
+        smeta = build_stac_item_keys(meta, buckets)
         create_json_item(smeta, 'test/CBERS_4_MUX_20170528_090_084_L2.json')
 
     def test_create_awfi_json_item(self):
         """test_create_awfi_json_item"""
 
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
-        smeta = build_stac_item_keys(meta)
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac' }
+        smeta = build_stac_item_keys(meta, buckets)
+
         create_json_item(smeta, 'test/CBERS_4_AWFI_20170409_167_123_L4.json')
         
 if __name__ == '__main__':

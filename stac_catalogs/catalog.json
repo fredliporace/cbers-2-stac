@@ -1,0 +1,29 @@
+{
+    "name": "CBERS",
+    "description": "Catalogs of CBERS mission's imagery",
+
+    "license": "CC-BY-SA-3.0",
+
+    "links": [
+        { "rel": "self", "href": "catalog.json" },
+        { "rel": "child", "href": "CBERS4/catalog.json" },
+        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"},
+    ],
+
+    "contact": {
+        "name": "AMS Kepler",
+        "email": "liporace@amskepler.com",
+        "url": "https://github.com/fredliporace/cbers-on-aws"
+    },
+
+    "formats": ["geotiff", "cog"],
+
+    "keywords": ["satellite"],
+    "homepage": "https://github.com/fredliporace/cbers-on-aws",
+
+    "provider": {
+        "scheme": "s3",
+        "region": "us-east-1",
+        "requesterPays": "true"
+    }
+}

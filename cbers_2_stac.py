@@ -45,8 +45,9 @@ def get_keys_from_cbers(cbers_metadata):
 
     # satellite node information
     satellite = root.find('x:satellite', nsp)
-    metadata['sensor'] = satellite.find('x:instrument', nsp).text
+    metadata['mission'] = satellite.find('x:name', nsp).text
     metadata['number'] = satellite.find('x:number', nsp).text
+    metadata['sensor'] = satellite.find('x:instrument', nsp).text
 
     # image node information
     image = root.find('x:image', nsp)
@@ -137,12 +138,13 @@ def get_keys_from_cbers(cbers_metadata):
 
     return metadata
 
-def build_stac_item_keys(cbers):
+def build_stac_item_keys(cbers, buckets):
     """
     Builds a STAC item dict based on CBERS metadata
 
     Input:
     cbers(dict): CBERS metadata
+    buckets(dict): buckets identification
     """
 
     stac_item = OrderedDict()
@@ -201,20 +203,33 @@ def build_stac_item_keys(cbers):
     stac_item['properties']['cbers:row'] = int(cbers['row'])
 
     # Links
-    meta_prefix = 'https://s3.amazonaws.com/cbers-meta-pds/'
-    main_prefix = 's3://cbers-pds/'
+    meta_prefix = 'https://s3.amazonaws.com/%s/' % (buckets['metadata'])
+    main_prefix = 's3://%s/' % (buckets['cog'])
+    stac_prefix = 'https://%s.s3.amazonaws.com/' % (buckets['stac'])
     # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
     stac_item['links'] = list()
+
     stac_item['links'].append(OrderedDict())
     stac_item['links'][0]['rel'] = 'self'
     # Option if Item are organized by path and row
     #stac_item['links'][0]['href'] = meta_prefix + \
     #                                cbers['download_url'] + '/' + stac_item['id'] + '.json'
-    stac_item['links'][0]['href'] = meta_prefix + 'stac/' + \
+    stac_item['links'][0]['href'] = stac_prefix + \
                                     cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
+
     stac_item['links'].append(OrderedDict())
     stac_item['links'][1]['rel'] = 'catalog'
-    stac_item['links'][1]['href'] = meta_prefix + cbers['sat_sensor'] + '/catalog.json'
+    stac_item['links'][1]['href'] = stac_prefix + cbers['mission'] + \
+                                    cbers['number'] + \
+                                    '/' + cbers['sensor'] + '/catalog.json'
+
+    stac_item['links'].append(OrderedDict())
+    stac_item['links'][2]['rel'] = 'collection'
+    stac_item['links'][2]['href'] = stac_prefix + 'collections/' + \
+                                    cbers['mission'] + '_' + \
+                                    cbers['number'] + '_' + \
+                                    cbers['sensor'] + '_' + \
+                                    'L' + cbers['processing_level'] + '_collection.json'
 
     # Assets
     stac_item['assets'] = OrderedDict()
@@ -253,14 +268,24 @@ def create_json_item(stac_item, filename):
     with open(filename, 'w') as outfile:
         json.dump(stac_item, outfile, indent=2)
         
-def convert(cbers_metadata):
+def convert(cbers_metadata, buckets):
     """Generate STAC item from CBERS metadata
     Input:
     cbers_metadata(string): CBERS metadata file location
+    buckets(dict): buckets identification
     """
 
     meta = get_keys_from_cbers(cbers_metadata)
     
 if __name__ == '__main__':
+    # Command line arguments
+    # metadata filename (1)
+
+    buckets = {
+        'metadata':'cbers-meta-pds',
+        'cog':'cbers-pds',
+        'stac':'cbers-stac' }
+    
     assert sys.argv == 2
-    convert(cbers_metadata=sys.argv[1])
+    convert(cbers_metadata=sys.argv[1],
+            buckets=buckets)

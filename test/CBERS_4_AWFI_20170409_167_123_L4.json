@@ -51,11 +51,15 @@
   "links": [
     {
       "rel": "self", 
-      "href": "https://s3.amazonaws.com/cbers-meta-pds/stac/CBERS4/AWFI/CBERS_4_AWFI_20170409_167_123_L4.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/CBERS_4_AWFI_20170409_167_123_L4.json"
     }, 
     {
       "rel": "catalog", 
-      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/AWFI/catalog.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/catalog.json"
+    }, 
+    {
+      "rel": "collection", 
+      "href": "https://cbers-stac.s3.amazonaws.com/collections/CBERS_4_AWFI_L4_collection.json"
     }
   ], 
   "assets": {
