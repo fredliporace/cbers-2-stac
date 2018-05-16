@@ -6,6 +6,6 @@
         { "rel": "self", "href": "catalog.json" },
         { "rel": "child", "href": "MUX/catalog.json" },
         { "rel": "child", "href": "AWFI/catalog.json" },
-        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"},
+        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"}
     ]
 }

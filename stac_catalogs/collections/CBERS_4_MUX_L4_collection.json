@@ -5,7 +5,7 @@
         "eo:platform": "CBERS-4",
         "eo:instrument": "MUX",
         "eo:gsd": 20.0
-    }
+    },
     "eo:bands": {
         "5": {
             "common_name": "blue"

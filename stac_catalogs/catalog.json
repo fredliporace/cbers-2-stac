@@ -7,7 +7,7 @@
     "links": [
         { "rel": "self", "href": "catalog.json" },
         { "rel": "child", "href": "CBERS4/catalog.json" },
-        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"},
+        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"}
     ],
 
     "contact": {

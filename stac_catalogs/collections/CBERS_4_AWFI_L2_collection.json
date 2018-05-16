@@ -5,7 +5,7 @@
         "eo:platform": "CBERS-4",
         "eo:instrument": "AWFI",
         "eo:gsd": 64.0
-    }
+    },
     "eo:bands": {
         "13": {
             "common_name": "blue"
