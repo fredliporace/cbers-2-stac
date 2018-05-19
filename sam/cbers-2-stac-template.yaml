@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: 'Update CBERS static STAC catalog'
+
+Globals:
+  Function:
+    Runtime: python3.6
+    Environment:
+      Variables:
+        # @todo use as parameter?
+        BUCKET: cbers-pds
+        META_BUCKET: cbers-meta-pds
+
+Resources:
+
+  #################################################
+  # Loggroup start
+  #################################################
+
+  TaskLogGroup:
+    Type: 'AWS::Logs::LogGroup'
+    Properties:
+      RetentionInDays: 7
+
+  #################################################
+  # Loggroup end
+  #################################################
+
+  #################################################
+  # Roles start
+  #################################################
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        # @todo check if ReadOnlyAccess is needed with FullAccess
+        - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+        - "arn:aws:iam::aws:policy/AWSBatchFullAccess"
+        - "arn:aws:iam::aws:policy/AWSStepFunctionsConsoleFullAccess"
+        - "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonSESFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+      Path: "/"
+
+  #################################################
+  # Roles end
+  #################################################
+
+  #################################################
+  # S3 start
+  #################################################
+
+  # @todo this does not work because cloudformation tries to
+  # create a new bucket
+  #CBERSS3:
+  #  Type: AWS::S3::Bucket
+  #  Properties:
+  #    BucketName: cbers-pds
+
+  #################################################
+  # S3 end
+  #################################################
+
+  #################################################
+  # Lambda start (include dead letter queues)
+  #################################################
+
+  GeneralLambdaDLQ: 
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  ProcessNewSceneQueueFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: process_new_scene_queue
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Process new scenes in queue
+      Timeout: 300
+      #Environment:
+      #  Variables:
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  #################################################
+  # Lambda end
+  #################################################
