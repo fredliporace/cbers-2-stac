@@ -7,9 +7,9 @@ Globals:
     Runtime: python3.6
     Environment:
       Variables:
-        # @todo use as parameter?
-        BUCKET: cbers-pds
-        META_BUCKET: cbers-meta-pds
+        CBERS_PDS_BUCKET: cbers-pds
+        CBERS_META_PDS_BUCKET: cbers-meta-pds
+        CBERS_STAC_BUCKET: cbers-stac
 
 Resources:
 
@@ -75,6 +75,62 @@ Resources:
   #################################################
 
   #################################################
+  # SQS/SNS start 
+  #################################################
+
+  NewMUXScenesQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  MUXNewSceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewMUXScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
+
+  NewAWFIScenesQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  AWFINewSceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewAWFIScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+
+  NewPAN10MScenesQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  PAN10MNewSceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewPAN10MScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
+
+  NewPAN5MScenesQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  PAN5MNewSceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewPAN5MScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
+
+  #################################################
+  # SQS/SNS end
+  #################################################
+
+  #################################################
   # Lambda start (include dead letter queues)
   #################################################
 
@@ -92,8 +148,6 @@ Resources:
       Policies: 
       Description: Process new scenes in queue
       Timeout: 300
-      #Environment:
-      #  Variables:
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn

@@ -2,223 +2,173 @@
 
 import os
 import re
-from multiprocessing import Process
-import urllib2
+import json
 import boto3
-import zipfile
 
-# @todo used in other lambda functions, unify
-# this is candidate for removal, it is simply a concatenation
-def s3_filename(directory, filename, camera):
-    """Return complete path to S3 file to be uploaded"""
-    match = re.search(r'CBERS_(?P<satno>\d{1})_' + camera + r'_(?P<ymd>\d{8})'
-                      r'_(?P<path>\d{3})_(?P<row>\d{3})_L(?P<level>\d{1})_'
-                      r'BAND(?P<band>\d+).zip', filename)
-    assert match
-    return directory + '/' + match.group('ymd') + '/' + filename
+from cbers_2_stac import convert_inpe_to_stac
 
-def s3_file_size(bucket_name, key):
-    """Return file size if key exists in S3, 0 otherwise"""
+# CBERS metadata
+CMETA = {
+    'MUX': {
+        'reference': 5,
+        'num_bands': 4,
+        'quicklook_pixel_size': 200,
+        'red': 7,
+        'green': 6,
+        'blue': 5,
+        'meta_band': 6
+    },
+    'AWFI': {
+        'reference': 13,
+        'num_bands': 4,
+        'quicklook_pixel_size': 640,
+        'red': 15,
+        'green': 14,
+        'blue': 13,
+        'meta_band': 14
+    },
+    'PAN5M': {
+        'reference': 1,
+        'num_bands': 1,
+        'quicklook_pixel_size': 50,
+        'red': 1,
+        'green': 1,
+        'blue': 1,
+        'meta_band': 1
+    },
+    'PAN10M': {
+        'reference': 2,
+        'num_bands': 3,
+        'quicklook_pixel_size': 100,
+        'red': 3,
+        'green': 4,
+        'blue': 2,
+        'meta_band': 4
+    }
+}
 
-    s3res = boto3.resource('s3')
-    bucket = s3res.Bucket(bucket_name)
-    objs = list(bucket.objects.filter(Prefix=key))
-    exists = objs and objs[0].key == key
-    if exists:
-        return objs[0].size
-    return 0
+S3_CLIENT = boto3.client('s3')
 
-# @todo used in other lambda functions, unify
-# @todo this is now checked in email_parser/code.py, consider removing
-# double check
-def s3_file_exists(bucket, key):
+SQS_CLIENT = boto3.client('sqs')
+
+def parse_quicklook_key(key):
     """
-    True if key exists.
-    Works also if object is in Glacier
-    """
+    Parse quicklook key and return dictionary with
+    relevant fields.
 
-    s3res = boto3.resource('s3')
-    bucket = s3res.Bucket(bucket)
-    objs = list(bucket.objects.filter(Prefix=key))
-    exists = objs and objs[0].key == key
-    return exists
+    Input:
+    key(string): quicklook key
 
-def get_remote_filesize(url_file):
-    """
     Output:
-    remote filesize in bytes
+    dict with the following keys:
+      satellite(string): e.g. CBERS4
+      camera(string): e.g. MUX
+      path(string): 0 padded path, 3 digits
+      row(int): 0 padded row, 3 digits
+      scene_id(string): e.g. CBERS_4_AWFI_20170515_155_135_L2
     """
-    uhandle = urllib2.urlopen(url_file)
-    return int(uhandle.info()['Content-Length'])
 
-def part_filename(tmpdir, filename, part_no):
-    """Build part filename"""
-    filename = '%s/%s_part%04d' % (tmpdir, filename, part_no)
-    return filename.replace(r'//', r'/')
+    # Example input
+    # CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/CBERS_4_AWFI_20170515_155_135.jpg
 
-def download_part(url, filename, tmpdir, part_no, part_size, this_part_size, bucket):
+    match = re.search(r'(?P<satellite>\w+)/(?P<camera>\w+)/'
+                      r'(?P<path>\d{3})/(?P<row>\d{3})/(?P<scene_id>\w+)/',
+                      key)
+    assert match, "Could not match " + key
+    return {
+        'satellite':match.group('satellite'),
+        'camera':match.group('camera'),
+        'path':match.group('path'),
+        'row':match.group('row'),
+        'scene_id':match.group('scene_id')
+    }
+
+def get_s3_keys(quicklook_key):
     """
-    Download file part
-
-    If bucket is not None the part is downloaded only if not
-    already available in S3. Once downloaded the part is uploaded
-    to S3.
+    Get S3 keys associated with quicklook
+    key parameter.
 
     Input:
-    bucket(dict): keys 'bucket_name', 'bucket_dir', 'camera'
+    quicklook_key(string): quicklook key
+
+    Ouput:
+    dict with the following keys:
+      stac(string): STAC item file
+      inpe_metadata(string): INPE original metadata file
     """
 
-    chunk_size = 1024 * 1024
-    furl = url + '/' + filename
-    local_part_filename = part_filename(tmpdir, filename, part_no)
-    if bucket:
-        s3filename = bucket['bucket_dir'] + local_part_filename
+    qdict = parse_quicklook_key(quicklook_key)
+    stac_key = "%s/%s/%s/%s/%s.json" % (qdict['satellite'], qdict['camera'],
+                                        qdict['path'], qdict['row'],
+                                        qdict['scene_id'])
+    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (qdict['satellite'], qdict['camera'],
+                                                          qdict['path'], qdict['row'],
+                                                          qdict['scene_id'],
+                                                          qdict['scene_id'],
+                                                          CMETA[qdict['camera']]['meta_band'])
+    return {
+        'stac':stac_key,
+        'inpe_metadata':inpe_metadata_key
+    }
 
-    # Nothing to do if part is already downloaded
-    if bucket:
-        size = s3_file_size(bucket['bucket_name'], s3filename)
-        # @todo check if size is expected
-        if size:
-            # Already downloaded
-            return
-
-    # @todo retry on error
-    req = urllib2.Request(furl)
-    req.headers['Range'] = 'bytes=%d-%d' % (part_no * part_size,
-                                            part_no * part_size + this_part_size - 1)
-    partfile = urllib2.urlopen(req)
-    with open(local_part_filename, 'wb') as output:
-        while True:
-            data = partfile.read(chunk_size)
-            if data:
-                output.write(data)
-            else:
-                break
-
-    # Transfer part to S3
-    if bucket:
-        upload_to_s3(local_part_filename, s3filename,
-                     bucket['bucket_name'])
-
-def download_to_local(url, filename, tmpdir,
-                      part_size=None,
-                      bucket=None):
+def sqs_messages(queue):
     """
-    Download file (url+filename) to temporary directory,
-    read file in chunks.
+    Generator for SQS messages.
 
     Input:
-    part_size(int): if defined file is downloaded in parallel parts of this size
-    bucket(dict): keys 'bucket_name', 'bucket_dir', 'camera'
+    queue(string): SQS URL.
+
+    Ouput:
+    dict with the following keys:
+      key: Quicklook s3 key
     """
 
-    chunk_size = 1024 * 1024
-    furl = url + '/' + filename
-    if part_size:
-        fsize = get_remote_filesize(furl)
-        process_no = ((fsize - 1) // part_size) + 1
-        processes = list()
-        for process in range(0, process_no):
-            if process == process_no - 1:
-                this_part_size = ((fsize - 1) % part_size) + 1
-            else:
-                this_part_size = part_size
-            processes.append(Process(target=download_part, args=(url,
-                                                                 filename,
-                                                                 tmpdir,
-                                                                 process,
-                                                                 part_size,
-                                                                 this_part_size,
-                                                                 bucket)))
-        for process in processes:
-            process.start()
-        for process in processes:
-            process.join()
-        # @todo there is no reason to proceed here if one of the process reported
-        # a failure
-        with open(tmpdir + '/' + filename, 'wb') as output:
-            for process in range(0, process_no):
-                # @todo repeated above
-                if process == process_no - 1:
-                    this_part_size = ((fsize - 1) % part_size) + 1
-                else:
-                    this_part_size = part_size
-                local_part_filename = part_filename(tmpdir, filename, process)
-                # File is downloaded from S3 if not local or incorrect size
-                if not os.path.isfile(local_part_filename) or \
-                   os.path.getsize(local_part_filename) != this_part_size:
-                    assert bucket
-                    # @todo create a function for that, same rule being used in
-                    # download_part()
-                    s3filename = bucket['bucket_dir'] + local_part_filename
-                    boto3.client('s3').download_file(bucket['bucket_name'], s3filename,
-                                                     local_part_filename)
-                    assert os.path.getsize(local_part_filename) == this_part_size, \
-                        "Part size for %s differ, %d %d" % (local_part_filename,
-                                                            os.path.getsize(local_part_filename),
-                                                            this_part_size)
-                with open(local_part_filename, 'rb') as fpart:
-                    while True:
-                        data = fpart.read(chunk_size)
-                        if data:
-                            output.write(data)
-                        else:
-                            break
-                os.remove(local_part_filename)
-                if bucket:
-                    # @todo delete file only after target is on S3
-                    s3filename = bucket['bucket_dir'] + local_part_filename
-                    if s3_file_size(bucket['bucket_name'], s3filename):
-                        boto3.client('s3').delete_object(Bucket=bucket['bucket_name'],
-                                                         Key=s3filename)
-        zfile = zipfile.ZipFile(tmpdir + '/' + filename)
-        assert zfile.testzip() is None, \
-            "%s is not a zip file" % (tmpdir + '/' + filename)
-        return
+    while True:
+        response = SQS_CLIENT.receive_message(
+            QueueUrl=queue)
+        if 'Messages' not in response:
+            break
+        msg = json.loads(response['Messages'][0]['Body'])
+        records = json.loads(msg['Message'])
+        retd = dict()
+        retd['key'] = records['Records'][0]['s3']['object']['key']
+        yield retd
 
-    # @todo unify processing as single part download
-    zfile = urllib2.urlopen(furl)
-    with open(tmpdir + '/' + filename, 'wb') as output:
-        while True:
-            data = zfile.read(chunk_size)
-            if data:
-                output.write(data)
-            else:
-                break
-
-def upload_to_s3(localfilename, s3filename, bucket_name, delete_after=False):
-    """Upload file to s3"""
-    s3srv = boto3.resource('s3')
-    with open(localfilename, 'rb') as data:
-        s3srv.Bucket(bucket_name).put_object(Key=s3filename,
-                                             Body=data)
-    if delete_after:
-        os.remove(localfilename)
-
-def download_to_s3_main(url, filename, tmpdir, bucket_name, bucket_dir,
-                        camera, part_size):
-    """ Main function
+def process_queue(cbers_pds_bucket,
+                  cbers_stac_bucket,
+                  cbers_meta_pds_bucket,
+                  queue):
     """
-    if not s3_file_exists(bucket_name,
-                          s3_filename(bucket_dir, filename, camera)):
-        download_to_local(url, filename, tmpdir,
-                          part_size=part_size,
-                          bucket={'bucket_name':bucket_name,
-                                  'bucket_dir':bucket_dir,
-                                  'camera':camera})
-        s3filename = s3_filename(bucket_dir, filename, camera)
-        localfilename = tmpdir + '/' + filename
-        upload_to_s3(localfilename, s3filename, bucket_name, delete_after=True)
+    Read quicklook queue and create STAC items if necessary.
+
+    Input:
+    cbers_pds_bucket(string): ditto
+    queue(string): SQS URL
+    """
+
+    for msg in sqs_messages(queue):
+        print(msg['key'])
+        metadata_keys = get_s3_keys(msg['key'])
+        local_inpe_metadata = '/tmp/' + \
+                              metadata_keys['inpe_metadata'].split('/')[-1]
+        local_stac_item = '/tmp/' + \
+                          metadata_keys['stac'].split('/')[-1]
+        with open(local_inpe_metadata, 'wb') as data:
+            S3_CLIENT.download_fileobj(cbers_pds_bucket,
+                                       metadata_keys['inpe_metadata'], data)
+            convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
+                                 stac_metadata_filename=local_stac_item,
+                                 buckets={'cog':cbers_pds_bucket,
+                                          'stac':cbers_stac_bucket,
+                                          'metadata':cbers_meta_pds_bucket})
+            break
 
 def handler(event, context):
     """Lambda entry point
     Event keys:
-    baseurl: URL of directory where file is located
-    filenames: list of filenames to be downloaded
-    index: index of filename to be downloaded
-    BUCKET: bucket id
     """
 
-    return download_to_s3_main(event['url'], event['filenames'][event['index']],
-                               '/tmp', os.environ['BUCKET'], event['download_dir'],
-                               event['camera'], int(os.environ['DOWNLOAD_PART_SIZE']))
+    return process_queue(cbers_pds_bucket=os.environ['CBERS_PDS_BUCKET'],
+                         cbers_stac_bucket=os.environ['CBERS_STAC_BUCKET'],
+                         cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
+                         queue=event['queue'])

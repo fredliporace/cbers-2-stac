@@ -1,19 +1,20 @@
 """cbers_to_stac_test"""
 
 import unittest
+import filecmp
 
-from cbers_2_stac import get_keys_from_cbers, \
+from sam.process_new_scene_queue.cbers_2_stac import get_keys_from_cbers, \
     build_stac_item_keys, create_json_item, \
-    epsg_from_utm_zone
+    epsg_from_utm_zone, convert_inpe_to_stac
 
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
 
     def epsg_from_utm_zone(self):
         """test_epsg_from_utm_zone"""
-        self.assertEqual( epsg_from_utm_zone(-23), 32723)
-        self.assertEqual( epsg_from_utm_zone(23), 32623)
-    
+        self.assertEqual(epsg_from_utm_zone(-23), 32723)
+        self.assertEqual(epsg_from_utm_zone(23), 32623)
+
     def test_get_keys_from_cbers(self):
         """test_get_keys_from_cbers"""
 
@@ -34,7 +35,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-57')
         self.assertEqual(meta['origin_latitude'], '0')
-        
+
     def test_build_awfi_stac_item_keys(self):
         """test_awfi_build_stac_item_keys"""
 
@@ -42,7 +43,7 @@ class CERS2StacTest(unittest.TestCase):
         buckets = {
             'metadata':'cbers-meta-pds',
             'cog':'cbers-pds',
-            'stac':'cbers-stac' }
+            'stac':'cbers-stac'}
         smeta = build_stac_item_keys(meta, buckets)
 
         # id
@@ -78,14 +79,14 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['cbers:path'], 167)
         self.assertEqual(smeta['properties']['cbers:row'], 123)
 
-        def test_build_mux_stac_item_keys(self):
-            """test_mux_build_stac_item_keys"""
+    def test_build_mux_stac_item_keys(self):
+        """test_mux_build_stac_item_keys"""
 
         meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
         buckets = {
             'metadata':'cbers-meta-pds',
             'cog':'cbers-pds',
-            'stac':'cbers-stac' }
+            'stac':'cbers-stac'}
         smeta = build_stac_item_keys(meta, buckets)
 
         # id
@@ -131,29 +132,32 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['links'][2]['href'],
                          'https://cbers-stac.s3.amazonaws.com/collections/'
                          'CBERS_4_MUX_L2_collection.json')
-        
-    def test_create_mux_json_item(self):
-        """test_create_mux_json_item"""
 
-        meta = get_keys_from_cbers('test/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml')
+    def test_convert_inpe_to_stac(self):
+        """test_convert_inpe_to_stac"""
+
         buckets = {
             'metadata':'cbers-meta-pds',
             'cog':'cbers-pds',
-            'stac':'cbers-stac' }
-        smeta = build_stac_item_keys(meta, buckets)
-        create_json_item(smeta, 'test/CBERS_4_MUX_20170528_090_084_L2.json')
+            'stac':'cbers-stac'}
 
-    def test_create_awfi_json_item(self):
-        """test_create_awfi_json_item"""
+        # MUX
+        output_filename = 'test/CBERS_4_MUX_20170528_090_084_L2.json'
+        ref_output_filename = 'test/ref_CBERS_4_MUX_20170528_090_084_L2.json'
+        convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_MUX_20170528'
+                             '_090_084_L2_BAND6.xml',
+                             stac_metadata_filename=output_filename,
+                             buckets=buckets)
+        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
 
-        meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml')
-        buckets = {
-            'metadata':'cbers-meta-pds',
-            'cog':'cbers-pds',
-            'stac':'cbers-stac' }
-        smeta = build_stac_item_keys(meta, buckets)
+        # AWFI
+        output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
+        ref_output_filename = 'test/ref_CBERS_4_AWFI_20170409_167_123_L4.json'
+        convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_AWFI_20170409'
+                             '_167_123_L4_BAND14.xml',
+                             stac_metadata_filename=output_filename,
+                             buckets=buckets)
+        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
 
-        create_json_item(smeta, 'test/CBERS_4_AWFI_20170409_167_123_L4.json')
-        
 if __name__ == '__main__':
     unittest.main()

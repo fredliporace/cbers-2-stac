@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Converts CBERS-4 scene metadata (xml) to stac item"""
 
 import sys
 import re
@@ -8,9 +9,7 @@ import json
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
-"""Converts CBERS-4 scene metadata (xml) to stac item"""
-
-def epsg_from_utm_zone( zone ):
+def epsg_from_utm_zone(zone):
     """
     Returns the WGS-84 EPSG for a given UTM zone
     Input:
@@ -55,11 +54,11 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['row'] = image.find('x:row', nsp).text
     metadata['processing_level'] = image.find('x:level', nsp).text
     metadata['vertical_pixel_size'] = image.find('x:verticalPixelSize', nsp).text
-    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text    
-    metadata['projection_name'] = image.find('x:projectionName', nsp).text    
-    metadata['origin_latitude'] = image.find('x:originLatitude', nsp).text    
-    metadata['origin_longitude'] = image.find('x:originLongitude', nsp).text    
-    
+    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text
+    metadata['projection_name'] = image.find('x:projectionName', nsp).text
+    metadata['origin_latitude'] = image.find('x:originLatitude', nsp).text
+    metadata['origin_longitude'] = image.find('x:originLongitude', nsp).text
+
     imagedata = image.find('x:imageData', nsp)
     metadata['ul_lat'] = imagedata.find('x:UL', nsp).find('x:latitude', nsp).text
     metadata['ul_lon'] = imagedata.find('x:UL', nsp).find('x:longitude', nsp).text
@@ -89,7 +88,7 @@ def get_keys_from_cbers(cbers_metadata):
     for attitude in attitudes.findall('x:attitude', nsp):
         metadata['roll'] = attitude.find('x:roll', nsp).text
         break
-    
+
     # availableBands node information
     available_bands = root.find('x:availableBands', nsp)
     metadata['bands'] = list()
@@ -117,7 +116,8 @@ def get_keys_from_cbers(cbers_metadata):
                                                             int(metadata['path']),
                                                             int(metadata['row']),
                                                             re.sub(r'_BAND\d+.xml', '',
-                                                                   os.path.basename(cbers_metadata)))
+                                                                   os.path.
+                                                                   basename(cbers_metadata)))
     metadata['sat_sensor'] = 'CBERS%s/%s' % (metadata['number'],
                                              metadata['sensor'])
     metadata['meta_file'] = os.path.basename(cbers_metadata)
@@ -158,7 +158,7 @@ def build_stac_item_keys(cbers, buckets):
                                          cbers['processing_level'])
 
     stac_item['type'] = 'Feature'
-    # Order is lower left lat, lon; upper right lat, lon 
+    # Order is lower left lat, lon; upper right lat, lon
     stac_item['bbox'] = (float(cbers['bb_ll_lat']), float(cbers['bb_ll_lon']),
                          float(cbers['bb_ur_lat']), float(cbers['bb_ur_lon']))
 
@@ -177,7 +177,7 @@ def build_stac_item_keys(cbers, buckets):
 
     stac_item['properties'] = OrderedDict()
     datetime = cbers['acquisition_date'].replace(' ', 'T')
-    datetime = re.sub('\.\d+', 'Z', datetime)
+    datetime = re.sub(r'\.\d+', 'Z', datetime)
     stac_item['properties']['datetime'] = datetime
     stac_item['properties']['provider'] = 'INPE'
     # License from INPE's site is
@@ -254,7 +254,7 @@ def build_stac_item_keys(cbers, buckets):
         stac_item['assets'][band_id]['type'] = 'GeoTIFF'
         stac_item['assets'][band_id]['required'] = True
         stac_item['assets'][band_id]['eo_bands'] = [band]
-    
+
     return stac_item
 
 def create_json_item(stac_item, filename):
@@ -267,25 +267,33 @@ def create_json_item(stac_item, filename):
 
     with open(filename, 'w') as outfile:
         json.dump(stac_item, outfile, indent=2)
-        
-def convert(cbers_metadata, buckets):
-    """Generate STAC item from CBERS metadata
+
+def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename,
+                         buckets):
+    """
+    Generate STAC item in stac_metadata from inpe_metadata.
+
     Input:
-    cbers_metadata(string): CBERS metadata file location
-    buckets(dict): buckets identification
+    inpe_metadata(string): CBERS metadata (INPE format) file
+    stac_metadata(string): STAC item metadata file to be written
+    buckets: buckets dictionary
     """
 
-    meta = get_keys_from_cbers(cbers_metadata)
-    
+    meta = get_keys_from_cbers(inpe_metadata_filename)
+    stac_meta = build_stac_item_keys(meta, buckets)
+    create_json_item(stac_meta, stac_metadata_filename)
+
 if __name__ == '__main__':
     # Command line arguments
-    # metadata filename (1)
+    # inpe_metadata filename (1)
+    # stac_metadata filename (2)
 
-    buckets = {
+    BUCKETS = {
         'metadata':'cbers-meta-pds',
         'cog':'cbers-pds',
-        'stac':'cbers-stac' }
-    
-    assert sys.argv == 2
-    convert(cbers_metadata=sys.argv[1],
-            buckets=buckets)
+        'stac':'cbers-stac'}
+
+    assert sys.argv == 3
+    convert_inpe_to_stac(inpe_metadata_filename=sys.argv[1],
+                         stac_metadata_filename=sys.argv[2],
+                         buckets=BUCKETS)
