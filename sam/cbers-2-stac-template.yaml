@@ -90,6 +90,23 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
 
+  NewMUXSceneQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt NewMUXScenesQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
+      Queues:
+        - !Ref NewMUXScenesQueue
+
   NewAWFIScenesQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -101,6 +118,23 @@ Resources:
       Endpoint: !GetAtt NewAWFIScenesQueue.Arn
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+
+  NewAWFISceneQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt NewAWFIScenesQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+      Queues:
+        - !Ref NewAWFIScenesQueue
 
   NewPAN10MScenesQueue:
     Type: 'AWS::SQS::Queue'
@@ -114,6 +148,23 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
 
+  NewPAN10MSceneQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt NewPAN10MScenesQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
+      Queues:
+        - !Ref NewPAN10MScenesQueue
+
   NewPAN5MScenesQueue:
     Type: 'AWS::SQS::Queue'
     Properties:
@@ -125,6 +176,23 @@ Resources:
       Endpoint: !GetAtt NewPAN5MScenesQueue.Arn
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
+
+  NewPAN5MSceneQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt NewPAN5MScenesQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
+      Queues:
+        - !Ref NewPAN5MScenesQueue
 
   #################################################
   # SQS/SNS end
