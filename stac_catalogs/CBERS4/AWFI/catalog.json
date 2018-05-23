@@ -1,5 +1,5 @@
 {
-    "name": "CBERS4 MUX",
+    "name": "CBERS4 AWFI",
     "description": "Catalog of CBERS4 AWFI camera imagery",
 
     "links": [
@@ -10,6 +10,6 @@
         { "rel": "root",
           "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"},
         { "rel": "item",
-          "href": "CBERS_4_MUX_20170528_090_084_L2.json"}
+          "href": "CBERS_4_AWFI_20170409_167_123_L4.json"}
     ]
 }
