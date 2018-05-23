@@ -156,12 +156,14 @@ def process_queue(cbers_pds_bucket,
         with open(local_inpe_metadata, 'wb') as data:
             S3_CLIENT.download_fileobj(cbers_pds_bucket,
                                        metadata_keys['inpe_metadata'], data)
-            convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
-                                 stac_metadata_filename=local_stac_item,
-                                 buckets={'cog':cbers_pds_bucket,
-                                          'stac':cbers_stac_bucket,
-                                          'metadata':cbers_meta_pds_bucket})
-            break
+        convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
+                             stac_metadata_filename=local_stac_item,
+                             buckets={'cog':cbers_pds_bucket,
+                                      'stac':cbers_stac_bucket,
+                                      'metadata':cbers_meta_pds_bucket})
+        with open(local_stac_item, 'rb') as data:
+            S3_CLIENT.upload_fileobj(data, cbers_stac_bucket,
+                                     metadata_keys['stac'])
 
 def handler(event, context):
     """Lambda entry point

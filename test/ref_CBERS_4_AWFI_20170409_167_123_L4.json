@@ -51,11 +51,11 @@
   "links": [
     {
       "rel": "self",
-      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/CBERS_4_AWFI_20170409_167_123_L4.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/167/123/CBERS_4_AWFI_20170409_167_123_L4.json"
     },
     {
       "rel": "catalog",
-      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/catalog.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/167/catalog.json"
     },
     {
       "rel": "collection",

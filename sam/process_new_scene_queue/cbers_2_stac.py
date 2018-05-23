@@ -211,17 +211,21 @@ def build_stac_item_keys(cbers, buckets):
 
     stac_item['links'].append(OrderedDict())
     stac_item['links'][0]['rel'] = 'self'
-    # Option if Item are organized by path and row
+    # Option if Items are organized by path and row
     #stac_item['links'][0]['href'] = meta_prefix + \
     #                                cbers['download_url'] + '/' + stac_item['id'] + '.json'
+    # Option if Items are organized in the same camera subdir
+    #stac_item['links'][0]['href'] = stac_prefix + \
+    #                                cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
     stac_item['links'][0]['href'] = stac_prefix + \
-                                    cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
+                                    cbers['sat_sensor'] + '/' + "%03d" % (int(cbers['path'])) + \
+                                    '/' + "%03d" % (int(cbers['row'])) + '/' + \
+                                    stac_item['id'] + '.json'
 
     stac_item['links'].append(OrderedDict())
     stac_item['links'][1]['rel'] = 'catalog'
-    stac_item['links'][1]['href'] = stac_prefix + cbers['mission'] + \
-                                    cbers['number'] + \
-                                    '/' + cbers['sensor'] + '/catalog.json'
+    stac_item['links'][1]['href'] = stac_prefix + cbers['sat_sensor'] + \
+                                    '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
 
     stac_item['links'].append(OrderedDict())
     stac_item['links'][2]['rel'] = 'collection'
