@@ -2,8 +2,11 @@
 
 import os
 import re
+from collections import OrderedDict
 import json
+
 import boto3
+from botocore.errorfactory import ClientError
 
 from cbers_2_stac import convert_inpe_to_stac
 
@@ -134,6 +137,148 @@ def sqs_messages(queue):
         retd['key'] = records['Records'][0]['s3']['object']['key']
         yield retd
 
+def base_stac_catalog(satellite, mission=None, camera=None, path=None, row=None):
+    """JSON SATC catalog with common itens"""
+
+    stac_catalog = OrderedDict()
+
+    name = satellite
+    description = name
+
+    if mission:
+        name += mission
+        description += mission
+    if camera:
+        name += ' %s' % (camera)
+        description += ' %s camera' % (camera)
+    if path:
+        name += ' %s' % (path)
+        description += ' path %s' % (path)
+    if row:
+        name += '/%s' % (row)
+        description += ' row %s' % (row)
+    description += ' catalog'
+
+    stac_catalog['name'] = name
+    stac_catalog['description'] = description
+
+    stac_catalog['links'] = list()
+
+    self_link = OrderedDict()
+    self_link['rel'] = 'self'
+    self_link['href'] = 'catalog.json'
+    stac_catalog['links'].append(self_link)
+
+    if mission or camera or path or row:
+        parent_link = OrderedDict()
+        parent_link['rel'] = 'parent'
+        parent_link['href'] = '../catalog.json'
+        stac_catalog['links'].append(parent_link)
+
+    return stac_catalog
+
+def update_catalog_tree(stac_item, buckets):
+    """
+    Traverse STAC catalog tree and update links
+    """
+
+    catalog_path = os.path.dirname(stac_item)
+    stac_filename = os.path.basename(stac_item)
+
+    match = re.match(r'(?P<satellite>\w+)_(?P<mission>\w+)_'
+                     r'(?P<camera>\w+)_(?P<YHD>\w+)_(?P<path>\w+)_'
+                     r'(?P<row>\w+)_(?P<level>\w+).json', stac_filename)
+    assert match, "Can't match %s" % (stac_filename)
+    satellite = match.group('satellite')
+    mission = match.group('mission')
+    camera = match.group('camera')
+    path = match.group('path')
+    row = match.group('row')
+
+    # SAT/MISSION/CAMERA/PATH/ROW level
+    local_catalog_file = '/tmp/catalog.json'
+    local_updated_catalog_file = '/tmp/updated_catalog.json'
+    s3_catalog_file = '%s/catalog.json' % (catalog_path)
+    try:
+        with open(local_catalog_file, 'wb') as data:
+            S3_CLIENT.download_fileobj(buckets['stac'],
+                                       s3_catalog_file, data)
+    except ClientError:
+        # File needs to be created
+        with open(local_catalog_file, 'w') as data:
+            json.dump(base_stac_catalog(satellite, mission, camera,
+                                        path, row),
+                      data,
+                      indent=2)
+    stac_catalog = None
+    with open(local_catalog_file, 'r') as data:
+        stac_catalog = json.load(data)
+        stac_item = {'rel':'item', 'href':stac_filename}
+        if stac_item not in stac_catalog['links']:
+            stac_catalog['links'].append(stac_item)
+    with open(local_updated_catalog_file, 'w') as data:
+        json.dump(stac_catalog, data, indent=2)
+    with open(local_updated_catalog_file, 'rb') as data:
+        S3_CLIENT.upload_fileobj(data, buckets['stac'],
+                                 s3_catalog_file)
+
+    # SAT/MISSION/CAMERA/PATH level
+    local_catalog_file = '/tmp/catalog.json'
+    local_updated_catalog_file = '/tmp/updated_catalog.json'
+    child_catalog = '%s/catalog.json' % (row)
+    catalog_path = '%s%s/%s/%s' % (satellite, mission, camera, path)
+    s3_catalog_file = '%s/catalog.json' % (catalog_path)
+    try:
+        with open(local_catalog_file, 'wb') as data:
+            S3_CLIENT.download_fileobj(buckets['stac'],
+                                       s3_catalog_file, data)
+    except ClientError:
+        # File needs to be created
+        with open(local_catalog_file, 'w') as data:
+            json.dump(base_stac_catalog(satellite, mission, camera,
+                                        path),
+                      data,
+                      indent=2)
+    stac_catalog = None
+    with open(local_catalog_file, 'r') as data:
+        stac_catalog = json.load(data)
+        stac_item = {'rel':'child', 'href':child_catalog}
+        if stac_item not in stac_catalog['links']:
+            stac_catalog['links'].append(stac_item)
+    with open(local_updated_catalog_file, 'w') as data:
+        json.dump(stac_catalog, data, indent=2)
+    with open(local_updated_catalog_file, 'rb') as data:
+        S3_CLIENT.upload_fileobj(data, buckets['stac'],
+                                 s3_catalog_file)
+
+    # SAT/MISSION/CAMERA level
+    local_catalog_file = '/tmp/catalog.json'
+    local_updated_catalog_file = '/tmp/updated_catalog.json'
+    child_catalog = '%s/catalog.json' % (path)
+    catalog_path = '%s%s/%s' % (satellite, mission, camera)
+    s3_catalog_file = '%s/catalog.json' % (catalog_path)
+    try:
+        with open(local_catalog_file, 'wb') as data:
+            S3_CLIENT.download_fileobj(buckets['stac'],
+                                       s3_catalog_file, data)
+    except ClientError:
+        # File needs to be created
+        with open(local_catalog_file, 'w') as data:
+            json.dump(base_stac_catalog(satellite, mission, camera),
+                      data,
+                      indent=2)
+    stac_catalog = None
+    with open(local_catalog_file, 'r') as data:
+        stac_catalog = json.load(data)
+        stac_item = {'rel':'child', 'href':child_catalog}
+        if stac_item not in stac_catalog['links']:
+            stac_catalog['links'].append(stac_item)
+    with open(local_updated_catalog_file, 'w') as data:
+        json.dump(stac_catalog, data, indent=2)
+    with open(local_updated_catalog_file, 'rb') as data:
+        S3_CLIENT.upload_fileobj(data, buckets['stac'],
+                                 s3_catalog_file)
+
 def process_queue(cbers_pds_bucket,
                   cbers_stac_bucket,
                   cbers_meta_pds_bucket,
@@ -146,6 +291,9 @@ def process_queue(cbers_pds_bucket,
     queue(string): SQS URL
     """
 
+    buckets = {'cog':cbers_pds_bucket,
+               'stac':cbers_stac_bucket,
+               'metadata':cbers_meta_pds_bucket}
     for msg in sqs_messages(queue):
         print(msg['key'])
         metadata_keys = get_s3_keys(msg['key'])
@@ -153,17 +301,20 @@ def process_queue(cbers_pds_bucket,
                               metadata_keys['inpe_metadata'].split('/')[-1]
         local_stac_item = '/tmp/' + \
                           metadata_keys['stac'].split('/')[-1]
+        # Download INPE metadata and generate STAC item file
         with open(local_inpe_metadata, 'wb') as data:
             S3_CLIENT.download_fileobj(cbers_pds_bucket,
                                        metadata_keys['inpe_metadata'], data)
         convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
                              stac_metadata_filename=local_stac_item,
-                             buckets={'cog':cbers_pds_bucket,
-                                      'stac':cbers_stac_bucket,
-                                      'metadata':cbers_meta_pds_bucket})
+                             buckets=buckets)
+        # Upload STAC item file
         with open(local_stac_item, 'rb') as data:
             S3_CLIENT.upload_fileobj(data, cbers_stac_bucket,
                                      metadata_keys['stac'])
+        # Update catalog tree
+        update_catalog_tree(stac_item=metadata_keys['stac'],
+                            buckets=buckets)
 
 def handler(event, context):
     """Lambda entry point

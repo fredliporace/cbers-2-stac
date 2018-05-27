@@ -281,11 +281,15 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename,
     inpe_metadata(string): CBERS metadata (INPE format) file
     stac_metadata(string): STAC item metadata file to be written
     buckets: buckets dictionary
+
+    Return:
+    Dictionary based on INPE's metadata
     """
 
     meta = get_keys_from_cbers(inpe_metadata_filename)
     stac_meta = build_stac_item_keys(meta, buckets)
     create_json_item(stac_meta, stac_metadata_filename)
+    return meta
 
 if __name__ == '__main__':
     # Command line arguments
