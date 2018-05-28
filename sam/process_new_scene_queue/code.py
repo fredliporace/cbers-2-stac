@@ -124,6 +124,7 @@ def sqs_messages(queue):
     Ouput:
     dict with the following keys:
       key: Quicklook s3 key
+      ReceiptHandle: Message receipt handle
     """
 
     while True:
@@ -135,6 +136,7 @@ def sqs_messages(queue):
         records = json.loads(msg['Message'])
         retd = dict()
         retd['key'] = records['Records'][0]['s3']['object']['key']
+        retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
 def base_stac_catalog(satellite, mission=None, camera=None, path=None, row=None):
@@ -282,18 +284,27 @@ def update_catalog_tree(stac_item, buckets):
 def process_queue(cbers_pds_bucket,
                   cbers_stac_bucket,
                   cbers_meta_pds_bucket,
-                  queue):
+                  queue,
+                  message_batch_size,
+                  delete_processed_messages=False):
     """
     Read quicklook queue and create STAC items if necessary.
 
     Input:
-    cbers_pds_bucket(string): ditto
-    queue(string): SQS URL
+      cbers_pds_bucket(string): ditto
+      cbers_stac_bucket(string): ditto
+      cbers_meta_pds_bucket(string): ditto
+      queue(string): SQS URL
+      message_batch_size: maximum number of messages to be processed, 0 for
+                          all messages.
+      delete_processed_messages: if True messages are deleted from queue
+                                 after processing
     """
 
     buckets = {'cog':cbers_pds_bucket,
                'stac':cbers_stac_bucket,
                'metadata':cbers_meta_pds_bucket}
+    processed_messages = 0
     for msg in sqs_messages(queue):
         print(msg['key'])
         metadata_keys = get_s3_keys(msg['key'])
@@ -316,6 +327,17 @@ def process_queue(cbers_pds_bucket,
         update_catalog_tree(stac_item=metadata_keys['stac'],
                             buckets=buckets)
 
+        # Remove message from queue
+        if delete_processed_messages:
+            SQS_CLIENT.delete_message(
+                QueueUrl=queue,
+                ReceiptHandle=msg['ReceiptHandle']
+            )
+
+        processed_messages += 1
+        if processed_messages == message_batch_size:
+            break
+
 def handler(event, context):
     """Lambda entry point
     Event keys:
@@ -324,4 +346,6 @@ def handler(event, context):
     return process_queue(cbers_pds_bucket=os.environ['CBERS_PDS_BUCKET'],
                          cbers_stac_bucket=os.environ['CBERS_STAC_BUCKET'],
                          cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
-                         queue=event['queue'])
+                         queue=event['queue'],
+                         message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
+                         delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)

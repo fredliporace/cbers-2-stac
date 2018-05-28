@@ -87,7 +87,8 @@ class ProcessNewSceneTest(unittest.TestCase):
                       cbers_stac_bucket='cbers-stac',
                       cbers_meta_pds_bucket='cbers-meta-pds',
                       queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
-                      'NewAWFIQuicklookMonitor')
+                      'NewAWFIQuicklookMonitor',
+                      message_batch_size=1)
 
 if __name__ == '__main__':
     unittest.main()

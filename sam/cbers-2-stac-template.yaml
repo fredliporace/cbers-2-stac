@@ -10,6 +10,8 @@ Globals:
         CBERS_PDS_BUCKET: cbers-pds
         CBERS_META_PDS_BUCKET: cbers-meta-pds
         CBERS_STAC_BUCKET: cbers-stac
+        MESSAGE_BATCH_SIZE: 0
+        DELETE_MESSAGES: 1
 
 Resources:
 
