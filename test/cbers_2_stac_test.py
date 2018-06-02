@@ -58,10 +58,10 @@ class CERS2StacTest(unittest.TestCase):
 
         # geometry
         self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], -23.152887)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], -63.086835)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], -23.152887)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], -63.086835)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], -63.086835)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], -63.086835)
 
         # properties
         self.assertEqual(smeta['properties']['datetime'], '2017-04-09T14:09:23Z')
@@ -101,10 +101,10 @@ class CERS2StacTest(unittest.TestCase):
 
         # geometry
         self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], 13.891487)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], 23.463987)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], 13.891487)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], 23.463987)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], 13.891487)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], 23.463987)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], 13.891487)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], 23.463987)
 
         # properties
         self.assertEqual(smeta['properties']['datetime'], '2017-05-28T09:01:17Z')
@@ -126,9 +126,9 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['links'][0]['rel'], 'self')
         self.assertEqual(smeta['links'][0]['href'],
                          'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/'
-                         'CBERS_4_MUX_20170528_090_084_L2.json')
+                         '090/084/CBERS_4_MUX_20170528_090_084_L2.json')
         self.assertEqual(smeta['links'][1]['href'],
-                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/catalog.json')
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/090/catalog.json')
         self.assertEqual(smeta['links'][2]['href'],
                          'https://cbers-stac.s3.amazonaws.com/collections/'
                          'CBERS_4_MUX_L2_collection.json')

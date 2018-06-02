@@ -164,16 +164,16 @@ def build_stac_item_keys(cbers, buckets):
 
     stac_item['geometry'] = OrderedDict()
     stac_item['geometry']['type'] = 'MultiPolygon'
-    stac_item['geometry']['coordinates'] = [[[(float(cbers['ll_lat']),
-                                               float(cbers['ll_lon'])),
-                                              (float(cbers['lr_lat']),
-                                               float(cbers['lr_lon'])),
-                                              (float(cbers['ur_lat']),
-                                               float(cbers['ur_lon'])),
-                                              (float(cbers['ul_lat']),
-                                               float(cbers['ul_lon'])),
-                                              (float(cbers['ll_lat']),
-                                               float(cbers['ll_lon']))]]]
+    stac_item['geometry']['coordinates'] = [[[(float(cbers['ll_lon']),
+                                               float(cbers['ll_lat'])),
+                                              (float(cbers['lr_lon']),
+                                               float(cbers['lr_lat'])),
+                                              (float(cbers['ur_lon']),
+                                               float(cbers['ur_lat'])),
+                                              (float(cbers['ul_lon']),
+                                               float(cbers['ul_lat'])),
+                                              (float(cbers['ll_lon']),
+                                               float(cbers['ll_lat']))]]]
 
     stac_item['properties'] = OrderedDict()
     datetime = cbers['acquisition_date'].replace(' ', 'T')
