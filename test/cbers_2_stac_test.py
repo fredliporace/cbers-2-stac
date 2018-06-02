@@ -51,10 +51,10 @@ class CERS2StacTest(unittest.TestCase):
 
         # bbox
         self.assertEqual(len(smeta['bbox']), 4)
-        self.assertEqual(smeta['bbox'][0], -24.425554)
-        self.assertEqual(smeta['bbox'][1], -63.157102)
-        self.assertEqual(smeta['bbox'][2], -16.364230)
-        self.assertEqual(smeta['bbox'][3], -53.027684)
+        self.assertEqual(smeta['bbox'][1], -24.425554)
+        self.assertEqual(smeta['bbox'][0], -63.157102)
+        self.assertEqual(smeta['bbox'][3], -16.364230)
+        self.assertEqual(smeta['bbox'][2], -53.027684)
 
         # geometry
         self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)
@@ -94,10 +94,10 @@ class CERS2StacTest(unittest.TestCase):
 
         # bbox
         self.assertEqual(len(smeta['bbox']), 4)
-        self.assertEqual(smeta['bbox'][0], 13.700498)
-        self.assertEqual(smeta['bbox'][1], 23.465111)
-        self.assertEqual(smeta['bbox'][2], 14.988180)
-        self.assertEqual(smeta['bbox'][3], 24.812825)
+        self.assertEqual(smeta['bbox'][1], 13.700498)
+        self.assertEqual(smeta['bbox'][0], 23.465111)
+        self.assertEqual(smeta['bbox'][3], 14.988180)
+        self.assertEqual(smeta['bbox'][2], 24.812825)
 
         # geometry
         self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)

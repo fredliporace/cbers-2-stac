@@ -79,7 +79,7 @@ class ProcessNewSceneTest(unittest.TestCase):
         self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
         self.assertEqual(len(catalog['links']), 1)
 
-    #@unittest.skip("Require AWS credentials and environment")
+    @unittest.skip("Require AWS credentials and environment")
     def process_queue_test(self):
         """process_queue_test"""
 

@@ -158,9 +158,9 @@ def build_stac_item_keys(cbers, buckets):
                                          cbers['processing_level'])
 
     stac_item['type'] = 'Feature'
-    # Order is lower left lat, lon; upper right lat, lon
-    stac_item['bbox'] = (float(cbers['bb_ll_lat']), float(cbers['bb_ll_lon']),
-                         float(cbers['bb_ur_lat']), float(cbers['bb_ur_lon']))
+    # Order is lower left lon, lat; upper right lon, lat
+    stac_item['bbox'] = (float(cbers['bb_ll_lon']), float(cbers['bb_ll_lat']),
+                         float(cbers['bb_ur_lon']), float(cbers['bb_ur_lat']))
 
     stac_item['geometry'] = OrderedDict()
     stac_item['geometry']['type'] = 'MultiPolygon'
