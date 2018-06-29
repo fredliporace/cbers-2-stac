@@ -207,34 +207,33 @@ def build_stac_item_keys(cbers, buckets):
     main_prefix = 's3://%s/' % (buckets['cog'])
     stac_prefix = 'https://%s.s3.amazonaws.com/' % (buckets['stac'])
     # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
-    stac_item['links'] = list()
+    stac_item['links'] = OrderedDict()
 
-    stac_item['links'].append(OrderedDict())
-    stac_item['links'][0]['rel'] = 'self'
+    stac_item['links']['self'] = OrderedDict()
+    stac_item['links']['self']['rel'] = 'self'
     # Option if Items are organized by path and row
     #stac_item['links'][0]['href'] = meta_prefix + \
     #                                cbers['download_url'] + '/' + stac_item['id'] + '.json'
     # Option if Items are organized in the same camera subdir
     #stac_item['links'][0]['href'] = stac_prefix + \
     #                                cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
-    stac_item['links'][0]['href'] = stac_prefix + \
-                                    cbers['sat_sensor'] + '/' + "%03d" % (int(cbers['path'])) + \
-                                    '/' + "%03d" % (int(cbers['row'])) + '/' + \
-                                    stac_item['id'] + '.json'
+    stac_item['links']['self']['href'] = stac_prefix + \
+                                         cbers['sat_sensor'] + '/' + "%03d" % (int(cbers['path'])) + \
+                                         '/' + "%03d" % (int(cbers['row'])) + '/' + \
+                                         stac_item['id'] + '.json'
 
-    stac_item['links'].append(OrderedDict())
-    stac_item['links'][1]['rel'] = 'catalog'
-    stac_item['links'][1]['href'] = stac_prefix + cbers['sat_sensor'] + \
-                                    '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
+    stac_item['links']['catalog'] = OrderedDict()
+    stac_item['links']['catalog']['rel'] = 'catalog'
+    stac_item['links']['catalog']['href'] = stac_prefix + cbers['sat_sensor'] + \
+                                            '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
 
-    stac_item['links'].append(OrderedDict())
-    stac_item['links'][2]['rel'] = 'collection'
-    stac_item['links'][2]['href'] = stac_prefix + 'collections/' + \
-                                    cbers['mission'] + '_' + \
-                                    cbers['number'] + '_' + \
-                                    cbers['sensor'] + '_' + \
-                                    'L' + cbers['processing_level'] + '_collection.json'
-
+    stac_item['links']['collection'] = OrderedDict()
+    stac_item['links']['collection']['rel'] = 'collection'
+    stac_item['links']['collection']['href'] = stac_prefix + 'collections/' + \
+                                               cbers['mission'] + '_' + \
+                                               cbers['number'] + '_' + \
+                                               cbers['sensor'] + '_' + \
+                                               'L' + cbers['processing_level'] + '_collection.json'
     # Assets
     stac_item['assets'] = OrderedDict()
     stac_item['assets']['thumbnail'] = OrderedDict()

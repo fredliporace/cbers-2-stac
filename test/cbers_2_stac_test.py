@@ -123,13 +123,13 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['cbers:row'], 84)
 
         # links
-        self.assertEqual(smeta['links'][0]['rel'], 'self')
-        self.assertEqual(smeta['links'][0]['href'],
+        self.assertEqual(smeta['links']['self']['rel'], 'self')
+        self.assertEqual(smeta['links']['self']['href'],
                          'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/'
                          '090/084/CBERS_4_MUX_20170528_090_084_L2.json')
-        self.assertEqual(smeta['links'][1]['href'],
+        self.assertEqual(smeta['links']['catalog']['href'],
                          'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/090/catalog.json')
-        self.assertEqual(smeta['links'][2]['href'],
+        self.assertEqual(smeta['links']['collection']['href'],
                          'https://cbers-stac.s3.amazonaws.com/collections/'
                          'CBERS_4_MUX_L2_collection.json')
 
