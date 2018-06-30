@@ -1,10 +1,15 @@
 """cbers_to_stac_test"""
 
+import os
 import unittest
 import filecmp
+import json
+
+from jsonschema import validate, RefResolver
+from jsonschema.exceptions import ValidationError
 
 from sam.process_new_scene_queue.cbers_2_stac import get_keys_from_cbers, \
-    build_stac_item_keys, create_json_item, \
+    build_stac_item_keys, \
     epsg_from_utm_zone, convert_inpe_to_stac
 
 class CERS2StacTest(unittest.TestCase):
@@ -136,6 +141,15 @@ class CERS2StacTest(unittest.TestCase):
     def test_convert_inpe_to_stac(self):
         """test_convert_inpe_to_stac"""
 
+        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        'json_schema/')
+        schema_path = os.path.join(json_schema_path,
+                                   'stac-item.json')
+        resolver = RefResolver('file://' + json_schema_path + '/',
+                               None)
+        with open(schema_path) as fp_schema:
+            schema = json.load(fp_schema)
+
         buckets = {
             'metadata':'cbers-meta-pds',
             'cog':'cbers-pds',
@@ -148,6 +162,9 @@ class CERS2StacTest(unittest.TestCase):
                              '_090_084_L2_BAND6.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
+                             None)
         self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
 
         # AWFI
@@ -157,7 +174,28 @@ class CERS2StacTest(unittest.TestCase):
                              '_167_123_L4_BAND14.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
+                             None)
         self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
+
+    def test_json_schema(self):
+        """test_json_schema"""
+
+        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        'json_schema/')
+        schema_path = os.path.join(json_schema_path,
+                                   'stac-item.json')
+        resolver = RefResolver('file://' + json_schema_path + '/',
+                               None)
+        #self.assertEqual(schema_path, '')
+        with open(schema_path) as fp_schema:
+            schema = json.load(fp_schema)
+        invalid_filename = 'test/CBERS_4_MUX_20170528_090_084_L2_error.json'
+        with open(invalid_filename) as fp_in:
+            with self.assertRaises(ValidationError) as context:
+                validate(json.load(fp_in), schema, resolver=resolver)
+            self.assertTrue("'links' is a required property" in str(context.exception))
 
 if __name__ == '__main__':
     unittest.main()
