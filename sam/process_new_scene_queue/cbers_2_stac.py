@@ -255,6 +255,7 @@ def build_stac_item_keys(cbers, buckets):
                                                cbers['download_url'] + '/' + \
                                                stac_item['id'] + '_BAND' + band + '.tif'
         stac_item['assets'][band_id]['type'] = 'GeoTIFF'
+        stac_item['assets'][band_id]['format'] = 'COG'
         stac_item['assets'][band_id]['required'] = True
         stac_item['assets'][band_id]['eo_bands'] = [band]
 

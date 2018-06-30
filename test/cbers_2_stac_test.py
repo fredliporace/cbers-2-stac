@@ -4,6 +4,7 @@ import os
 import unittest
 import filecmp
 import json
+import difflib
 
 from jsonschema import validate, RefResolver
 from jsonschema.exceptions import ValidationError
@@ -11,6 +12,18 @@ from jsonschema.exceptions import ValidationError
 from sam.process_new_scene_queue.cbers_2_stac import get_keys_from_cbers, \
     build_stac_item_keys, \
     epsg_from_utm_zone, convert_inpe_to_stac
+
+def diff_files(filename1, filename2):
+    """
+    Return string with context diff, empty if files are equal
+    """
+    with open(filename1) as file1:
+        with open(filename2) as file2:
+            diff = difflib.context_diff(file1.readlines(), file2.readlines())
+    res = ''
+    for line in diff:
+        res += line
+    return res
 
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
@@ -165,7 +178,8 @@ class CERS2StacTest(unittest.TestCase):
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
                              None)
-        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
 
         # AWFI
         output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
@@ -177,7 +191,8 @@ class CERS2StacTest(unittest.TestCase):
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
                              None)
-        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
 
     def test_json_schema(self):
         """test_json_schema"""
