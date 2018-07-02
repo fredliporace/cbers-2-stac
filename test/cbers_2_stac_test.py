@@ -1,11 +1,29 @@
 """cbers_to_stac_test"""
 
+import os
 import unittest
 import filecmp
+import json
+import difflib
+
+from jsonschema import validate, RefResolver
+from jsonschema.exceptions import ValidationError
 
 from sam.process_new_scene_queue.cbers_2_stac import get_keys_from_cbers, \
-    build_stac_item_keys, create_json_item, \
+    build_stac_item_keys, \
     epsg_from_utm_zone, convert_inpe_to_stac
+
+def diff_files(filename1, filename2):
+    """
+    Return string with context diff, empty if files are equal
+    """
+    with open(filename1) as file1:
+        with open(filename2) as file2:
+            diff = difflib.context_diff(file1.readlines(), file2.readlines())
+    res = ''
+    for line in diff:
+        res += line
+    return res
 
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
@@ -123,18 +141,27 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['cbers:row'], 84)
 
         # links
-        self.assertEqual(smeta['links'][0]['rel'], 'self')
-        self.assertEqual(smeta['links'][0]['href'],
+        self.assertEqual(smeta['links']['self']['rel'], 'self')
+        self.assertEqual(smeta['links']['self']['href'],
                          'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/'
                          '090/084/CBERS_4_MUX_20170528_090_084_L2.json')
-        self.assertEqual(smeta['links'][1]['href'],
+        self.assertEqual(smeta['links']['catalog']['href'],
                          'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/090/catalog.json')
-        self.assertEqual(smeta['links'][2]['href'],
+        self.assertEqual(smeta['links']['collection']['href'],
                          'https://cbers-stac.s3.amazonaws.com/collections/'
                          'CBERS_4_MUX_L2_collection.json')
 
     def test_convert_inpe_to_stac(self):
         """test_convert_inpe_to_stac"""
+
+        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        'json_schema/')
+        schema_path = os.path.join(json_schema_path,
+                                   'stac-item.json')
+        resolver = RefResolver('file://' + json_schema_path + '/',
+                               None)
+        with open(schema_path) as fp_schema:
+            schema = json.load(fp_schema)
 
         buckets = {
             'metadata':'cbers-meta-pds',
@@ -148,7 +175,11 @@ class CERS2StacTest(unittest.TestCase):
                              '_090_084_L2_BAND6.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
-        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
+                             None)
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
 
         # AWFI
         output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
@@ -157,7 +188,29 @@ class CERS2StacTest(unittest.TestCase):
                              '_167_123_L4_BAND14.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
-        self.assertTrue(filecmp.cmp(output_filename, ref_output_filename))
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
+                             None)
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
+
+    def test_json_schema(self):
+        """test_json_schema"""
+
+        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                        'json_schema/')
+        schema_path = os.path.join(json_schema_path,
+                                   'stac-item.json')
+        resolver = RefResolver('file://' + json_schema_path + '/',
+                               None)
+        #self.assertEqual(schema_path, '')
+        with open(schema_path) as fp_schema:
+            schema = json.load(fp_schema)
+        invalid_filename = 'test/CBERS_4_MUX_20170528_090_084_L2_error.json'
+        with open(invalid_filename) as fp_in:
+            with self.assertRaises(ValidationError) as context:
+                validate(json.load(fp_in), schema, resolver=resolver)
+            self.assertTrue("'links' is a required property" in str(context.exception))
 
 if __name__ == '__main__':
     unittest.main()
