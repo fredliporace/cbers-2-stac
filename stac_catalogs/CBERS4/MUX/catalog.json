@@ -8,8 +8,6 @@
         { "rel": "parent",
           "href": "../catalog.json"},
         { "rel": "root",
-          "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"},
-        { "rel": "item",
-          "href": "CBERS_4_MUX_20170528_090_084_L2.json"}
+          "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"}
     ]
 }
