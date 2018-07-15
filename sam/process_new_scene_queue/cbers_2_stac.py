@@ -246,13 +246,11 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['assets']['thumbnail']['href'] = meta_prefix + \
                                                cbers['download_url'] + '/' + \
                                                cbers['no_level_id'] + '.jpg'
-    stac_item['assets']['thumbnail']['required'] = True
     stac_item['assets']['thumbnail']['type'] = 'jpeg'
     stac_item['assets']['metadata'] = OrderedDict()
     stac_item['assets']['metadata']['href'] = main_prefix + \
                                                cbers['download_url'] + '/' + \
                                                cbers['meta_file']
-    stac_item['assets']['metadata']['required'] = True
     stac_item['assets']['metadata']['type'] = 'xml'
     for band in cbers['bands']:
         band_id = "B" + band
@@ -262,7 +260,6 @@ def build_stac_item_keys(cbers, buckets):
                                                stac_item['id'] + '_BAND' + band + '.tif'
         stac_item['assets'][band_id]['type'] = 'GeoTIFF'
         stac_item['assets'][band_id]['format'] = 'COG'
-        stac_item['assets'][band_id]['required'] = True
         stac_item['assets'][band_id]['eo_bands'] = [band]
 
     return stac_item
