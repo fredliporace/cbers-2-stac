@@ -1,7 +1,7 @@
 {
     "properties": {
-        "c:id": "CBERS4_MUX_L2",
-        "c:name": "CBERS4_MUX_L2",
+        "c:id": "CBERS_4_MUX_L2",
+        "c:name": "CBERS_4_MUX_L2",
         "c:description": "CBERS 4 MUX System Corrected data",
         "eo:platform": "CBERS-4",
         "eo:instrument": "MUX",

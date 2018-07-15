@@ -1,7 +1,7 @@
 {
     "properties": {
-        "c:id": "CBERS4_AWFI_L4",
-        "c:name": "CBERS4_AWFI_L4",
+        "c:id": "CBERS_4_AWFI_L4",
+        "c:name": "CBERS_4_AWFI_L4",
         "c:description": "CBERS 4 AWFI Ortho data",
         "eo:platform": "CBERS-4",
         "eo:instrument": "AWFI",
