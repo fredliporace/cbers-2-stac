@@ -218,7 +218,8 @@ def build_stac_item_keys(cbers, buckets):
     #stac_item['links'][0]['href'] = stac_prefix + \
     #                                cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
     stac_item['links']['self']['href'] = stac_prefix + \
-                                         cbers['sat_sensor'] + '/' + "%03d" % (int(cbers['path'])) + \
+                                         cbers['sat_sensor'] + '/' + \
+                                         "%03d" % (int(cbers['path'])) + \
                                          '/' + "%03d" % (int(cbers['row'])) + '/' + \
                                          stac_item['id'] + '.json'
 
@@ -227,13 +228,18 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['links']['catalog']['href'] = stac_prefix + cbers['sat_sensor'] + \
                                             '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
 
+    # Collection
+    collection_id = cbers['mission'] + '_' + \
+                    cbers['number'] + '_' + \
+                    cbers['sensor'] + '_' + \
+                    'L' + cbers['processing_level']
     stac_item['links']['collection'] = OrderedDict()
     stac_item['links']['collection']['rel'] = 'collection'
     stac_item['links']['collection']['href'] = stac_prefix + 'collections/' + \
-                                               cbers['mission'] + '_' + \
-                                               cbers['number'] + '_' + \
-                                               cbers['sensor'] + '_' + \
-                                               'L' + cbers['processing_level'] + '_collection.json'
+                                               collection_id + \
+                                               '_collection.json'
+    stac_item['properties']['c:id'] = collection_id
+
     # Assets
     stac_item['assets'] = OrderedDict()
     stac_item['assets']['thumbnail'] = OrderedDict()

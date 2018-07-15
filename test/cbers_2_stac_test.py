@@ -2,7 +2,6 @@
 
 import os
 import unittest
-import filecmp
 import json
 import difflib
 
@@ -126,6 +125,7 @@ class CERS2StacTest(unittest.TestCase):
 
         # properties
         self.assertEqual(smeta['properties']['datetime'], '2017-05-28T09:01:17Z')
+        self.assertEqual(smeta['properties']['c:id'], 'CBERS_4_MUX_L2')
 
         # properties:eo
         self.assertEqual(smeta['properties']['eo:collection'], 'default')

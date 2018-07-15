@@ -46,7 +46,8 @@
     "eo:epsg": 32757,
     "cbers:data_type": "L4",
     "cbers:path": 167,
-    "cbers:row": 123
+    "cbers:row": 123,
+    "c:id": "CBERS_4_AWFI_L4"
   },
   "links": {
     "self": {
