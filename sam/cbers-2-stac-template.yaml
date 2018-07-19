@@ -55,6 +55,7 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSESFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
       Path: "/"
 
   #################################################
@@ -77,7 +78,19 @@ Resources:
   #################################################
 
   #################################################
-  # SQS/SNS start 
+  # SNS Topic start
+  #################################################
+
+  # @todo allow everybody to subscribe to topic
+  CBERSSTACItemTopic:
+    Type: 'AWS::SNS::Topic'
+
+  #################################################
+  # SNS Topic End
+  #################################################
+
+  #################################################
+  # SQS/Subscription start 
   #################################################
 
   NewMUXScenesQueue:
@@ -218,6 +231,9 @@ Resources:
       Policies: 
       Description: Process new scenes in queue
       Timeout: 300
+      Environment:
+        Variables:
+          SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
