@@ -54,6 +54,8 @@ S3_CLIENT = boto3.client('s3')
 
 SQS_CLIENT = boto3.client('sqs')
 
+SNS_CLIENT = boto3.client('sns')
+
 def parse_quicklook_key(key):
     """
     Parse quicklook key and return dictionary with
@@ -286,6 +288,7 @@ def process_queue(cbers_pds_bucket,
                   cbers_meta_pds_bucket,
                   queue,
                   message_batch_size,
+                  sns_target_arn,
                   delete_processed_messages=False):
     """
     Read quicklook queue and create STAC items if necessary.
@@ -297,6 +300,7 @@ def process_queue(cbers_pds_bucket,
       queue(string): SQS URL
       message_batch_size: maximum number of messages to be processed, 0 for
                           all messages.
+      sns_target_arn: SNS arn for new stac items topic
       delete_processed_messages: if True messages are deleted from queue
                                  after processing
     """
@@ -316,13 +320,48 @@ def process_queue(cbers_pds_bucket,
         with open(local_inpe_metadata, 'wb') as data:
             S3_CLIENT.download_fileobj(cbers_pds_bucket,
                                        metadata_keys['inpe_metadata'], data)
-        convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
-                             stac_metadata_filename=local_stac_item,
-                             buckets=buckets)
+        stac_meta = convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
+                                         stac_metadata_filename=local_stac_item,
+                                         buckets=buckets)
         # Upload STAC item file
         with open(local_stac_item, 'rb') as data:
             S3_CLIENT.upload_fileobj(data, cbers_stac_bucket,
                                      metadata_keys['stac'])
+
+        # Publish to SNS topic
+        SNS_CLIENT.publish(TargetArn=sns_target_arn,
+                           Message=stac_meta['links']['self']['href'],
+                           MessageAttributes={
+                               'properties.datetime': {
+                                   'DataType': 'String',
+                                   'StringValue': stac_meta['properties']['datetime']
+                               },
+                               'bbox.ll_lon': {
+                                   'DataType': 'Number',
+                                   'StringValue': str(stac_meta['bbox'][0])
+                               },
+                               'bbox.ll_lat': {
+                                   'DataType': 'Number',
+                                   'StringValue': str(stac_meta['bbox'][1])
+                               },
+                               'bbox.ur_lon': {
+                                   'DataType': 'Number',
+                                   'StringValue': str(stac_meta['bbox'][2])
+                               },
+                               'bbox.ur_lat': {
+                                   'DataType': 'Number',
+                                   'StringValue': str(stac_meta['bbox'][3])
+                               },
+                               'links.self.href': {
+                                   'DataType': 'String',
+                                   'StringValue': stac_meta['links']['self']['href']
+                               },
+                               'properties.c.id': {
+                                   'DataType': 'String',
+                                   'StringValue': stac_meta['properties']['c:id']
+                               }
+                           })
+
         # Update catalog tree
         update_catalog_tree(stac_item=metadata_keys['stac'],
                             buckets=buckets)
@@ -348,4 +387,5 @@ def handler(event, context):
                          cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
                          queue=event['queue'],
                          message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
+                         sns_target_arn=os.environ['SNS_TARGET_ARN'],
                          delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
