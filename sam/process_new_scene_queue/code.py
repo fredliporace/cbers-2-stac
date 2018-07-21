@@ -330,7 +330,7 @@ def process_queue(cbers_pds_bucket,
 
         # Publish to SNS topic
         SNS_CLIENT.publish(TargetArn=sns_target_arn,
-                           Message=stac_meta['links']['self']['href'],
+                           Message=json.dumps(stac_meta),
                            MessageAttributes={
                                'properties.datetime': {
                                    'DataType': 'String',
