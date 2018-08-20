@@ -249,9 +249,9 @@ Resources:
   ProcessMUXQueue:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: 'Process MUX Queue once a day'
+      Description: 'Process MUX Queue once a hour'
       State: 'ENABLED'
-      ScheduleExpression: 'cron(50 23 * * ? *)'
+      ScheduleExpression: 'cron(50 */1 * * ? *)'
       Targets:
       - Arn: !GetAtt ProcessNewSceneQueueFunction.Arn
         Id: "PRMUXQUEUE"
@@ -270,9 +270,9 @@ Resources:
   ProcessAWFIQueue:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: 'Process AWFI Queue once a day'
+      Description: 'Process AWFI Queue once a hour'
       State: 'ENABLED'
-      ScheduleExpression: 'cron(50 23 * * ? *)'
+      ScheduleExpression: 'cron(50 */1 * * ? *)'
       Targets:
       - Arn: !GetAtt ProcessNewSceneQueueFunction.Arn
         Id: "PRMUXQUEUE"
