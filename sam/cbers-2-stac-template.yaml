@@ -75,7 +75,7 @@ Resources:
   #################################################
 
   #################################################
-  # SQS/Subscription start 
+  # SQS(with triggers)/Subscription start 
   #################################################
 
   NewScenesQueue:
@@ -241,9 +241,19 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 300
+
+  ReconcileQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      # @todo try to increase batch size depending on measured
+      # lambda execution time
+      BatchSize: 1
+      EventSourceArn: !GetAtt [ReconcileQueue, Arn]
+      FunctionName: !Ref ConsumeReconcileQueueFunction
 
   #################################################
-  # SQS/SNS end
+  # SQS/Subscription end
   #################################################
 
   #################################################
@@ -264,9 +274,45 @@ Resources:
       Policies: 
       Description: Process new scenes in queue
       Timeout: 300
+      # @todo kept at 1 while there are no locks in
+      # catalog files updates
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  PopulateReconcileQueueFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: populate_reconcile_queue
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Populates reconcile queue with S3 keys from a common prefix
+      Timeout: 300
+      Environment:
+        Variables:
+          RECONCILE_QUEUE: !Ref ReconcileQueue
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  ConsumeReconcileQueueFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: consume_reconcile_queue
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Consume dirs from reconcile queue, populating NewScenesQueue with quicklooks to be processed
+      # @todo adjust timeout based on lambda execution time measurements
+      Timeout: 295
+      Environment:
+        Variables:
+          NEW_SCENES_QUEUE: !Ref NewScenesQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
