@@ -100,6 +100,8 @@ def get_s3_keys(quicklook_key):
     dict with the following keys:
       stac(string): STAC item file
       inpe_metadata(string): INPE original metadata file
+      quicklook_keys: Dictionary obtained from quicklook filename,
+        see parse_quicklook_key()
     """
 
     qdict = parse_quicklook_key(quicklook_key)
@@ -113,7 +115,8 @@ def get_s3_keys(quicklook_key):
                                                           CMETA[qdict['camera']]['meta_band'])
     return {
         'stac':stac_key,
-        'inpe_metadata':inpe_metadata_key
+        'inpe_metadata':inpe_metadata_key,
+        'quicklook_keys':qdict
     }
 
 def sqs_messages(queue):
@@ -312,6 +315,9 @@ def process_queue(cbers_pds_bucket,
     for msg in sqs_messages(queue):
         print(msg['key'])
         metadata_keys = get_s3_keys(msg['key'])
+        # Currently only MUX and AWFI
+        if metadata_keys['quicklook_keys']['camera'] not in ('MUX', 'AWFI'):
+            continue
         local_inpe_metadata = '/tmp/' + \
                               metadata_keys['inpe_metadata'].split('/')[-1]
         local_stac_item = '/tmp/' + \
@@ -328,39 +334,40 @@ def process_queue(cbers_pds_bucket,
             S3_CLIENT.upload_fileobj(data, cbers_stac_bucket,
                                      metadata_keys['stac'])
 
-        # Publish to SNS topic
-        SNS_CLIENT.publish(TargetArn=sns_target_arn,
-                           Message=json.dumps(stac_meta),
-                           MessageAttributes={
-                               'properties.datetime': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['properties']['datetime']
-                               },
-                               'bbox.ll_lon': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][0])
-                               },
-                               'bbox.ll_lat': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][1])
-                               },
-                               'bbox.ur_lon': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][2])
-                               },
-                               'bbox.ur_lat': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][3])
-                               },
-                               'links.self.href': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['links']['self']['href']
-                               },
-                               'properties.c.id': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['properties']['c:id']
-                               }
-                           })
+        # Publish to SNS topic, if defined
+        if sns_target_arn:
+            SNS_CLIENT.publish(TargetArn=sns_target_arn,
+                               Message=json.dumps(stac_meta),
+                               MessageAttributes={
+                                   'properties.datetime': {
+                                       'DataType': 'String',
+                                       'StringValue': stac_meta['properties']['datetime']
+                                   },
+                                   'bbox.ll_lon': {
+                                       'DataType': 'Number',
+                                       'StringValue': str(stac_meta['bbox'][0])
+                                   },
+                                   'bbox.ll_lat': {
+                                       'DataType': 'Number',
+                                       'StringValue': str(stac_meta['bbox'][1])
+                                   },
+                                   'bbox.ur_lon': {
+                                       'DataType': 'Number',
+                                       'StringValue': str(stac_meta['bbox'][2])
+                                   },
+                                   'bbox.ur_lat': {
+                                       'DataType': 'Number',
+                                       'StringValue': str(stac_meta['bbox'][3])
+                                   },
+                                   'links.self.href': {
+                                       'DataType': 'String',
+                                       'StringValue': stac_meta['links']['self']['href']
+                                   },
+                                   'properties.c.id': {
+                                       'DataType': 'String',
+                                       'StringValue': stac_meta['properties']['c:id']
+                                   }
+                               })
 
         # Update catalog tree
         update_catalog_tree(stac_item=metadata_keys['stac'],

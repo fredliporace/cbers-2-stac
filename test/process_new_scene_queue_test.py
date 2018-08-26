@@ -31,6 +31,7 @@ class ProcessNewSceneTest(unittest.TestCase):
         self.assertEqual(s3_keys['inpe_metadata'],
                          'CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/'
                          'CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml')
+        self.assertEqual(s3_keys['quicklook_keys']['camera'], 'AWFI')
 
     def base_stac_catalog(self):
         """base_stac_catalog_test"""
@@ -88,7 +89,8 @@ class ProcessNewSceneTest(unittest.TestCase):
                       cbers_meta_pds_bucket='cbers-meta-pds',
                       queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
                       'NewAWFIQuicklookMonitor',
-                      message_batch_size=1)
+                      message_batch_size=1,
+                      sns_target_arn=None)
 
 if __name__ == '__main__':
     unittest.main()

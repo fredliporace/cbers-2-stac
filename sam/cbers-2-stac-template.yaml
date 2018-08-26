@@ -63,21 +63,6 @@ Resources:
   #################################################
 
   #################################################
-  # S3 start
-  #################################################
-
-  # @todo this does not work because cloudformation tries to
-  # create a new bucket
-  #CBERSS3:
-  #  Type: AWS::S3::Bucket
-  #  Properties:
-  #    BucketName: cbers-pds
-
-  #################################################
-  # S3 end
-  #################################################
-
-  #################################################
   # SNS Topic start
   #################################################
 
@@ -92,6 +77,45 @@ Resources:
   #################################################
   # SQS/Subscription start 
   #################################################
+
+  NewScenesQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
+  # This queue is subscribed to topics from all quicklooks,
+  # except PAN5 and PAN10 for now
+  NewMUXSceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
+
+  NewAWFISceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+
+  NewSceneQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt NewScenesQueue.Arn
+          Condition:
+            # @todo improve by specifying only the allowed Arns, removing '*'
+            ArnEquals:
+              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:*'
+      Queues:
+        - !Ref NewScenesQueue
 
   NewMUXScenesQueue:
     Type: 'AWS::SQS::Queue'
@@ -208,6 +232,15 @@ Resources:
               aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
       Queues:
         - !Ref NewPAN5MScenesQueue
+
+  # This queue expects messages of S3 prefixes
+  # Each prefix is searched for .jpg files and a message
+  # emulating a 'NewScene' is emulated and sent to the queue responible
+  # to update the static STAC catalog
+  ReconcileQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
 
   #################################################
   # SQS/SNS end
