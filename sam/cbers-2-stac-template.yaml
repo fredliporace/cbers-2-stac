@@ -82,9 +82,10 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 60
 
   # This queue is subscribed to topics from all quicklooks,
-  # except PAN5 and PAN10 for now
+  # PAN5 and PAN10 are ignored for now
   NewMUXSceneSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -98,6 +99,20 @@ Resources:
       Endpoint: !GetAtt NewScenesQueue.Arn
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+
+  NewPAN10SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
+
+  NewPAN5SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
@@ -117,121 +132,14 @@ Resources:
       Queues:
         - !Ref NewScenesQueue
 
-  NewMUXScenesQueue:
-    Type: 'AWS::SQS::Queue'
+  NewScenesQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
     Properties:
-      MessageRetentionPeriod: 1209600
-
-  MUXNewSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewMUXScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
-
-  NewMUXSceneQueuePolicy:
-    Type: 'AWS::SQS::QueuePolicy'
-    Properties:
-      PolicyDocument:
-        Version: '2008-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action: 'SQS:SendMessage'
-          Resource: !GetAtt NewMUXScenesQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
-      Queues:
-        - !Ref NewMUXScenesQueue
-
-  NewAWFIScenesQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-
-  AWFINewSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewAWFIScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
-
-  NewAWFISceneQueuePolicy:
-    Type: 'AWS::SQS::QueuePolicy'
-    Properties:
-      PolicyDocument:
-        Version: '2008-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action: 'SQS:SendMessage'
-          Resource: !GetAtt NewAWFIScenesQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
-      Queues:
-        - !Ref NewAWFIScenesQueue
-
-  NewPAN10MScenesQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-
-  PAN10MNewSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewPAN10MScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
-
-  NewPAN10MSceneQueuePolicy:
-    Type: 'AWS::SQS::QueuePolicy'
-    Properties:
-      PolicyDocument:
-        Version: '2008-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action: 'SQS:SendMessage'
-          Resource: !GetAtt NewPAN10MScenesQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
-      Queues:
-        - !Ref NewPAN10MScenesQueue
-
-  NewPAN5MScenesQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-
-  PAN5MNewSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewPAN5MScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
-
-  NewPAN5MSceneQueuePolicy:
-    Type: 'AWS::SQS::QueuePolicy'
-    Properties:
-      PolicyDocument:
-        Version: '2008-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action: 'SQS:SendMessage'
-          Resource: !GetAtt NewPAN5MScenesQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
-      Queues:
-        - !Ref NewPAN5MScenesQueue
+      # @todo try to increase batch size depending on measured
+      # lambda execution time
+      BatchSize: 10
+      EventSourceArn: !GetAtt [NewScenesQueue, Arn]
+      FunctionName: !Ref ProcessNewSceneQueueFunction
 
   # This queue expects messages of S3 prefixes
   # Each prefix is searched for .jpg files and a message
@@ -273,7 +181,9 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Policies: 
       Description: Process new scenes in queue
-      Timeout: 300
+      # This timeout is suitable for SQS/Lambda triggers,
+      # which is limited to 10 messages per lambda call
+      Timeout: 55
       # @todo kept at 1 while there are no locks in
       # catalog files updates
       ReservedConcurrentExecutions: 1
@@ -324,48 +234,6 @@ Resources:
   #################################################
   # Rule start
   #################################################
-
-  ProcessMUXQueue:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: 'Process MUX Queue once a hour'
-      State: 'ENABLED'
-      ScheduleExpression: 'cron(50 */1 * * ? *)'
-      Targets:
-      - Arn: !GetAtt ProcessNewSceneQueueFunction.Arn
-        Id: "PRMUXQUEUE"
-        Input: !Sub
-          |-
-            {"queue":"${NewMUXScenesQueue}"}
-
-  ProcessMUXQueuePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt ProcessNewSceneQueueFunction.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt ProcessMUXQueue.Arn
-
-  ProcessAWFIQueue:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: 'Process AWFI Queue once a hour'
-      State: 'ENABLED'
-      ScheduleExpression: 'cron(50 */1 * * ? *)'
-      Targets:
-      - Arn: !GetAtt ProcessNewSceneQueueFunction.Arn
-        Id: "PRMUXQUEUE"
-        Input: !Sub
-          |-
-            {"queue":"${NewAWFIScenesQueue}"}
-
-  ProcessAWFIQueuePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt ProcessNewSceneQueueFunction.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt ProcessAWFIQueue.Arn
 
   #################################################
   # Rule end
