@@ -2,11 +2,9 @@
 
 import os
 import re
-from collections import OrderedDict
 import json
 
 import boto3
-from botocore.errorfactory import ClientError
 
 from cbers_2_stac import convert_inpe_to_stac
 
@@ -144,149 +142,7 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
-def base_stac_catalog(satellite, mission=None, camera=None, path=None, row=None):
-    """JSON SATC catalog with common itens"""
-
-    stac_catalog = OrderedDict()
-
-    name = satellite
-    description = name
-
-    if mission:
-        name += mission
-        description += mission
-    if camera:
-        name += ' %s' % (camera)
-        description += ' %s camera' % (camera)
-    if path:
-        name += ' %s' % (path)
-        description += ' path %s' % (path)
-    if row:
-        name += '/%s' % (row)
-        description += ' row %s' % (row)
-    description += ' catalog'
-
-    stac_catalog['name'] = name
-    stac_catalog['description'] = description
-
-    stac_catalog['links'] = list()
-
-    self_link = OrderedDict()
-    self_link['rel'] = 'self'
-    self_link['href'] = 'catalog.json'
-    stac_catalog['links'].append(self_link)
-
-    if mission or camera or path or row:
-        parent_link = OrderedDict()
-        parent_link['rel'] = 'parent'
-        parent_link['href'] = '../catalog.json'
-        stac_catalog['links'].append(parent_link)
-
-    return stac_catalog
-
-def update_catalog_tree(stac_item, buckets):
-    """
-    Traverse STAC catalog tree and update links
-    """
-
-    catalog_path = os.path.dirname(stac_item)
-    stac_filename = os.path.basename(stac_item)
-
-    match = re.match(r'(?P<satellite>\w+)_(?P<mission>\w+)_'
-                     r'(?P<camera>\w+)_(?P<YHD>\w+)_(?P<path>\w+)_'
-                     r'(?P<row>\w+)_(?P<level>\w+).json', stac_filename)
-    assert match, "Can't match %s" % (stac_filename)
-    satellite = match.group('satellite')
-    mission = match.group('mission')
-    camera = match.group('camera')
-    path = match.group('path')
-    row = match.group('row')
-
-    # SAT/MISSION/CAMERA/PATH/ROW level
-    local_catalog_file = '/tmp/catalog.json'
-    local_updated_catalog_file = '/tmp/updated_catalog.json'
-    s3_catalog_file = '%s/catalog.json' % (catalog_path)
-    try:
-        with open(local_catalog_file, 'wb') as data:
-            S3_CLIENT.download_fileobj(buckets['stac'],
-                                       s3_catalog_file, data)
-    except ClientError:
-        # File needs to be created
-        with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera,
-                                        path, row),
-                      data,
-                      indent=2)
-    stac_catalog = None
-    with open(local_catalog_file, 'r') as data:
-        stac_catalog = json.load(data)
-        stac_item = {'rel':'item', 'href':stac_filename}
-        if stac_item not in stac_catalog['links']:
-            stac_catalog['links'].append(stac_item)
-    with open(local_updated_catalog_file, 'w') as data:
-        json.dump(stac_catalog, data, indent=2)
-    with open(local_updated_catalog_file, 'rb') as data:
-        S3_CLIENT.upload_fileobj(data, buckets['stac'],
-                                 s3_catalog_file)
-
-    # SAT/MISSION/CAMERA/PATH level
-    local_catalog_file = '/tmp/catalog.json'
-    local_updated_catalog_file = '/tmp/updated_catalog.json'
-    child_catalog = '%s/catalog.json' % (row)
-    catalog_path = '%s%s/%s/%s' % (satellite, mission, camera, path)
-    s3_catalog_file = '%s/catalog.json' % (catalog_path)
-    try:
-        with open(local_catalog_file, 'wb') as data:
-            S3_CLIENT.download_fileobj(buckets['stac'],
-                                       s3_catalog_file, data)
-    except ClientError:
-        # File needs to be created
-        with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera,
-                                        path),
-                      data,
-                      indent=2)
-    stac_catalog = None
-    with open(local_catalog_file, 'r') as data:
-        stac_catalog = json.load(data)
-        stac_item = {'rel':'child', 'href':child_catalog}
-        if stac_item not in stac_catalog['links']:
-            stac_catalog['links'].append(stac_item)
-    with open(local_updated_catalog_file, 'w') as data:
-        json.dump(stac_catalog, data, indent=2)
-    with open(local_updated_catalog_file, 'rb') as data:
-        S3_CLIENT.upload_fileobj(data, buckets['stac'],
-                                 s3_catalog_file)
-
-    # SAT/MISSION/CAMERA level
-    local_catalog_file = '/tmp/catalog.json'
-    local_updated_catalog_file = '/tmp/updated_catalog.json'
-    child_catalog = '%s/catalog.json' % (path)
-    catalog_path = '%s%s/%s' % (satellite, mission, camera)
-    s3_catalog_file = '%s/catalog.json' % (catalog_path)
-    try:
-        with open(local_catalog_file, 'wb') as data:
-            S3_CLIENT.download_fileobj(buckets['stac'],
-                                       s3_catalog_file, data)
-    except ClientError:
-        # File needs to be created
-        with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera),
-                      data,
-                      indent=2)
-    stac_catalog = None
-    with open(local_catalog_file, 'r') as data:
-        stac_catalog = json.load(data)
-        stac_item = {'rel':'child', 'href':child_catalog}
-        if stac_item not in stac_catalog['links']:
-            stac_catalog['links'].append(stac_item)
-    with open(local_updated_catalog_file, 'w') as data:
-        json.dump(stac_catalog, data, indent=2)
-    with open(local_updated_catalog_file, 'rb') as data:
-        S3_CLIENT.upload_fileobj(data, buckets['stac'],
-                                 s3_catalog_file)
-
-def process_message(msg, buckets, sns_target_arn):
+def process_message(msg, buckets, sns_target_arn, catalog_update_queue):
     """
     Process a single message. Generates STAC item, updates catalog
     structure and send STAC item to SNS topic.
@@ -294,7 +150,9 @@ def process_message(msg, buckets, sns_target_arn):
     Input:
       msg(dict): message (quicklook) to be processed, key is 'key'.
       buckets(dict): buckets for 'cog', 'stac' and 'metadata'
-      sns_target_arn: SNS arn for new stac items topic
+      sns_target_arn(string): SNS arn for new stac items topic
+      catalog_update_queue(string): URL of queue that receives new STAC items for
+        updating the catalog structure
     """
 
     print(msg['key'])
@@ -353,15 +211,16 @@ def process_message(msg, buckets, sns_target_arn):
                                }
                            })
 
-    # Update catalog tree
-    update_catalog_tree(stac_item=metadata_keys['stac'],
-                        buckets=buckets)
+    # Sent message to update catalog tree queue
+    SQS_CLIENT.send_message(QueueUrl=catalog_update_queue,
+                            MessageBody=metadata_keys['stac'])
 
 def process_trigger(cbers_pds_bucket,
                     cbers_stac_bucket,
                     cbers_meta_pds_bucket,
                     event,
-                    sns_target_arn):
+                    sns_target_arn,
+                    catalog_update_queue):
     """
     Read quicklook queue and create STAC items if necessary.
 
@@ -371,6 +230,8 @@ def process_trigger(cbers_pds_bucket,
       cbers_meta_pds_bucket(string): ditto
       event(dict): event dictionary generated by trigger
       sns_target_arn: SNS arn for new stac items topic
+      catalog_update_queue(string): URL of queue that receives new STAC items for
+        updating the catalog structure
     """
 
     buckets = {'cog':cbers_pds_bucket,
@@ -380,7 +241,7 @@ def process_trigger(cbers_pds_bucket,
         message = json.loads(json.loads(record['body'])['Message'])
         for rec in message['Records']:
             process_message({'key':rec['s3']['object']['key']},
-                            buckets, sns_target_arn)
+                            buckets, sns_target_arn, catalog_update_queue)
 
 def process_queue(cbers_pds_bucket,
                   cbers_stac_bucket,
@@ -388,6 +249,7 @@ def process_queue(cbers_pds_bucket,
                   queue,
                   message_batch_size,
                   sns_target_arn,
+                  catalog_update_queue,
                   delete_processed_messages=False):
     """
     Read quicklook queue and create STAC items if necessary.
@@ -400,6 +262,8 @@ def process_queue(cbers_pds_bucket,
       message_batch_size: maximum number of messages to be processed, 0 for
                           all messages.
       sns_target_arn: SNS arn for new stac items topic
+      catalog_update_queue(string): URL of queue that receives new STAC items for
+        updating the catalog structure
       delete_processed_messages: if True messages are deleted from queue
                                  after processing
     """
@@ -410,7 +274,7 @@ def process_queue(cbers_pds_bucket,
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        process_message(msg, buckets, sns_target_arn)
+        process_message(msg, buckets, sns_target_arn, catalog_update_queue)
 
         # Remove message from queue
         if delete_processed_messages:
@@ -436,6 +300,7 @@ def handler(event, context):
                       queue=event['queue'],
                       message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
                       sns_target_arn=os.environ['SNS_TARGET_ARN'],
+                      catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'],
                       delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
     else:
         # Lambda is being invoked as trigger to SQS
@@ -443,4 +308,5 @@ def handler(event, context):
                         cbers_stac_bucket=os.environ['CBERS_STAC_BUCKET'],
                         cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
                         event=event,
-                        sns_target_arn=os.environ['SNS_TARGET_ARN'])
+                        sns_target_arn=os.environ['SNS_TARGET_ARN'],
+                        catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'])

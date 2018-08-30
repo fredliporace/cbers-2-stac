@@ -160,6 +160,14 @@ Resources:
       EventSourceArn: !GetAtt [ReconcileQueue, Arn]
       FunctionName: !Ref ConsumeReconcileQueueFunction
 
+  # This queue receives the new STAC item keys, consumed
+  # by UpdateCatalogTreeFunction
+  CatalogUpdateQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 30
+
   #################################################
   # SQS/Subscription end
   #################################################
@@ -184,12 +192,10 @@ Resources:
       # This timeout is suitable for SQS/Lambda triggers,
       # which is limited to 10 messages per lambda call
       Timeout: 55
-      # @todo kept at 1 while there are no locks in
-      # catalog files updates
-      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
+          CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -206,6 +212,22 @@ Resources:
       Environment:
         Variables:
           RECONCILE_QUEUE: !Ref ReconcileQueue
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  UpdateCatalogTreeFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: update_catalog_tree
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: Consume from CatalogUpdate queue and update the catalog structure one message at a time
+      Timeout: 300
+      Environment:
+        Variables:
+          CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -234,6 +256,24 @@ Resources:
   #################################################
   # Rule start
   #################################################
+
+  ProcessCatalogTreeUpdateQueue:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: 'Process catalog tree update every hour'
+      State: 'ENABLED'
+      ScheduleExpression: 'cron(50 */1 * * ? *)'
+      Targets:
+      - Arn: !GetAtt UpdateCatalogTreeFunction.Arn
+        Id: "PRCTUQUEUE"
+
+  ProcessCatalofTreeUpdateQueuePermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt ProcessNewSceneQueueFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt ProcessCatalogTreeUpdateQueue.Arn
 
   #################################################
   # Rule end
