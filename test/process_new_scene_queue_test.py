@@ -3,7 +3,8 @@
 import unittest
 
 from sam.process_new_scene_queue.code import parse_quicklook_key, \
-    get_s3_keys, process_queue, base_stac_catalog
+    get_s3_keys, process_queue
+from sam.update_catalog_tree.code import base_stac_catalog
 
 class ProcessNewSceneTest(unittest.TestCase):
     """ProcessNewSceneTest"""
