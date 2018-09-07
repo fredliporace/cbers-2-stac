@@ -262,7 +262,7 @@ Resources:
     Properties:
       Description: 'Process catalog tree update every hour'
       State: 'ENABLED'
-      ScheduleExpression: 'cron(50 */1 * * ? *)'
+      ScheduleExpression: 'cron(00 */1 * * ? *)'
       Targets:
       - Arn: !GetAtt UpdateCatalogTreeFunction.Arn
         Id: "PRCTUQUEUE"
@@ -270,7 +270,7 @@ Resources:
   ProcessCatalofTreeUpdateQueuePermission:
     Type: 'AWS::Lambda::Permission'
     Properties:
-      FunctionName: !GetAtt ProcessNewSceneQueueFunction.Arn
+      FunctionName: !GetAtt UpdateCatalogTreeFunction.Arn
       Action: 'lambda:InvokeFunction'
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt ProcessCatalogTreeUpdateQueue.Arn
