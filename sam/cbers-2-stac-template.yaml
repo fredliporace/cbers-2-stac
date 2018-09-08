@@ -49,13 +49,9 @@ Resources:
         - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
         # @todo check if ReadOnlyAccess is needed with FullAccess
         - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
-        - "arn:aws:iam::aws:policy/AWSBatchFullAccess"
-        - "arn:aws:iam::aws:policy/AWSStepFunctionsConsoleFullAccess"
-        - "arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess"
-        - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
-        - "arn:aws:iam::aws:policy/AmazonSESFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
       Path: "/"
 
   #################################################
@@ -135,8 +131,7 @@ Resources:
   NewScenesQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      # @todo try to increase batch size depending on measured
-      # lambda execution time
+      # @todo Adjust batch size
       BatchSize: 10
       EventSourceArn: !GetAtt [NewScenesQueue, Arn]
       FunctionName: !Ref ProcessNewSceneQueueFunction
@@ -196,6 +191,7 @@ Resources:
         Variables:
           SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
           CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
+          CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -223,7 +219,8 @@ Resources:
       Handler: code.handler
       Role: !GetAtt LambdaRole.Arn
       Policies:
-      Description: Consume from CatalogUpdate queue and update the catalog structure one message at a time
+      Description: >
+        Consume from CatalogUpdate queue and update the catalog structure one message at a time
       Timeout: 300
       Environment:
         Variables:
@@ -239,7 +236,9 @@ Resources:
       Handler: code.handler
       Role: !GetAtt LambdaRole.Arn
       Policies: 
-      Description: Consume dirs from reconcile queue, populating NewScenesQueue with quicklooks to be processed
+      Description: >
+        Consume dirs from reconcile queue, populating
+        NewScenesQueue with quicklooks to be processed
       # @todo adjust timeout based on lambda execution time measurements
       Timeout: 295
       Environment:
@@ -277,4 +276,27 @@ Resources:
 
   #################################################
   # Rule end
+  #################################################
+
+  #################################################
+  # DynamoDB start
+  #################################################
+
+  CatalogUpdateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "stacitem"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "stacitem"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  #################################################
+  # DynamoDB end
   #################################################

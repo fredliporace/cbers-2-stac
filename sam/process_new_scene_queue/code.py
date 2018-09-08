@@ -54,6 +54,8 @@ SQS_CLIENT = boto3.client('sqs')
 
 SNS_CLIENT = boto3.client('sns')
 
+DB_CLIENT = boto3.client('dynamodb')
+
 def parse_quicklook_key(key):
     """
     Parse quicklook key and return dictionary with
@@ -142,7 +144,8 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
-def process_message(msg, buckets, sns_target_arn, catalog_update_queue):
+def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
+                    catalog_update_table):
     """
     Process a single message. Generates STAC item, updates catalog
     structure and send STAC item to SNS topic.
@@ -153,6 +156,7 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue):
       sns_target_arn(string): SNS arn for new stac items topic
       catalog_update_queue(string): URL of queue that receives new STAC items for
         updating the catalog structure
+      catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
     print(msg['key'])
@@ -211,16 +215,37 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue):
                                }
                            })
 
-    # Sent message to update catalog tree queue
+    # Send message to update catalog tree queue
     SQS_CLIENT.send_message(QueueUrl=catalog_update_queue,
                             MessageBody=metadata_keys['stac'])
+
+    # Request catalog update
+    catalog_update_request(table_name=catalog_update_table,
+                           stac_item_key=metadata_keys['stac'])
+
+def catalog_update_request(table_name, stac_item_key):
+    """
+    Generate a catalog structure update request by recording
+    key in DynamoDB table.
+
+    Input:
+      stac_item_key(string): ditto
+      table_name(string): DynamoDB table name
+    """
+
+    DB_CLIENT.put_item(
+        TableName=table_name,
+        Item={
+            'stacitem':{'S': stac_item_key}
+        })
 
 def process_trigger(cbers_pds_bucket,
                     cbers_stac_bucket,
                     cbers_meta_pds_bucket,
                     event,
                     sns_target_arn,
-                    catalog_update_queue):
+                    catalog_update_queue,
+                    catalog_update_table):
     """
     Read quicklook queue and create STAC items if necessary.
 
@@ -232,6 +257,7 @@ def process_trigger(cbers_pds_bucket,
       sns_target_arn: SNS arn for new stac items topic
       catalog_update_queue(string): URL of queue that receives new STAC items for
         updating the catalog structure
+      catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
     buckets = {'cog':cbers_pds_bucket,
@@ -241,7 +267,8 @@ def process_trigger(cbers_pds_bucket,
         message = json.loads(json.loads(record['body'])['Message'])
         for rec in message['Records']:
             process_message({'key':rec['s3']['object']['key']},
-                            buckets, sns_target_arn, catalog_update_queue)
+                            buckets, sns_target_arn, catalog_update_queue,
+                            catalog_update_table)
 
 def process_queue(cbers_pds_bucket,
                   cbers_stac_bucket,
@@ -250,6 +277,7 @@ def process_queue(cbers_pds_bucket,
                   message_batch_size,
                   sns_target_arn,
                   catalog_update_queue,
+                  catalog_update_table,
                   delete_processed_messages=False):
     """
     Read quicklook queue and create STAC items if necessary.
@@ -264,6 +292,7 @@ def process_queue(cbers_pds_bucket,
       sns_target_arn: SNS arn for new stac items topic
       catalog_update_queue(string): URL of queue that receives new STAC items for
         updating the catalog structure
+      catalog_update_table: DynamoDB that hold the catalog update requests
       delete_processed_messages: if True messages are deleted from queue
                                  after processing
     """
@@ -274,7 +303,8 @@ def process_queue(cbers_pds_bucket,
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        process_message(msg, buckets, sns_target_arn, catalog_update_queue)
+        process_message(msg, buckets, sns_target_arn, catalog_update_queue,
+                        catalog_update_table)
 
         # Remove message from queue
         if delete_processed_messages:
@@ -301,6 +331,7 @@ def handler(event, context):
                       message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
                       sns_target_arn=os.environ['SNS_TARGET_ARN'],
                       catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'],
+                      catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'],
                       delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
     else:
         # Lambda is being invoked as trigger to SQS
@@ -309,4 +340,5 @@ def handler(event, context):
                         cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
                         event=event,
                         sns_target_arn=os.environ['SNS_TARGET_ARN'],
-                        catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'])
+                        catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'],
+                        catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'])
