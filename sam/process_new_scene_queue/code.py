@@ -3,6 +3,7 @@
 import os
 import re
 import json
+import datetime
 
 import boto3
 
@@ -226,7 +227,7 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
 def catalog_update_request(table_name, stac_item_key):
     """
     Generate a catalog structure update request by recording
-    key in DynamoDB table.
+    register into DynamoDB table.
 
     Input:
       stac_item_key(string): ditto
@@ -236,7 +237,8 @@ def catalog_update_request(table_name, stac_item_key):
     DB_CLIENT.put_item(
         TableName=table_name,
         Item={
-            'stacitem':{'S': stac_item_key}
+            'stacitem': {'S': stac_item_key},
+            'datetime': {'S': str(datetime.datetime.now())}
         })
 
 def process_trigger(cbers_pds_bucket,

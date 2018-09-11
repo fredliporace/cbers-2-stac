@@ -212,6 +212,23 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  GenerateCatalogLevelsToBeUpdatedFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: generate_catalog_levels_to_be_updated
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Generate levels into output table from input table
+      Timeout: 300
+      Environment:
+        Variables:
+          CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
+          CATALOG_LEVELS_UPDATE_TABLE: !Ref CatalogLevelsUpdateTable
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
   UpdateCatalogTreeFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -274,6 +291,24 @@ Resources:
       Principal: 'events.amazonaws.com'
       SourceArn: !GetAtt ProcessCatalogTreeUpdateQueue.Arn
 
+  GenerateCatalogLevels:
+    Type: 'AWS::Events::Rule'
+    Properties:
+      Description: 'Generate catalog levels to be updated every hour'
+      State: 'ENABLED'
+      ScheduleExpression: 'cron(00 */1 * * ? *)'
+      Targets:
+      - Arn: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
+        Id: "GCLTBU"
+
+  GenerateCatalogLevelsPermission:
+    Type: 'AWS::Lambda::Permission'
+    Properties:
+      FunctionName: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
+      Action: 'lambda:InvokeFunction'
+      Principal: 'events.amazonaws.com'
+      SourceArn: !GetAtt GenerateCatalogLevels.Arn
+
   #################################################
   # Rule end
   #################################################
@@ -282,6 +317,8 @@ Resources:
   # DynamoDB start
   #################################################
 
+  # Holds all STAC item keys generated since last
+  # catalog files upate procedure
   CatalogUpdateTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -292,6 +329,22 @@ Resources:
       KeySchema:
         -
           AttributeName: "stacitem"
+          KeyType: "HASH"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+
+  # Holds all catalog levels to be updated
+  CatalogLevelsUpdateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        -
+          AttributeName: "catalog_level"
+          AttributeType: "S"
+      KeySchema:
+        -
+          AttributeName: "catalog_level"
           KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: 5
