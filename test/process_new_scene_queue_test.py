@@ -34,53 +34,6 @@ class ProcessNewSceneTest(unittest.TestCase):
                          'CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml')
         self.assertEqual(s3_keys['quicklook_keys']['camera'], 'AWFI')
 
-    def base_stac_catalog(self):
-        """base_stac_catalog_test"""
-
-        catalog = base_stac_catalog('CBERS', '4', 'AWFI', '130', '100')
-        self.assertEqual(catalog['name'], 'CBERS4 AWFI 130/100')
-        self.assertEqual(catalog['description'],
-                         'CBERS4 AWFI camera path 130 row 100 catalog')
-        self.assertEqual(catalog['links'][0]['rel'], 'self')
-        self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
-        self.assertEqual(catalog['links'][1]['rel'], 'parent')
-        self.assertEqual(catalog['links'][1]['href'], '../catalog.json')
-
-        catalog = base_stac_catalog('CBERS', '4', 'AWFI', '130')
-        self.assertEqual(catalog['name'], 'CBERS4 AWFI 130')
-        self.assertEqual(catalog['description'],
-                         'CBERS4 AWFI camera path 130 catalog')
-        self.assertEqual(catalog['links'][0]['rel'], 'self')
-        self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
-        self.assertEqual(catalog['links'][1]['rel'], 'parent')
-        self.assertEqual(catalog['links'][1]['href'], '../catalog.json')
-
-        catalog = base_stac_catalog('CBERS', '4', 'AWFI')
-        self.assertEqual(catalog['name'], 'CBERS4 AWFI')
-        self.assertEqual(catalog['description'],
-                         'CBERS4 AWFI camera catalog')
-        self.assertEqual(catalog['links'][0]['rel'], 'self')
-        self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
-        self.assertEqual(catalog['links'][1]['rel'], 'parent')
-        self.assertEqual(catalog['links'][1]['href'], '../catalog.json')
-
-        catalog = base_stac_catalog('CBERS', '4')
-        self.assertEqual(catalog['name'], 'CBERS4')
-        self.assertEqual(catalog['description'],
-                         'CBERS4 catalog')
-        self.assertEqual(catalog['links'][0]['rel'], 'self')
-        self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
-        self.assertEqual(catalog['links'][1]['rel'], 'parent')
-        self.assertEqual(catalog['links'][1]['href'], '../catalog.json')
-
-        catalog = base_stac_catalog('CBERS')
-        self.assertEqual(catalog['name'], 'CBERS')
-        self.assertEqual(catalog['description'],
-                         'CBERS catalog')
-        self.assertEqual(catalog['links'][0]['rel'], 'self')
-        self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
-        self.assertEqual(len(catalog['links']), 1)
-
     @unittest.skip("Require AWS credentials and environment")
     def process_queue_test(self):
         """process_queue_test"""

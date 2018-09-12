@@ -2,6 +2,7 @@
 
 import os
 import re
+from operator import itemgetter
 from collections import OrderedDict
 import json
 
@@ -10,6 +11,107 @@ from botocore.errorfactory import ClientError
 
 S3_CLIENT = boto3.client('s3')
 SQS_CLIENT = boto3.client('sqs')
+
+def build_catalog_from_s3(bucket, prefix, response=None):
+    """
+    Returns a catalog for a given prefix. The catalog is represented
+    as a dictionary.
+
+    Input:
+    bucket(string): bucket name
+    prefix(string): key prefix (no trailing /)
+    response(dict): S3 output from list_objects_v2, used for unit testing
+    """
+    catalog_info = get_catalog_info(prefix)
+    catalog = base_stac_catalog(satellite=catalog_info['satellite+mission'],
+                                mission=None,
+                                camera=catalog_info['camera'],
+                                path=catalog_info['path'],
+                                row=catalog_info['row'])
+    if catalog_info['level'] == 0:
+        new_links = get_items_from_s3(bucket, prefix + '/', response)
+    else:
+        new_links = get_catalogs_from_s3(bucket, prefix +'/', response)
+    catalog['links'] += new_links
+
+    return catalog
+
+def get_catalog_info(key):
+    """
+    Returns an dict representing the catalog level, instrument, path and
+    row. Keys are:
+     - level(int)
+     - satellite, mission, camera, path, row
+    represents the key containing the items. Value is increased
+    for each parent dir.
+
+    Input:
+    key(string): 'directory' key
+    """
+
+    ret = dict()
+
+    # Level
+    levels = key.split('/')
+    level = 4 - len(levels)
+    assert level >= 0 and level <= 2, "Unsupported level " + str(level)
+    ret['level'] = level
+    ret['satellite+mission'] = None
+    ret['camera'] = None
+    ret['path'] = None
+    ret['row'] = None
+
+    keys = ['satellite+mission', 'camera', 'path', 'row']
+    for index, key_id in enumerate(levels):
+        ret[keys[index]] = key_id
+
+    return ret
+
+def get_catalogs_from_s3(bucket, prefix, response=None):
+    """
+    Return a list with catalog (catalog.json files) located in S3
+    prefix. Assumes every subdir contains a catalog.json file
+
+    Input:
+    bucket(string): bucket name
+    prefix(string): key prefix
+    response(dict): S3 output from list_objects_v2, used for unit testing
+    """
+    ret = list()
+    if not response:
+        response = S3_CLIENT.list_objects_v2(Bucket=bucket,
+                                             Delimiter='/',
+                                             Prefix=prefix)
+        assert not response['IsTruncated'], "Truncated S3 listing"
+    for item in response['CommonPrefixes']:
+        key = item['Prefix'].split('/')[-2] + '/catalog.json'
+        ret.append({"rel":"child",
+                    "href":key})
+    return sorted(ret, key=itemgetter('href'))
+
+def get_items_from_s3(bucket, prefix, response=None):
+    """
+    Return a list with items (.json files) located in S3
+    prefix.
+
+    Input:
+    bucket(string): bucket name
+    prefix(string): key prefix
+    response(dict): S3 output from list_objects_v2, used for unit testing
+    """
+    ret = list()
+    if not response:
+        response = S3_CLIENT.list_objects_v2(Bucket=bucket,
+                                             Delimiter='/',
+                                             Prefix=prefix)
+        assert not response['IsTruncated'], "Truncated S3 listing"
+    for item in response['Contents']:
+        key = item['Key'].split('/')[-1]
+        # Skip catalog.json files, including only L\d{1}.json
+        if re.match(r'.*L\d{1}.json', key):
+            ret.append({"rel":"item",
+                        "href":key})
+    return sorted(ret, key=itemgetter('href'))
 
 def sqs_messages(queue):
     """
