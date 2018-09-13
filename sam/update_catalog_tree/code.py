@@ -1,4 +1,4 @@
-"""process_new_scene_queue"""
+"""update_catalog_tree"""
 
 import os
 import re
@@ -11,6 +11,17 @@ from botocore.errorfactory import ClientError
 
 S3_CLIENT = boto3.client('s3')
 SQS_CLIENT = boto3.client('sqs')
+
+def write_catalog_to_s3(bucket, prefix, catalog):
+    """
+    Uploads a catalog represented as a dictionary to bucket
+    with prefix/catalog.json key.
+    """
+
+    s3_catalog_file = prefix + '/catalog.json'
+    S3_CLIENT.put_object(Body=json.dumps(catalog, indent=2),
+                         Bucket=bucket,
+                         Key=s3_catalog_file)
 
 def build_catalog_from_s3(bucket, prefix, response=None):
     """
@@ -195,6 +206,8 @@ def update_catalog_tree(stac_item, buckets):
     row = match.group('row')
 
     # SAT/MISSION/CAMERA/PATH/ROW level
+    # @todo use the same method of the write_catalog_to_s3 function,
+    # avoids temporary file creation.
     local_catalog_file = '/tmp/catalog.json'
     local_updated_catalog_file = '/tmp/updated_catalog.json'
     s3_catalog_file = '%s/catalog.json' % (catalog_path)

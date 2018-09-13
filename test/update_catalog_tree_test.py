@@ -5,7 +5,7 @@ import unittest
 from dateutil.tz import tzutc
 
 from sam.update_catalog_tree.code import get_items_from_s3, get_catalogs_from_s3, \
-    get_catalog_info, base_stac_catalog, build_catalog_from_s3
+    get_catalog_info, base_stac_catalog, build_catalog_from_s3, write_catalog_to_s3
 
 MUX_083_RESPONSE = {'ResponseMetadata': {'RequestId': '28742BED38FC3852', 'HostId': 'ikYxQ4guhPSng8OfEXOQ7CfTudw9xZwWvSJBR59KUYni4SXaWxNp7Ov+m4pWsBUThU64vE/vhzU=', 'HTTPStatusCode': 200, 'HTTPHeaders': {'x-amz-id-2': 'ikYxQ4guhPSng8OfEXOQ7CfTudw9xZwWvSJBR59KUYni4SXaWxNp7Ov+m4pWsBUThU64vE/vhzU=', 'x-amz-request-id': '28742BED38FC3852', 'date': 'Wed, 12 Sep 2018 00:12:15 GMT', 'x-amz-bucket-region': 'us-east-1', 'content-type': 'application/xml', 'transfer-encoding': 'chunked', 'server': 'AmazonS3'}, 'RetryAttempts': 0}, 'IsTruncated': False, 'Contents': [{'Key': 'CBERS4/MUX/083/catalog.json', 'LastModified': datetime.datetime(2018, 9, 7, 23, 17, 19, tzinfo=tzutc()), 'ETag': '"62df51d8fadf3c707d6acb4e11cd0ddf"', 'Size': 2205, 'StorageClass': 'STANDARD'}], 'Name': 'cbers-stac', 'Prefix': 'CBERS4/MUX/083/', 'Delimiter': '/', 'MaxKeys': 1000, 'CommonPrefixes': [{'Prefix': 'CBERS4/MUX/083/083/'}, {'Prefix': 'CBERS4/MUX/083/084/'}, {'Prefix': 'CBERS4/MUX/083/085/'}, {'Prefix': 'CBERS4/MUX/083/086/'}, {'Prefix': 'CBERS4/MUX/083/087/'}, {'Prefix': 'CBERS4/MUX/083/088/'}, {'Prefix': 'CBERS4/MUX/083/089/'}, {'Prefix': 'CBERS4/MUX/083/090/'}, {'Prefix': 'CBERS4/MUX/083/091/'}, {'Prefix': 'CBERS4/MUX/083/092/'}, {'Prefix': 'CBERS4/MUX/083/093/'}, {'Prefix': 'CBERS4/MUX/083/094/'}, {'Prefix': 'CBERS4/MUX/083/095/'}, {'Prefix': 'CBERS4/MUX/083/096/'}, {'Prefix': 'CBERS4/MUX/083/097/'}, {'Prefix': 'CBERS4/MUX/083/098/'}, {'Prefix': 'CBERS4/MUX/083/099/'}, {'Prefix': 'CBERS4/MUX/083/100/'}, {'Prefix': 'CBERS4/MUX/083/101/'}, {'Prefix': 'CBERS4/MUX/083/102/'}, {'Prefix': 'CBERS4/MUX/083/103/'}, {'Prefix': 'CBERS4/MUX/083/104/'}, {'Prefix': 'CBERS4/MUX/083/105/'}, {'Prefix': 'CBERS4/MUX/083/106/'}, {'Prefix': 'CBERS4/MUX/083/107/'}, {'Prefix': 'CBERS4/MUX/083/108/'}, {'Prefix': 'CBERS4/MUX/083/109/'}, {'Prefix': 'CBERS4/MUX/083/110/'}, {'Prefix': 'CBERS4/MUX/083/111/'}], 'KeyCount': 30}
 
@@ -95,6 +95,7 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(catalog['links'][-1]['rel'], 'child')
         self.assertEqual(catalog['links'][-1]['href'], '111/catalog.json')
 
+
     def base_stac_catalog(self):
         """base_stac_catalog_test"""
 
@@ -141,6 +142,29 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(catalog['links'][0]['rel'], 'self')
         self.assertEqual(catalog['links'][0]['href'], 'catalog.json')
         self.assertEqual(len(catalog['links']), 1)
-        
+
+    @unittest.skip("Require AWS credentials and environment")
+    def integration_test(self):
+        """integration_test"""
+
+        prefix = 'CBERS4/MUX/083/095'
+        catalog = build_catalog_from_s3(bucket='cbers-stac',
+                                        prefix=prefix)
+        self.assertEqual(catalog['name'], 'CBERS4 MUX 083/095')
+        write_catalog_to_s3(bucket='cbers-stac', prefix='test/' + prefix,
+                            catalog=catalog)
+
+        prefix = 'CBERS4/MUX/083'
+        catalog = build_catalog_from_s3(bucket='cbers-stac',
+                                        prefix=prefix)
+        write_catalog_to_s3(bucket='cbers-stac', prefix='test/' + prefix,
+                            catalog=catalog)
+
+        prefix = 'CBERS4/MUX'
+        catalog = build_catalog_from_s3(bucket='cbers-stac',
+                                        prefix=prefix)
+        write_catalog_to_s3(bucket='cbers-stac', prefix='test/' + prefix,
+                            catalog=catalog)
+
 if __name__ == '__main__':
     unittest.main()
