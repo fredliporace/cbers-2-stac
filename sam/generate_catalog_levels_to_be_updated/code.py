@@ -4,6 +4,7 @@ import os
 import boto3
 
 DB_CLIENT = boto3.client('dynamodb')
+SQS_CLIENT = boto3.client('sqs')
 
 def get_catalog_levels(item):
     """
@@ -23,7 +24,7 @@ class GenerateCatalogLevelsToBeUpdated():
     Items are removed input table after being processed.
     """
 
-    def __init__(self, input_table, output_table, limit=1000):
+    def __init__(self, input_table, output_table, queue, limit=1000):
         """
         Ctor.
         input_table(string): DynamoDB table with STAC items
@@ -34,6 +35,7 @@ class GenerateCatalogLevelsToBeUpdated():
         self._items = list()
         self._input_table = input_table
         self._output_table = output_table
+        self._queue = queue
         self._limit = limit
 
     @property
@@ -77,12 +79,15 @@ class GenerateCatalogLevelsToBeUpdated():
             self.__parse_items(response['Items'])
         #print(self._levels_to_be_updated)
         #print(self._items)
-        # Update catalog level table
+        # Update catalog level table and send prefix to catalog update queue
         for level in self._levels_to_be_updated:
             response = DB_CLIENT.put_item(
                 TableName=self._output_table,
                 Item={
                     'catalog_level': {"S": level}})
+            SQS_CLIENT.send_message(QueueUrl=self._queue,
+                                    MessageBody=level)
+
         # Remove processed items
         for item in self._items:
             response = DB_CLIENT.delete_item(
@@ -96,5 +101,6 @@ def handler(event, context):
     """
 
     gcl = GenerateCatalogLevelsToBeUpdated(input_table=os.environ['CATALOG_UPDATE_TABLE'],
-                                           output_table=os.environ['CATALOG_LEVELS_UPDATE_TABLE'])
+                                           output_table=os.environ['CATALOG_LEVELS_UPDATE_TABLE'],
+                                           queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'])
     gcl.process()

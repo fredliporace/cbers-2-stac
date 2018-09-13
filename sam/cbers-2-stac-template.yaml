@@ -96,19 +96,19 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
 
-  NewPAN10SceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
+  #NewPAN10SceneSubscription:
+  #  Type: 'AWS::SNS::Subscription'
+  #  Properties:
+  #    Endpoint: !GetAtt NewScenesQueue.Arn
+  #    Protocol: 'sqs'
+  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
 
-  NewPAN5SceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
+  #NewPAN5SceneSubscription:
+  #  Type: 'AWS::SNS::Subscription'
+  #  Properties:
+  #    Endpoint: !GetAtt NewScenesQueue.Arn
+  #    Protocol: 'sqs'
+  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
@@ -162,6 +162,22 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       VisibilityTimeout: 30
+
+  # This queue receives prefixes of STAC catalogs
+  # that need to be updated
+  CatalogPrefixUpdateQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 60
+
+  CatalogPrefixUpdateQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      # @todo Adjust batch size
+      BatchSize: 10
+      EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
+      FunctionName: !Ref UpdateCatalogPrefixFunction
 
   #################################################
   # SQS/Subscription end
@@ -225,15 +241,17 @@ Resources:
         Variables:
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
           CATALOG_LEVELS_UPDATE_TABLE: !Ref CatalogLevelsUpdateTable
+          CATALOG_PREFIX_UPDATE_QUEUE: !Ref CatalogPrefixUpdateQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  # @todo delete
   UpdateCatalogTreeFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
       CodeUri: update_catalog_tree
-      Handler: code.handler
+      Handler: code.active_handler
       Role: !GetAtt LambdaRole.Arn
       Policies:
       Description: >
@@ -242,6 +260,20 @@ Resources:
       Environment:
         Variables:
           CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  UpdateCatalogPrefixFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: update_catalog_tree
+      Handler: code.trigger_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        Update catalog from prefix
+      Timeout: 55
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -273,11 +305,12 @@ Resources:
   # Rule start
   #################################################
 
+  # @todo delete
   ProcessCatalogTreeUpdateQueue:
     Type: 'AWS::Events::Rule'
     Properties:
       Description: 'Process catalog tree update every hour'
-      State: 'ENABLED'
+      State: 'DISABLED'
       ScheduleExpression: 'cron(00 */1 * * ? *)'
       Targets:
       - Arn: !GetAtt UpdateCatalogTreeFunction.Arn
@@ -334,6 +367,7 @@ Resources:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
 
+  # @todo delete
   # Holds all catalog levels to be updated
   CatalogLevelsUpdateTable:
     Type: AWS::DynamoDB::Table

@@ -332,7 +332,7 @@ def process_queue(cbers_pds_bucket,
         if processed_messages == message_batch_size:
             break
 
-def handler(event, context):
+def active_handler(event, context):
     """Lambda entry point for actively consuming messages from update catalog.
     Event keys:
     """
@@ -343,3 +343,16 @@ def handler(event, context):
                   queue=os.environ['CATALOG_UPDATE_QUEUE'],
                   message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
                   delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
+
+def trigger_handler(event, context):
+    """Lambda entry point for SQS trigger integration
+    Event keys:
+    """
+    for record in event['Records']:
+        prefix = record['body']
+        print("Processing " + prefix)
+        catalog = build_catalog_from_s3(bucket=os.environ['CBERS_STAC_BUCKET'],
+                                        prefix=prefix)
+        write_catalog_to_s3(bucket=os.environ['CBERS_STAC_BUCKET'],
+                            prefix=prefix,
+                            catalog=catalog)
