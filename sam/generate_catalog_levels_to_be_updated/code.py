@@ -81,10 +81,13 @@ class GenerateCatalogLevelsToBeUpdated():
         #print(self._items)
         # Update catalog level table and send prefix to catalog update queue
         for level in self._levels_to_be_updated:
-            response = DB_CLIENT.put_item(
-                TableName=self._output_table,
-                Item={
-                    'catalog_level': {"S": level}})
+
+            if self._output_table:
+                response = DB_CLIENT.put_item(
+                    TableName=self._output_table,
+                    Item={
+                        'catalog_level': {"S": level}})
+
             SQS_CLIENT.send_message(QueueUrl=self._queue,
                                     MessageBody=level)
 
@@ -101,6 +104,7 @@ def handler(event, context):
     """
 
     gcl = GenerateCatalogLevelsToBeUpdated(input_table=os.environ['CATALOG_UPDATE_TABLE'],
-                                           output_table=os.environ['CATALOG_LEVELS_UPDATE_TABLE'],
+                                           output_table=\
+                                           os.environ.get('CATALOG_LEVELS_UPDATE_TABLE'),
                                            queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'])
     gcl.process()

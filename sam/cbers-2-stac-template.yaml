@@ -155,14 +155,6 @@ Resources:
       EventSourceArn: !GetAtt [ReconcileQueue, Arn]
       FunctionName: !Ref ConsumeReconcileQueueFunction
 
-  # This queue receives the new STAC item keys, consumed
-  # by UpdateCatalogTreeFunction
-  CatalogUpdateQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 30
-
   # This queue receives prefixes of STAC catalogs
   # that need to be updated
   CatalogPrefixUpdateQueue:
@@ -206,7 +198,6 @@ Resources:
       Environment:
         Variables:
           SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
-          CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
       DeadLetterQueue:
         Type: 'SQS'
@@ -240,26 +231,7 @@ Resources:
       Environment:
         Variables:
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
-          CATALOG_LEVELS_UPDATE_TABLE: !Ref CatalogLevelsUpdateTable
           CATALOG_PREFIX_UPDATE_QUEUE: !Ref CatalogPrefixUpdateQueue
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
-
-  # @todo delete
-  UpdateCatalogTreeFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: update_catalog_tree
-      Handler: code.active_handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        Consume from CatalogUpdate queue and update the catalog structure one message at a time
-      Timeout: 300
-      Environment:
-        Variables:
-          CATALOG_UPDATE_QUEUE: !Ref CatalogUpdateQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -305,25 +277,6 @@ Resources:
   # Rule start
   #################################################
 
-  # @todo delete
-  ProcessCatalogTreeUpdateQueue:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: 'Process catalog tree update every hour'
-      State: 'DISABLED'
-      ScheduleExpression: 'cron(00 */1 * * ? *)'
-      Targets:
-      - Arn: !GetAtt UpdateCatalogTreeFunction.Arn
-        Id: "PRCTUQUEUE"
-
-  ProcessCatalofTreeUpdateQueuePermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt UpdateCatalogTreeFunction.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt ProcessCatalogTreeUpdateQueue.Arn
-
   GenerateCatalogLevels:
     Type: 'AWS::Events::Rule'
     Properties:
@@ -362,23 +315,6 @@ Resources:
       KeySchema:
         -
           AttributeName: "stacitem"
-          KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
-
-  # @todo delete
-  # Holds all catalog levels to be updated
-  CatalogLevelsUpdateTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        -
-          AttributeName: "catalog_level"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "catalog_level"
           KeyType: "HASH"
       ProvisionedThroughput:
         ReadCapacityUnits: 5

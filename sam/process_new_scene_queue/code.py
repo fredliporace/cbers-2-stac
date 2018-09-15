@@ -148,15 +148,16 @@ def sqs_messages(queue):
 def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                     catalog_update_table):
     """
-    Process a single message. Generates STAC item, updates catalog
-    structure and send STAC item to SNS topic.
+    Process a single message. Generate STAC item, send STAC item to SNS topic,
+    write key into DynamoDB table and, optionally, send key to queue for
+    further processing.
 
     Input:
       msg(dict): message (quicklook) to be processed, key is 'key'.
       buckets(dict): buckets for 'cog', 'stac' and 'metadata'
       sns_target_arn(string): SNS arn for new stac items topic
       catalog_update_queue(string): URL of queue that receives new STAC items for
-        updating the catalog structure
+        updating the catalog structure, None if not used.
       catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
@@ -217,8 +218,9 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                            })
 
     # Send message to update catalog tree queue
-    SQS_CLIENT.send_message(QueueUrl=catalog_update_queue,
-                            MessageBody=metadata_keys['stac'])
+    if catalog_update_queue:
+        SQS_CLIENT.send_message(QueueUrl=catalog_update_queue,
+                                MessageBody=metadata_keys['stac'])
 
     # Request catalog update
     catalog_update_request(table_name=catalog_update_table,
@@ -332,7 +334,7 @@ def handler(event, context):
                       queue=event['queue'],
                       message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
                       sns_target_arn=os.environ['SNS_TARGET_ARN'],
-                      catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'],
+                      catalog_update_queue=os.environ.get('CATALOG_UPDATE_QUEUE'),
                       catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'],
                       delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
     else:
@@ -342,5 +344,5 @@ def handler(event, context):
                         cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
                         event=event,
                         sns_target_arn=os.environ['SNS_TARGET_ARN'],
-                        catalog_update_queue=os.environ['CATALOG_UPDATE_QUEUE'],
+                        catalog_update_queue=os.environ.get('CATALOG_UPDATE_QUEUE'),
                         catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'])
