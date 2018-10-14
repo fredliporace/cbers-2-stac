@@ -2,6 +2,10 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Update CBERS static STAC catalog'
 
+Parameters:
+  STACBucket:
+    Type: String
+
 Globals:
   Function:
     Runtime: python3.6
@@ -9,7 +13,7 @@ Globals:
       Variables:
         CBERS_PDS_BUCKET: cbers-pds
         CBERS_META_PDS_BUCKET: cbers-meta-pds
-        CBERS_STAC_BUCKET: cbers-stac
+        CBERS_STAC_BUCKET: !Ref STACBucket
         MESSAGE_BATCH_SIZE: 0
         DELETE_MESSAGES: 1
 
@@ -82,19 +86,19 @@ Resources:
 
   # This queue is subscribed to topics from all quicklooks,
   # PAN5 and PAN10 are ignored for now
-  NewMUXSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
+  #NewMUXSceneSubscription:
+  #  Type: 'AWS::SNS::Subscription'
+  #  Properties:
+  #    Endpoint: !GetAtt NewScenesQueue.Arn
+  #    Protocol: 'sqs'
+  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
 
-  NewAWFISceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+  #NewAWFISceneSubscription:
+  #  Type: 'AWS::SNS::Subscription'
+  #  Properties:
+  #    Endpoint: !GetAtt NewScenesQueue.Arn
+  #    Protocol: 'sqs'
+  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
 
   #NewPAN10SceneSubscription:
   #  Type: 'AWS::SNS::Subscription'

@@ -3,7 +3,8 @@
 
 # Primary
 APP = cbers-2-stac
-STACK_NAME = cbers-2-stac
+STACK_NAME = cbers-2-stac-0-6
+STAC_BUCKET = cbers-stac-0-6
 
 # Derived
 SAM_TEMPLATE = $(APP)-template.yaml
@@ -17,4 +18,4 @@ package:
 	aws cloudformation package --template-file $(SAM_TEMPLATE) --s3-bucket ${DEPLOY_BUCKET} --output-template $(SAM_PACKAGED) 
 
 deploy: validate package
-	aws cloudformation deploy --template-file $(SAM_PACKAGED) --stack-name $(STACK_NAME) --tags project=$(PROJECT_TAG) --capabilities CAPABILITY_IAM
+	aws cloudformation deploy --template-file $(SAM_PACKAGED) --stack-name $(STACK_NAME) --tags project=$(PROJECT_TAG) --capabilities CAPABILITY_IAM --parameter-overrides STACBucket=$(STAC_BUCKET)
