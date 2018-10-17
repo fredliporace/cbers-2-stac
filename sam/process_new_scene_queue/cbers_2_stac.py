@@ -158,9 +158,6 @@ def build_stac_item_keys(cbers, buckets):
                                          cbers['processing_level'])
 
     stac_item['type'] = 'Feature'
-    # Order is lower left lon, lat; upper right lon, lat
-    stac_item['bbox'] = (float(cbers['bb_ll_lon']), float(cbers['bb_ll_lat']),
-                         float(cbers['bb_ur_lon']), float(cbers['bb_ur_lat']))
 
     stac_item['geometry'] = OrderedDict()
     stac_item['geometry']['type'] = 'MultiPolygon'
@@ -175,15 +172,52 @@ def build_stac_item_keys(cbers, buckets):
                                               (float(cbers['ll_lon']),
                                                float(cbers['ll_lat']))]]]
 
+    # Order is lower left lon, lat; upper right lon, lat
+    stac_item['bbox'] = (float(cbers['bb_ll_lon']), float(cbers['bb_ll_lat']),
+                         float(cbers['bb_ur_lon']), float(cbers['bb_ur_lat']))
+
     stac_item['properties'] = OrderedDict()
     datetime = cbers['acquisition_date'].replace(' ', 'T')
     datetime = re.sub(r'\.\d+', 'Z', datetime)
     stac_item['properties']['datetime'] = datetime
-    stac_item['properties']['provider'] = 'INPE'
+
+    # ?? Check provider, moved in 0.6
+    # stac_item['properties']['provider'] = 'INPE'
     # License from INPE's site is
     # https://creativecommons.org/licenses/by-sa/3.0/
     # Removed from Item since this is defined at catalog level
     # stac_item['properties']['license'] = 'CC-BY-SA-3.0'
+
+    # Links
+    meta_prefix = 'https://s3.amazonaws.com/%s/' % (buckets['metadata'])
+    main_prefix = 's3://%s/' % (buckets['cog'])
+    stac_prefix = 'https://%s.s3.amazonaws.com/' % (buckets['stac'])
+    # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
+    stac_item['links'] = list()
+
+    # links, self
+    self_link = OrderedDict()
+    self_link['rel'] = 'self'
+    self_link['href'] = stac_prefix + \
+        cbers['sat_sensor'] + '/' + \
+        "%03d" % (int(cbers['path'])) + \
+        '/' + "%03d" % (int(cbers['row'])) + '/' + \
+        stac_item['id'] + '.json'
+    stac_item['links'].append(self_link)
+
+    # ?? review this
+    #stac_item['links']['catalog'] = OrderedDict()
+    #stac_item['links']['catalog']['rel'] = 'catalog'
+    #stac_item['links']['catalog']['href'] = stac_prefix + cbers['sat_sensor'] + \
+    #                                        '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
+
+    # links, collection
+    collection_link = OrderedDict()
+    collection_link['rel'] = 'collection'
+    collection_link['href'] = stac_prefix + '/collections/' + cbers['mission'] + \
+        '_' + cbers['number'] + \
+        '_' + cbers['sensor'] + '_collection.json'
+    stac_item['links'].append(collection_link)
 
     # EO section
     stac_item['properties']['eo:collection'] = 'default'
@@ -202,43 +236,18 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['properties']['cbers:path'] = int(cbers['path'])
     stac_item['properties']['cbers:row'] = int(cbers['row'])
 
-    # Links
-    meta_prefix = 'https://s3.amazonaws.com/%s/' % (buckets['metadata'])
-    main_prefix = 's3://%s/' % (buckets['cog'])
-    stac_prefix = 'https://%s.s3.amazonaws.com/' % (buckets['stac'])
-    # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
-    stac_item['links'] = OrderedDict()
-
-    stac_item['links']['self'] = OrderedDict()
-    stac_item['links']['self']['rel'] = 'self'
-    # Option if Items are organized by path and row
-    #stac_item['links'][0]['href'] = meta_prefix + \
-    #                                cbers['download_url'] + '/' + stac_item['id'] + '.json'
-    # Option if Items are organized in the same camera subdir
-    #stac_item['links'][0]['href'] = stac_prefix + \
-    #                                cbers['sat_sensor'] + '/' + stac_item['id'] + '.json'
-    stac_item['links']['self']['href'] = stac_prefix + \
-                                         cbers['sat_sensor'] + '/' + \
-                                         "%03d" % (int(cbers['path'])) + \
-                                         '/' + "%03d" % (int(cbers['row'])) + '/' + \
-                                         stac_item['id'] + '.json'
-
-    stac_item['links']['catalog'] = OrderedDict()
-    stac_item['links']['catalog']['rel'] = 'catalog'
-    stac_item['links']['catalog']['href'] = stac_prefix + cbers['sat_sensor'] + \
-                                            '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
-
     # Collection
-    collection_id = cbers['mission'] + '_' + \
-                    cbers['number'] + '_' + \
-                    cbers['sensor'] + '_' + \
-                    'L' + cbers['processing_level']
-    stac_item['links']['collection'] = OrderedDict()
-    stac_item['links']['collection']['rel'] = 'collection'
-    stac_item['links']['collection']['href'] = stac_prefix + 'collections/' + \
-                                               collection_id + \
-                                               '_collection.json'
-    stac_item['properties']['c:id'] = collection_id
+    # ?? check this
+    #collection_id = cbers['mission'] + '_' + \
+    #                cbers['number'] + '_' + \
+    #                cbers['sensor'] + '_' + \
+    #                'L' + cbers['processing_level']
+    #stac_item['links']['collection'] = OrderedDict()
+    #stac_item['links']['collection']['rel'] = 'collection'
+    #stac_item['links']['collection']['href'] = stac_prefix + 'collections/' + \
+    #                                           collection_id + \
+    #                                           '_collection.json'
+    #stac_item['properties']['c:id'] = collection_id
 
     # Assets
     stac_item['assets'] = OrderedDict()
