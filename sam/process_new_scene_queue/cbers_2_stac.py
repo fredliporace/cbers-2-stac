@@ -138,6 +138,27 @@ def get_keys_from_cbers(cbers_metadata):
 
     return metadata
 
+def build_link(rel, href):
+    """
+    Build a rel, href link object
+    """
+    link = OrderedDict()
+    link['rel'] = rel
+    link['href'] = href
+    return link
+
+def build_asset(href, title=None, asset_type=None):
+    """
+    Build a asset entry
+    """
+    asset = OrderedDict()
+    asset['href'] = href
+    if title:
+        asset['title'] = title
+    if asset_type:
+        asset['asset_type'] = asset_type
+    return asset
+
 def build_stac_item_keys(cbers, buckets):
     """
     Builds a STAC item dict based on CBERS metadata
@@ -181,13 +202,6 @@ def build_stac_item_keys(cbers, buckets):
     datetime = re.sub(r'\.\d+', 'Z', datetime)
     stac_item['properties']['datetime'] = datetime
 
-    # ?? Check provider, moved in 0.6
-    # stac_item['properties']['provider'] = 'INPE'
-    # License from INPE's site is
-    # https://creativecommons.org/licenses/by-sa/3.0/
-    # Removed from Item since this is defined at catalog level
-    # stac_item['properties']['license'] = 'CC-BY-SA-3.0'
-
     # Links
     meta_prefix = 'https://s3.amazonaws.com/%s/' % (buckets['metadata'])
     main_prefix = 's3://%s/' % (buckets['cog'])
@@ -196,34 +210,29 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['links'] = list()
 
     # links, self
-    self_link = OrderedDict()
-    self_link['rel'] = 'self'
-    self_link['href'] = stac_prefix + \
-        cbers['sat_sensor'] + '/' + \
-        "%03d" % (int(cbers['path'])) + \
-        '/' + "%03d" % (int(cbers['row'])) + '/' + \
-        stac_item['id'] + '.json'
-    stac_item['links'].append(self_link)
+    stac_item['links'].append(build_link('self',
+                                         stac_prefix + \
+                                         cbers['sat_sensor'] + '/' + \
+                                         "%03d" % (int(cbers['path'])) + \
+                                         '/' + "%03d" % (int(cbers['row'])) + '/' + \
+                                         stac_item['id'] + '.json'))
 
-    # ?? review this
-    #stac_item['links']['catalog'] = OrderedDict()
-    #stac_item['links']['catalog']['rel'] = 'catalog'
-    #stac_item['links']['catalog']['href'] = stac_prefix + cbers['sat_sensor'] + \
-    #                                        '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'
+    # links, parent
+    stac_item['links'].append(build_link('parent',
+                                         stac_prefix + cbers['sat_sensor'] + \
+                                         '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'))
 
     # links, collection
-    collection_link = OrderedDict()
-    collection_link['rel'] = 'collection'
-    collection_link['href'] = stac_prefix + '/collections/' + cbers['mission'] + \
-        '_' + cbers['number'] + \
-        '_' + cbers['sensor'] + '_collection.json'
-    stac_item['links'].append(collection_link)
+    stac_item['links'].append(build_link('collection',
+                                         stac_prefix + 'collections/' + cbers['mission'] + \
+                                         '_' + cbers['number'] + \
+                                         '_' + cbers['sensor'] + '_collection.json'))
 
     # EO section
-    stac_item['properties']['eo:collection'] = 'default'
+    # ?? check c:id
+    # stac_item['properties']['c:id'] = collection_id
     stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
     stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
-    #stac_item['properties']['eo:resolution'] = float(cbers['vertical_pixel_size'])
     stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])
     assert cbers['projection_name'] == 'UTM', \
         'Unsupported projection ' + cbers['projection_name']
@@ -236,41 +245,24 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['properties']['cbers:path'] = int(cbers['path'])
     stac_item['properties']['cbers:row'] = int(cbers['row'])
 
-    # Collection
-    # ?? check this
-    #collection_id = cbers['mission'] + '_' + \
-    #                cbers['number'] + '_' + \
-    #                cbers['sensor'] + '_' + \
-    #                'L' + cbers['processing_level']
-    #stac_item['links']['collection'] = OrderedDict()
-    #stac_item['links']['collection']['rel'] = 'collection'
-    #stac_item['links']['collection']['href'] = stac_prefix + 'collections/' + \
-    #                                           collection_id + \
-    #                                           '_collection.json'
-    #stac_item['properties']['c:id'] = collection_id
-
     # Assets
     stac_item['assets'] = OrderedDict()
-    stac_item['assets']['thumbnail'] = OrderedDict()
-    stac_item['assets']['thumbnail']['href'] = meta_prefix + \
-                                               cbers['download_url'] + '/' + \
-                                               cbers['no_level_id'] + '.jpg'
-    stac_item['assets']['thumbnail']['type'] = 'jpeg'
-    stac_item['assets']['metadata'] = OrderedDict()
-    stac_item['assets']['metadata']['href'] = main_prefix + \
-                                               cbers['download_url'] + '/' + \
-                                               cbers['meta_file']
-    stac_item['assets']['metadata']['type'] = 'xml'
+    stac_item['assets']['thumbnail'] = build_asset(meta_prefix + \
+                                                   cbers['download_url'] + '/' + \
+                                                   cbers['no_level_id'] + '.jpg',
+                                                   asset_type="image/jpeg")
+
+    stac_item['assets']['metadata'] = build_asset(main_prefix + \
+                                                  cbers['download_url'] + '/' + \
+                                                  cbers['meta_file'],
+                                                  asset_type="text/xml",
+                                                  title="INPE original metadata")
     for band in cbers['bands']:
         band_id = "B" + band
-        stac_item['assets'][band_id] = OrderedDict()
-        stac_item['assets'][band_id]['href'] = main_prefix + \
-                                               cbers['download_url'] + '/' + \
-                                               stac_item['id'] + '_BAND' + band + '.tif'
-        stac_item['assets'][band_id]['type'] = 'GeoTIFF'
-        stac_item['assets'][band_id]['format'] = 'COG'
-        stac_item['assets'][band_id]['eo_bands'] = [band]
-
+        stac_item['assets'][band_id] = build_asset(main_prefix + \
+                                                   cbers['download_url'] + '/' + \
+                                                   stac_item['id'] + '_BAND' + band + '.tif',
+                                                   asset_type="image/x.cloud-optimized-geotiff")
     return stac_item
 
 def create_json_item(stac_item, filename):

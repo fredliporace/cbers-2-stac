@@ -25,21 +25,10 @@
           "required": [
             "id",
             "type",
-            "geometry",
             "links",
             "assets"
           ],
           "properties": {
-            "geometry": {
-              "properties": {
-                "type": {
-                  "enum": [
-                    "Polygon",
-                    "MultiPolygon"
-                  ]
-                }
-              }
-            },
             "id": {
               "title": "Provider ID",
               "description": "Provider item ID",
@@ -48,44 +37,21 @@
             "links": {
               "title": "Item links",
               "description": "Links to item relations",
-              "type": "object",
+              "type": "array",
               "items": {
                 "$ref": "#/definitions/link"
-              },
-              "minItems": 1,
-              "properties": {
-                "self": {
-                  "title": "self",
-                  "description": "Link to self",
-                  "type": "object",
-                  "oneOf": [
-                    {
-                      "$ref": "#/definitions/link"
-                    }
-                  ]
-                }
               }
             },
             "assets": {
               "title": "Asset links",
               "description": "Links to assets",
               "type": "object",
-              "items": {
-                "$ref": "#/definitions/asset"
-              },
-              "minItems": 1,
-              "properties": {
-                "thumbnail": {
-                  "title": "thumbnail",
-                  "description": "Thumbnail representation of the image, generally consumed by browsers",
-                  "type": "object",
-                  "oneOf": [
-                    {
-                      "$ref": "#/definitions/asset"
-                    }
-                  ]
+              "patternProperties": {
+                ".+": {
+                  "$ref": "#/definitions/asset"
                 }
-              }
+              },
+              "additionalProperties": false
             },
             "properties": {
               "type": "object",
@@ -98,22 +64,6 @@
                   "description": "The searchable date/time of the assets, in UTC (Formatted in RFC 3339) ",
                   "type": "string",
                   "format": "date-time"
-                },
-                "provider": {
-                  "title": "Provider",
-                  "description": "Provider name and contact",
-                  "oneOf": [
-                    {
-                      "type": "string"
-                    },
-                    {
-                      "$ref": "#/definitions/entity"
-                    }
-                  ]
-                },
-                "license": {
-                  "title": "Data license",
-                  "description": "Data license name based on SPDX License List"
                 }
               }
             }
@@ -128,10 +78,20 @@
         "href"
       ],
       "properties": {
-        "rel": {
+        "href": {
+          "title": "Link reference",
           "type": "string"
         },
-        "href": {
+        "rel": {
+          "title": "Link relation type",
+          "type": "string"
+        },
+        "type": {
+          "title": "Link type",
+          "type": "string"
+        },
+        "title": {
+          "title": "Link title",
           "type": "string"
         }
       }
@@ -143,29 +103,16 @@
       ],
       "properties": {
         "href": {
+          "title": "Asset reference",
           "type": "string"
         },
-        "name": {
-          "type": "string"
-        }
-      }
-    },
-    "entity": {
-      "type": "object",
-      "properties": {
-        "name": {
+        "title": {
+          "title": "Asset title",
           "type": "string"
         },
-        "email": {
-          "type": "string",
-          "format": "email"
-        },
-        "phone": {
+        "type": {
+          "title": "Asset type",
           "type": "string"
-        },
-        "url": {
-          "type": "string",
-          "format": "uri"
         }
       }
     }
