@@ -9,6 +9,8 @@ import json
 import boto3
 from botocore.errorfactory import ClientError
 
+from utils import build_absolute_prefix
+
 S3_CLIENT = boto3.client('s3')
 SQS_CLIENT = boto3.client('sqs')
 
@@ -34,7 +36,8 @@ def build_catalog_from_s3(bucket, prefix, response=None):
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
     catalog_info = get_catalog_info(prefix)
-    catalog = base_stac_catalog(satellite=catalog_info['satellite+mission'],
+    catalog = base_stac_catalog(bucket,
+                                satellite=catalog_info['satellite+mission'],
                                 mission=None,
                                 camera=catalog_info['camera'],
                                 path=catalog_info['path'],
@@ -147,20 +150,34 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
-def base_stac_catalog(satellite, mission=None, camera=None, path=None, row=None):
-    """JSON SATC catalog with common itens"""
+def base_stac_catalog(bucket, satellite, mission=None, camera=None, path=None, row=None):
+    """JSON STAC catalog with common items"""
 
     stac_catalog = OrderedDict()
 
     name = satellite
     description = name
 
+    # If mission is not defined we do not include the satellite
+    # name into self href.
+    if mission:
+        sat_sensor = satellite
+    else:
+        # Check for satellite+mission in first parameter
+        # @todo change this to always separate satellite and mission
+        if satellite == 'CBERS':
+            sat_sensor = None
+        else:
+            sat_sensor = satellite
+
     if mission:
         name += mission
         description += mission
+        sat_sensor += mission
     if camera:
         name += ' %s' % (camera)
         description += ' %s camera' % (camera)
+        sat_sensor += '/%s' % camera
     if path:
         name += ' %s' % (path)
         description += ' path %s' % (path)
@@ -169,17 +186,25 @@ def base_stac_catalog(satellite, mission=None, camera=None, path=None, row=None)
         description += ' row %s' % (row)
     description += ' catalog'
 
-    stac_catalog['name'] = name
+    stac_catalog['stac_version'] = '0.6.0'
+    stac_catalog['id'] = name
     stac_catalog['description'] = description
 
     stac_catalog['links'] = list()
 
+    # @todo use common function to build links, see item construction
     self_link = OrderedDict()
     self_link['rel'] = 'self'
-    self_link['href'] = 'catalog.json'
+    self_link['href'] = build_absolute_prefix(bucket, sat_sensor, path, row) + 'catalog.json'
     stac_catalog['links'].append(self_link)
 
+    root_link = OrderedDict()
+    root_link['rel'] = 'root'
+    root_link['href'] = build_absolute_prefix(bucket) + 'catalog.json'
+    stac_catalog['links'].append(root_link)
+
     if mission or camera or path or row:
+
         parent_link = OrderedDict()
         parent_link['rel'] = 'parent'
         parent_link['href'] = '../catalog.json'
@@ -218,7 +243,8 @@ def update_catalog_tree(stac_item, buckets):
     except ClientError:
         # File needs to be created
         with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera,
+            json.dump(base_stac_catalog(buckets['stac'],
+                                        satellite, mission, camera,
                                         path, row),
                       data,
                       indent=2)
@@ -247,7 +273,8 @@ def update_catalog_tree(stac_item, buckets):
     except ClientError:
         # File needs to be created
         with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera,
+            json.dump(base_stac_catalog(buckets['stac'],
+                                        satellite, mission, camera,
                                         path),
                       data,
                       indent=2)
@@ -276,7 +303,8 @@ def update_catalog_tree(stac_item, buckets):
     except ClientError:
         # File needs to be created
         with open(local_catalog_file, 'w') as data:
-            json.dump(base_stac_catalog(satellite, mission, camera),
+            json.dump(base_stac_catalog(buckets['stac'],
+                                        satellite, mission, camera),
                       data,
                       indent=2)
     stac_catalog = None

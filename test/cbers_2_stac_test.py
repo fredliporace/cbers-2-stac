@@ -27,7 +27,7 @@ def diff_files(filename1, filename2):
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
 
-    def epsg_from_utm_zone(self):
+    def test_epsg_from_utm_zone(self):
         """test_epsg_from_utm_zone"""
         self.assertEqual(epsg_from_utm_zone(-23), 32723)
         self.assertEqual(epsg_from_utm_zone(23), 32623)

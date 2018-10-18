@@ -9,6 +9,8 @@ import json
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
+from utils import build_absolute_prefix
+
 def epsg_from_utm_zone(zone):
     """
     Returns the WGS-84 EPSG for a given UTM zone
@@ -211,16 +213,18 @@ def build_stac_item_keys(cbers, buckets):
 
     # links, self
     stac_item['links'].append(build_link('self',
-                                         stac_prefix + \
-                                         cbers['sat_sensor'] + '/' + \
-                                         "%03d" % (int(cbers['path'])) + \
-                                         '/' + "%03d" % (int(cbers['row'])) + '/' + \
+                                         build_absolute_prefix(buckets['stac'],
+                                                               cbers['sat_sensor'],
+                                                               int(cbers['path']),
+                                                               int(cbers['row'])) + \
                                          stac_item['id'] + '.json'))
 
     # links, parent
     stac_item['links'].append(build_link('parent',
-                                         stac_prefix + cbers['sat_sensor'] + \
-                                         '/' + "%03d" % (int(cbers['path'])) + '/catalog.json'))
+                                         build_absolute_prefix(buckets['stac'],
+                                                               cbers['sat_sensor'],
+                                                               int(cbers['path'])) + \
+                                         'catalog.json'))
 
     # links, collection
     stac_item['links'].append(build_link('collection',
