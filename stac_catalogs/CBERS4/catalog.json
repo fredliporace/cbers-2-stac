@@ -1,11 +1,12 @@
 {
-    "name": "CBERS4",
-    "description": "Catalog of CBERS4 imagery",
+  "stac_version": "0.6.0",
+  "id": "CBERS",
+  "description": "Catalogs of CBERS4 mission's imagery",
 
-    "links": [
-        { "rel": "self", "href": "catalog.json" },
-        { "rel": "child", "href": "MUX/catalog.json" },
-        { "rel": "child", "href": "AWFI/catalog.json" },
-        { "rel": "root", "href": "https://s3.amazonaws.com/cbers-stac/catalog.json"}
-    ]
+  "links": [
+    { "rel": "self", "href": "https://cbers-stac-0-6.s3.amazonaws.com/CBERS4/catalog.json" },
+    { "rel": "root", "href": "https://cbers-stac-0-6.s3.amazonaws.com/catalog.json"},
+    { "rel": "child", "href": "MUX/catalog.json" },
+    { "rel": "child", "href": "AWFI/catalog.json" }
+  ]
 }
