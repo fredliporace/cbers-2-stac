@@ -202,6 +202,13 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
                          None)
 
+    def root_catalog_schema_test(self):
+        """root_catalog_schema_test"""
+        with open('stac_catalogs/catalog.json', 'r') as root_catalog_file:
+            catalog = json.loads(root_catalog_file.read())
+        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+                         None)
+
     @unittest.skip("Require AWS credentials and environment")
     def integration_test(self):
         """integration_test"""

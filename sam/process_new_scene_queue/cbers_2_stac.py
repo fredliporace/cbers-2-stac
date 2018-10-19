@@ -233,8 +233,6 @@ def build_stac_item_keys(cbers, buckets):
                                          '_' + cbers['sensor'] + '_collection.json'))
 
     # EO section
-    # ?? check c:id
-    # stac_item['properties']['c:id'] = collection_id
     stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
     stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
     stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])

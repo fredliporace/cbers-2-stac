@@ -10,8 +10,8 @@ from jsonschema.exceptions import ValidationError
 class CollectionTest(unittest.TestCase):
     """CollectionTest"""
 
-    def test_json_schema(self):
-        """test_json_schema"""
+    def test_collection_json_schema(self):
+        """test_collection_json_schema"""
 
         json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         'json_schema/')
