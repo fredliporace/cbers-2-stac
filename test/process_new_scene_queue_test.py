@@ -1,9 +1,11 @@
 """process_new_scene_test"""
 
 import unittest
+import json
 
 from sam.process_new_scene_queue.code import parse_quicklook_key, \
-    get_s3_keys, process_queue
+    get_s3_keys, process_queue, convert_inpe_to_stac, \
+    build_sns_topic_msg_attributes
 
 class ProcessNewSceneTest(unittest.TestCase):
     """ProcessNewSceneTest"""
@@ -32,6 +34,24 @@ class ProcessNewSceneTest(unittest.TestCase):
                          'CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/'
                          'CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml')
         self.assertEqual(s3_keys['quicklook_keys']['camera'], 'AWFI')
+
+    def build_sns_topic_msg_attr_test(self):
+        """build_sns_topic_msg_attributes_test"""
+
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac'}
+
+        stac_meta = convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_MUX_20170528' \
+                                         '_090_084_L2_BAND6.xml',
+                                         stac_metadata_filename=None,
+                                         buckets=buckets)
+        msg_attr = build_sns_topic_msg_attributes(stac_meta)
+        self.assertEqual(msg_attr['links.self.href'],
+                         {'DataType':'String',
+                          'StringValue':'https://cbers-stac.s3.amazonaws.com/CBERS4/' \
+                          'MUX/090/084/CBERS_4_MUX_20170528_090_084_L2.json'})
 
     @unittest.skip("Require AWS credentials and environment")
     def process_queue_test(self):

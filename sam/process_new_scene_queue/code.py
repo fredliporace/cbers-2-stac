@@ -145,6 +145,37 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
+def build_sns_topic_msg_attributes(stac_item):
+    """Builds SNS message attributed from stac_item dictionary"""
+    message_attr = {
+        'properties.datetime': {
+            'DataType': 'String',
+            'StringValue': stac_item['properties']['datetime']
+        },
+        'bbox.ll_lon': {
+            'DataType': 'Number',
+            'StringValue': str(stac_item['bbox'][0])
+        },
+        'bbox.ll_lat': {
+            'DataType': 'Number',
+            'StringValue': str(stac_item['bbox'][1])
+        },
+        'bbox.ur_lon': {
+            'DataType': 'Number',
+            'StringValue': str(stac_item['bbox'][2])
+        },
+        'bbox.ur_lat': {
+            'DataType': 'Number',
+            'StringValue': str(stac_item['bbox'][3])
+        },
+        'links.self.href': {
+            'DataType': 'String',
+            'StringValue': (item['href'] for item in stac_item['links'] \
+                            if item['rel'] == 'self').__next__()
+        }
+    }
+    return message_attr
+
 def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                     catalog_update_table):
     """
@@ -186,36 +217,7 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
     if sns_target_arn:
         SNS_CLIENT.publish(TargetArn=sns_target_arn,
                            Message=json.dumps(stac_meta),
-                           MessageAttributes={
-                               'properties.datetime': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['properties']['datetime']
-                               },
-                               'bbox.ll_lon': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][0])
-                               },
-                               'bbox.ll_lat': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][1])
-                               },
-                               'bbox.ur_lon': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][2])
-                               },
-                               'bbox.ur_lat': {
-                                   'DataType': 'Number',
-                                   'StringValue': str(stac_meta['bbox'][3])
-                               },
-                               'links.self.href': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['links']['self']['href']
-                               },
-                               'properties.c.id': {
-                                   'DataType': 'String',
-                                   'StringValue': stac_meta['properties']['c:id']
-                               }
-                           })
+                           MessageAttributes=build_sns_topic_msg_attributes(stac_meta))
 
     # Send message to update catalog tree queue
     if catalog_update_queue:

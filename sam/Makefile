@@ -20,5 +20,5 @@ package:
 update_catalog_tree/utils.py: process_new_scene_queue/utils.py
 	cp $? $@
 
-deploy: validate package process_new_scene/utils.py
+deploy: validate package update_catalog_tree/utils.py
 	aws cloudformation deploy --template-file $(SAM_PACKAGED) --stack-name $(STACK_NAME) --tags project=$(PROJECT_TAG) --capabilities CAPABILITY_IAM --parameter-overrides STACBucket=$(STAC_BUCKET)

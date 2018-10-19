@@ -285,7 +285,8 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename,
 
     Input:
     inpe_metadata(string): CBERS metadata (INPE format) file
-    stac_metadata(string): STAC item metadata file to be written
+    stac_metadata(string): STAC item metadata file to be written, if None then
+                           no file is written.
     buckets: buckets dictionary
 
     Return:
@@ -294,7 +295,8 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename,
 
     meta = get_keys_from_cbers(inpe_metadata_filename)
     stac_meta = build_stac_item_keys(meta, buckets)
-    create_json_item(stac_meta, stac_metadata_filename)
+    if stac_metadata_filename:
+        create_json_item(stac_meta, stac_metadata_filename)
     return stac_meta
 
 if __name__ == '__main__':
