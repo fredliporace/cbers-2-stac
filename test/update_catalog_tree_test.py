@@ -204,8 +204,14 @@ class UpdateCatalogTreeTest(unittest.TestCase):
 
     def root_catalog_schema_test(self):
         """root_catalog_schema_test"""
-        with open('stac_catalogs/catalog.json', 'r') as root_catalog_file:
-            catalog = json.loads(root_catalog_file.read())
+
+        with open('stac_catalogs/catalog.json', 'r') as catalog_file:
+            catalog = json.loads(catalog_file.read())
+        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+                         None)
+
+        with open('stac_catalogs/CBERS4/catalog.json', 'r') as catalog_file:
+            catalog = json.loads(catalog_file.read())
         self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
                          None)
 
