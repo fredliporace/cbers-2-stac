@@ -261,10 +261,11 @@ def build_stac_item_keys(cbers, buckets):
                                                   title="INPE original metadata")
     for band in cbers['bands']:
         band_id = "B" + band
-        stac_item['assets'][band_id] = build_asset(main_prefix + \
-                                                   cbers['download_url'] + '/' + \
-                                                   stac_item['id'] + '_BAND' + band + '.tif',
-                                                   asset_type="image/vnd.stac.geotiff; cloud-optimized=true")
+        stac_item['assets'][band_id] = \
+            build_asset(main_prefix + \
+                        cbers['download_url'] + '/' + \
+                        stac_item['id'] + '_BAND' + band + '.tif',
+                        asset_type="image/vnd.stac.geotiff; cloud-optimized=true")
     return stac_item
 
 def create_json_item(stac_item, filename):
