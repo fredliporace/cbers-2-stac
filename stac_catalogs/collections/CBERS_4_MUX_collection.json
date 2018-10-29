@@ -7,17 +7,18 @@
   "provider": [
     {
       "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
-      "type": "producer",
+      "roles": "[producer]",
       "url": "http://www.cbers.inpe.br"
     },
     {
       "name": "AMS Kepler",
-      "type": "processor",
-      "url": "http://www.amskepler.com"
+      "roles": "[processor]",
+      "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
+      "url": "https://github.com/fredliporace/cbers-on-aws"
     },
     {
       "name": "Amazon Web Services",
-      "type": "host",
+      "roles": "[host]",
       "url": "https://registry.opendata.aws/cbers/"
     }
   ],

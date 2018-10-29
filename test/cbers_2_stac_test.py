@@ -158,7 +158,7 @@ class CERS2StacTest(unittest.TestCase):
         json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         'json_schema/')
         schema_path = os.path.join(json_schema_path,
-                                   'stac-item.json')
+                                   'item.json')
         resolver = RefResolver('file://' + json_schema_path + '/',
                                None)
         with open(schema_path) as fp_schema:
@@ -203,7 +203,7 @@ class CERS2StacTest(unittest.TestCase):
         json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                         'json_schema/')
         schema_path = os.path.join(json_schema_path,
-                                   'stac-item.json')
+                                   'item.json')
         resolver = RefResolver('file://' + json_schema_path + '/',
                                None)
         #self.assertEqual(schema_path, '')
