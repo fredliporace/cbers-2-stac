@@ -44,19 +44,23 @@
     "eo:gsd": 20.0,
     "eo:platform": "CBERS-4",
     "eo:instrument": "MUX",
-    "eo:bands": {
-      "5": {
+    "eo:bands": [
+      {
+        "name": "B5",
         "common_name": "blue"
       },
-      "6": {
+      {
+        "name": "B6",
         "common_name": "green"
       },
-      "7": {
+      {
+        "name": "B7",
         "common_name": "red"
       },
-      "8": {
+      {
+        "name": "B8",
         "common_name": "nir"
       }      
-    }
+    ]
   }
 }

@@ -152,6 +152,9 @@ class CERS2StacTest(unittest.TestCase):
             else:
                 self.fail('Unrecognized rel %s' % link['rel'])
 
+        # assets
+        self.assertEqual(len(smeta['assets']), 6) # 4 bands, 1 metadata, 1 thumbnail
+
     def test_convert_inpe_to_stac(self):
         """test_convert_inpe_to_stac"""
 

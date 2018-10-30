@@ -149,7 +149,7 @@ def build_link(rel, href):
     link['href'] = href
     return link
 
-def build_asset(href, title=None, asset_type=None):
+def build_asset(href, title=None, asset_type=None, band_index=None):
     """
     Build a asset entry
     """
@@ -158,7 +158,9 @@ def build_asset(href, title=None, asset_type=None):
     if title:
         asset['title'] = title
     if asset_type:
-        asset['asset_type'] = asset_type
+        asset['type'] = asset_type
+    if band_index is not None:
+        asset['eo:bands'] = [band_index]
     return asset
 
 def build_stac_item_keys(cbers, buckets):
@@ -259,13 +261,14 @@ def build_stac_item_keys(cbers, buckets):
                                                   cbers['meta_file'],
                                                   asset_type="text/xml",
                                                   title="INPE original metadata")
-    for band in cbers['bands']:
+    for index, band in enumerate(cbers['bands']):
         band_id = "B" + band
         stac_item['assets'][band_id] = \
             build_asset(main_prefix + \
                         cbers['download_url'] + '/' + \
                         stac_item['id'] + '_BAND' + band + '.tif',
-                        asset_type="image/vnd.stac.geotiff; cloud-optimized=true")
+                        asset_type="image/vnd.stac.geotiff; cloud-optimized=true",
+                        band_index=index)
     return stac_item
 
 def create_json_item(stac_item, filename):
