@@ -91,28 +91,28 @@ Resources:
     Properties:
       Endpoint: !GetAtt NewScenesQueue.Arn
       Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4MUXQuicklook'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook'
 
   #NewAWFISceneSubscription:
   #  Type: 'AWS::SNS::Subscription'
   #  Properties:
   #    Endpoint: !GetAtt NewScenesQueue.Arn
   #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4AWFIQuicklook'
+  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
 
   #NewPAN10SceneSubscription:
   #  Type: 'AWS::SNS::Subscription'
   #  Properties:
   #    Endpoint: !GetAtt NewScenesQueue.Arn
   #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN10MQuicklook'
+  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
 
   #NewPAN5SceneSubscription:
   #  Type: 'AWS::SNS::Subscription'
   #  Properties:
   #    Endpoint: !GetAtt NewScenesQueue.Arn
   #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:769537946825:NewCB4PAN5MQuicklook'
+  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
