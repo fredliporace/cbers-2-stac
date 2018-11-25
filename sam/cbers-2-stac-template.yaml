@@ -128,7 +128,7 @@ Resources:
           Condition:
             # @todo improve by specifying only the allowed Arns, removing '*'
             ArnEquals:
-              aws:SourceArn: 'arn:aws:sns:us-east-1:769537946825:*'
+              aws:SourceArn: 'arn:aws:sns:us-east-1:599544552497:*'
       Queues:
         - !Ref NewScenesQueue
 
