@@ -57,6 +57,7 @@ SNS_CLIENT = boto3.client('sns')
 
 DB_CLIENT = boto3.client('dynamodb')
 
+
 def parse_quicklook_key(key):
     """
     Parse quicklook key and return dictionary with
@@ -82,12 +83,13 @@ def parse_quicklook_key(key):
                       key)
     assert match, "Could not match " + key
     return {
-        'satellite':match.group('satellite'),
-        'camera':match.group('camera'),
-        'path':match.group('path'),
-        'row':match.group('row'),
-        'scene_id':match.group('scene_id')
+        'satellite': match.group('satellite'),
+        'camera': match.group('camera'),
+        'path': match.group('path'),
+        'row': match.group('row'),
+        'scene_id': match.group('scene_id')
     }
+
 
 def get_s3_keys(quicklook_key):
     """
@@ -120,6 +122,7 @@ def get_s3_keys(quicklook_key):
         'quicklook_keys':qdict
     }
 
+
 def sqs_messages(queue):
     """
     Generator for SQS messages.
@@ -144,6 +147,7 @@ def sqs_messages(queue):
         retd['key'] = records['Records'][0]['s3']['object']['key']
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
+
 
 def build_sns_topic_msg_attributes(stac_item):
     """Builds SNS message attributed from stac_item dictionary"""
@@ -176,6 +180,7 @@ def build_sns_topic_msg_attributes(stac_item):
     }
     return message_attr
 
+
 def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                     catalog_update_table):
     """
@@ -187,8 +192,8 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
       msg(dict): message (quicklook) to be processed, key is 'key'.
       buckets(dict): buckets for 'cog', 'stac' and 'metadata'
       sns_target_arn(string): SNS arn for new stac items topic
-      catalog_update_queue(string): URL of queue that receives new STAC items for
-        updating the catalog structure, None if not used.
+      catalog_update_queue(string): URL of queue that receives new STAC items
+        for updating the catalog structure, None if not used.
       catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
@@ -204,7 +209,8 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
     # Download INPE metadata and generate STAC item file
     with open(local_inpe_metadata, 'wb') as data:
         S3_CLIENT.download_fileobj(buckets['cog'],
-                                   metadata_keys['inpe_metadata'], data)
+                                   metadata_keys['inpe_metadata'], data,
+                                   ExtraArgs={'RequestPayer': 'requester'})
     stac_meta = convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
                                      stac_metadata_filename=local_stac_item,
                                      buckets=buckets)
@@ -228,6 +234,7 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
     catalog_update_request(table_name=catalog_update_table,
                            stac_item_key=metadata_keys['stac'])
 
+
 def catalog_update_request(table_name, stac_item_key):
     """
     Generate a catalog structure update request by recording
@@ -244,6 +251,7 @@ def catalog_update_request(table_name, stac_item_key):
             'stacitem': {'S': stac_item_key},
             'datetime': {'S': str(datetime.datetime.now())}
         })
+
 
 def process_trigger(cbers_pds_bucket,
                     cbers_stac_bucket,
@@ -275,6 +283,7 @@ def process_trigger(cbers_pds_bucket,
             process_message({'key':rec['s3']['object']['key']},
                             buckets, sns_target_arn, catalog_update_queue,
                             catalog_update_table)
+
 
 def process_queue(cbers_pds_bucket,
                   cbers_stac_bucket,
@@ -322,6 +331,7 @@ def process_queue(cbers_pds_bucket,
         processed_messages += 1
         if processed_messages == message_batch_size:
             break
+
 
 def handler(event, context):
     """Lambda entry point for actively consuming messages from queue.

@@ -139,6 +139,7 @@ Resources:
       BatchSize: 10
       EventSourceArn: !GetAtt [NewScenesQueue, Arn]
       FunctionName: !Ref ProcessNewSceneQueueFunction
+      Enabled: True
 
   # This queue expects messages of S3 prefixes
   # Each prefix is searched for .jpg files and a message
