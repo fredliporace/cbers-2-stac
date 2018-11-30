@@ -15,11 +15,13 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
     """
     suffix = r'.*' + suffix
     files = S3_CLIENT.list_objects_v2(Bucket=bucket,
-                                      Prefix=prefix)
+                                      Prefix=prefix,
+                                      RequestPayer='requester')
+
     while True:
         for file in files['Contents']:
             if re.search(suffix, file['Key']):
-                print(file['Key'])
+                #print(file['Key'])
                 message = dict()
                 message['Message'] = json.dumps({'Records':[{'s3':{'object':{'key':file['Key']}}}]})
                 SQS_CLIENT.send_message(QueueUrl=queue, MessageBody=json.dumps(message))
@@ -27,7 +29,8 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
             break
         files = S3_CLIENT.list_objects_v2(Bucket=bucket,
                                           Prefix=prefix,
-                                          ContinuationToken=files['NextContinuationToken'])
+                                          ContinuationToken=files['NextContinuationToken'],
+                                          RequestPayer='requester')
 
 def handler(event, context):
     """Lambda entry point

@@ -18,7 +18,8 @@ def populate_queue_with_subdirs(bucket, prefix, queue):
     """
 
     dirs = S3_CLIENT.list_objects_v2(Bucket=bucket,
-                                     Prefix=prefix, Delimiter='/')
+                                     Prefix=prefix, Delimiter='/',
+                                     RequestPayer='requester')
 
     assert not dirs['IsTruncated']
     for dir_key in dirs['CommonPrefixes']:

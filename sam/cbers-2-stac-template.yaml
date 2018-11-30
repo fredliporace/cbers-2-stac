@@ -143,7 +143,7 @@ Resources:
 
   # This queue expects messages of S3 prefixes
   # Each prefix is searched for .jpg files and a message
-  # emulating a 'NewScene' is emulated and sent to the queue responible
+  # emulating a 'NewScene' is emulated and sent to the queue responsible
   # to update the static STAC catalog
   ReconcileQueue:
     Type: 'AWS::SQS::Queue'
@@ -156,9 +156,10 @@ Resources:
     Properties:
       # @todo try to increase batch size depending on measured
       # lambda execution time
-      BatchSize: 1
+      BatchSize: 10
       EventSourceArn: !GetAtt [ReconcileQueue, Arn]
       FunctionName: !Ref ConsumeReconcileQueueFunction
+      Enabled: True
 
   # This queue receives prefixes of STAC catalogs
   # that need to be updated
@@ -265,7 +266,11 @@ Resources:
       Description: >
         Consume dirs from reconcile queue, populating
         NewScenesQueue with quicklooks to be processed
-      # @todo adjust timeout based on lambda execution time measurements
+      # This timeout is big since this function list the quicklooks
+      # for whole S3 prefix, this may take a long time if we choose
+      # to reconcile from root. This may be improved if the reconcile
+      # queue is populated with all child prefixes instead of a single
+      # one.
       Timeout: 295
       Environment:
         Variables:
@@ -321,9 +326,7 @@ Resources:
         -
           AttributeName: "stacitem"
           KeyType: "HASH"
-      ProvisionedThroughput:
-        ReadCapacityUnits: 5
-        WriteCapacityUnits: 5
+      BillingMode: "PAY_PER_REQUEST"
 
   #################################################
   # DynamoDB end
