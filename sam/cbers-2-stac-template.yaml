@@ -5,6 +5,8 @@ Description: 'Update CBERS STAC catalog'
 Parameters:
   STACBucket:
     Type: String
+  OperatorEmail:
+    Type: String
 
 Globals:
   Function:
@@ -70,8 +72,90 @@ Resources:
   CBERSSTACItemTopic:
     Type: 'AWS::SNS::Topic'
 
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      Subscription: 
+        - 
+          Endpoint: !Ref OperatorEmail
+          Protocol: "email"
+
   #################################################
   # SNS Topic End
+  #################################################
+
+  #################################################
+  # Cloudwatch start
+  #################################################
+
+  DLQDepthAlarmProcessNewScene:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 'ProcessNewSceneQueueFunctionDLQ with more than one message'
+      ActionsEnabled: True
+      Namespace: 'AWS/SQS'
+      MetricName: 'ApproximateNumberOfMessagesVisible'
+      Dimensions:
+        - Name: 'QueueName'
+          Value: !GetAtt ProcessNewSceneQueueFunctionDLQ.QueueName
+      Statistic: 'Sum'
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0.0
+      ComparisonOperator: 'GreaterThanThreshold'
+      AlarmActions:
+        - !Ref AlarmTopic
+      InsufficientDataActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  DLQDepthAlarmConsumeReconcile:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 'ConsumeReconcileQueueFunctionDLQ with more than one message'
+      ActionsEnabled: True
+      Namespace: 'AWS/SQS'
+      MetricName: 'ApproximateNumberOfMessagesVisible'
+      Dimensions:
+        - Name: 'QueueName'
+          Value: !GetAtt ConsumeReconcileQueueFunctionDLQ.QueueName
+      Statistic: 'Sum'
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0.0
+      ComparisonOperator: 'GreaterThanThreshold'
+      AlarmActions:
+        - !Ref AlarmTopic
+      InsufficientDataActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  DLQDepthGeneral:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: 'GeneralDLQ with more than one message'
+      ActionsEnabled: True
+      Namespace: 'AWS/SQS'
+      MetricName: 'ApproximateNumberOfMessagesVisible'
+      Dimensions:
+        - Name: 'QueueName'
+          Value: !GetAtt GeneralLambdaDLQ.QueueName
+      Statistic: 'Sum'
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 0.0
+      ComparisonOperator: 'GreaterThanThreshold'
+      AlarmActions:
+        - !Ref AlarmTopic
+      InsufficientDataActions:
+        - !Ref AlarmTopic
+      OKActions:
+        - !Ref AlarmTopic
+
+  #################################################
+  # Cloudwatch end
   #################################################
 
   #################################################
@@ -83,6 +167,12 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn:    
+            "Fn::GetAtt":
+              - ProcessNewSceneQueueFunctionDLQ
+              - Arn                     
+        maxReceiveCount: 1
 
   # This queue is subscribed to topics from all quicklooks,
   # PAN5 and PAN10 are ignored for now
@@ -150,6 +240,12 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       VisibilityTimeout: 300
+      RedrivePolicy:
+        deadLetterTargetArn:    
+            "Fn::GetAtt":       
+              - ConsumeReconcileQueueFunctionDLQ
+              - Arn                     
+        maxReceiveCount: 1
 
   ReconcileQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
@@ -207,8 +303,13 @@ Resources:
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
       DeadLetterQueue:
         Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+        TargetArn: !GetAtt ProcessNewSceneQueueFunctionDLQ.Arn
 
+  ProcessNewSceneQueueFunctionDLQ: 
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+  
   PopulateReconcileQueueFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -277,7 +378,13 @@ Resources:
           NEW_SCENES_QUEUE: !Ref NewScenesQueue
       DeadLetterQueue:
         Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+        TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+
+  ConsumeReconcileQueueFunctionDLQ: 
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+
 
   #################################################
   # Lambda end

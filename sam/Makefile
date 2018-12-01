@@ -5,6 +5,7 @@
 APP = cbers-2-stac
 STACK_NAME = cbers-2-stac-0-6
 STAC_BUCKET = cbers-stac-0-6
+OPERATOR_EMAIL = liporace@amskepler.com
 
 # Derived
 SAM_TEMPLATE = $(APP)-template.yaml
@@ -21,4 +22,4 @@ update_catalog_tree/utils.py: process_new_scene_queue/utils.py
 	cp $? $@
 
 deploy: validate package update_catalog_tree/utils.py
-	aws cloudformation deploy --template-file $(SAM_PACKAGED) --stack-name $(STACK_NAME) --tags project=$(PROJECT_TAG) --capabilities CAPABILITY_IAM --parameter-overrides STACBucket=$(STAC_BUCKET)
+	aws cloudformation deploy --template-file $(SAM_PACKAGED) --stack-name $(STACK_NAME) --tags project=$(PROJECT_TAG) --capabilities CAPABILITY_IAM --parameter-overrides STACBucket=$(STAC_BUCKET) OperatorEmail=$(OPERATOR_EMAIL)
