@@ -105,8 +105,10 @@ Resources:
       ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref AlarmTopic
-      InsufficientDataActions:
-        - !Ref AlarmTopic
+      # See comment in sqs_keep_alive for rationale behind
+      # removing this alarm action
+      #InsufficientDataActions:
+      #  - !Ref AlarmTopic
       OKActions:
         - !Ref AlarmTopic
 
@@ -385,6 +387,26 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
 
+  SQSKeepAliveFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: sqs_keep_alive
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: >
+        Iterates through SQS list to keep them active for
+        Cloudwatch alarms.
+        Not being used for the moment since the monitored
+        queues will be activated when new messages are written,
+        this is enough for the alarms to be generated.
+      Timeout: 15
+      Environment:
+        Variables:
+          QUEUES_URLS: !Join [',', [!Ref ConsumeReconcileQueueFunctionDLQ]]
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
 
   #################################################
   # Lambda end
