@@ -129,8 +129,6 @@ Resources:
       ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref AlarmTopic
-      InsufficientDataActions:
-        - !Ref AlarmTopic
       OKActions:
         - !Ref AlarmTopic
 
@@ -150,8 +148,6 @@ Resources:
       Threshold: 0.0
       ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
-        - !Ref AlarmTopic
-      InsufficientDataActions:
         - !Ref AlarmTopic
       OKActions:
         - !Ref AlarmTopic
