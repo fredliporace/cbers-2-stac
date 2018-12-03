@@ -109,8 +109,6 @@ Resources:
       # removing this alarm action
       #InsufficientDataActions:
       #  - !Ref AlarmTopic
-      OKActions:
-        - !Ref AlarmTopic
 
   DLQDepthAlarmConsumeReconcile:
     Type: AWS::CloudWatch::Alarm
@@ -129,8 +127,6 @@ Resources:
       ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
         - !Ref AlarmTopic
-      OKActions:
-        - !Ref AlarmTopic
 
   DLQDepthGeneral:
     Type: AWS::CloudWatch::Alarm
@@ -148,8 +144,6 @@ Resources:
       Threshold: 0.0
       ComparisonOperator: 'GreaterThanThreshold'
       AlarmActions:
-        - !Ref AlarmTopic
-      OKActions:
         - !Ref AlarmTopic
 
   #################################################
