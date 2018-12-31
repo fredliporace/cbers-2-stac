@@ -39,6 +39,11 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/catalogDefinition'
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacEndpointFunction.Arn}/invocations
   /stac/search:
     get:
       summary: Search STAC items by simple filtering.
@@ -71,6 +76,11 @@ paths:
             text/html:
               schema:
                 type: string
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
     post:
       summary: Search STAC items by full-featured filtering.
       description: >-
@@ -103,6 +113,11 @@ paths:
             text/html:
               schema:
                 type: string
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
 components:
   parameters:
     limit:

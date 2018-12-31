@@ -60,6 +60,21 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
       Path: "/"
 
+  ApiGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
+
   #################################################
   # Roles end
   #################################################
@@ -270,6 +285,36 @@ Resources:
   #################################################
 
   #################################################
+  # Api Gateway start
+  #################################################
+
+  ApiAccount:
+    Type: AWS::ApiGateway::Account
+    Properties: 
+      CloudWatchRoleArn: !GetAtt ApiGatewayRole.Arn
+
+  StacApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        'Fn::Transform':
+           Name: 'AWS::Include'
+           Parameters:
+             Location: STAC-standalone.yaml
+      #DefinitionUri: STAC-standalone.yaml
+      MethodSettings:
+        - HttpMethod: "*"
+          ResourcePath: "/*"
+          LoggingLevel: ERROR      # INFO or ERROR
+          #DataTraceEnabled: true  # Put logs into cloudwatch
+          #MetricsEnabled: true    # Enable detailed metrics (error 404, latence, ...)
+
+  #################################################
+  # Api Gateway end
+  #################################################
+
+  #################################################
   # Lambda start (include dead letter queues)
   #################################################
 
@@ -362,7 +407,7 @@ Resources:
       # This timeout is big since this function list the quicklooks
       # for whole S3 prefix, this may take a long time if we choose
       # to reconcile from root. This may be improved if the reconcile
-      # queue is populated with all child prefixes instead of a single
+      # queue is populated with all children prefixes instead of a single
       # one.
       Timeout: 295
       Environment:
@@ -371,6 +416,48 @@ Resources:
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+
+  StacEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: stac_endpoint
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        stac API endpoint
+      Timeout: 55
+      Events:
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /stac
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  StacSearchEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: stac_search_endpoint
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        stac/search API endpoint
+      Timeout: 55
+      Events:
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /stac
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   ConsumeReconcileQueueFunctionDLQ: 
     Type: 'AWS::SQS::Queue'
@@ -450,3 +537,14 @@ Resources:
   #################################################
   # DynamoDB end
   #################################################
+
+Outputs:
+  ApiUrl:
+    Description: URL of your API endpoint
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref StacApi
+        - '.execute-api.'
+        - !Ref 'AWS::Region'
+        - '.amazonaws.com'
