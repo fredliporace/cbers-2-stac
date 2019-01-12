@@ -1,0 +1,35 @@
+Elasticsearch
+-------------
+
+- localstack start
+
+Environment
+export SERVICES=es
+$ localstack start
+
+- URLs for testing
+
+http://localhost:4571/
+http://localhost:4571/_cat/health?v
+http://localhost:4571/_cat/nodes?v
+http://localhost:4571/_cat/indices?v
+
+<HTTP Verb>/<Index>/<Type>/<ID>
+
+curl -X PUT "http://localhost:4571/customer?pretty"
+curl -X PUT "localhost:4571/customer/_doc/1?pretty" -H 'Content-Type: application/json' -d'
+{
+  "name": "John Doe"
+}
+'
+# Apaga o indice inteiro
+curl -X DELETE "localhost:4571/customer?pretty"
+
+curl -X PUT -H "Content-Type: application/json" -d @./stac_mappings.json http://localhost:4571/stac
+curl -X PUT -H "Content-Type: application/json" -d @./test/CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/stac/_doc/1
+curl -X GET -H "Content-Type: application/json" -d @search.json http://localhost:4571/stac/_search?pretty
+
+
+curl -X POST -H "Content-Type: application/json" -d @./CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/index/test/1
+
+

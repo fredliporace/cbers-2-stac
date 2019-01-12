@@ -1,0 +1,20 @@
+{
+    "query":{
+        "bool": {
+            "must": {
+                "match_all": {}
+            },
+            "filter": {
+                "geo_shape": {
+                    "geometry": {
+                        "shape": {
+                            "type": "envelope",
+                            "coordinates" : [[-180.0, -90.0], [180.0, 90.0]]
+                        },
+                        "relation": "intersects"
+                    }
+                }
+            }
+        }
+    }
+}

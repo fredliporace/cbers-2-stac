@@ -1,0 +1,20 @@
+{
+  "query":{
+    "bool": {
+      "must": {
+        "range": {"properties.datetime": {"gte": "2014-10-21T20:03:12.963","lte": "2018-11-24T20:03:12.963"}}
+      },
+      "filter": {
+        "geo_shape": {
+          "geometry": {
+            "shape": {
+              "type": "envelope",
+              "coordinates" : [[-180.0, -90.0], [180.0, 90.0]]
+            },
+            "relation": "intersects"
+          }
+        }
+      }
+    }
+  }
+}

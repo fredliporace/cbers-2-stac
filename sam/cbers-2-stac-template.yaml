@@ -538,6 +538,46 @@ Resources:
   # DynamoDB end
   #################################################
 
+  #################################################
+  # Elasticsearch start
+  #################################################
+
+  Elasticsearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      #AccessPolicies: JSON object
+      #AdvancedOptions:
+      #  String: String
+      #DomainName: String
+      # EBSOptions required for t2.small
+      EBSOptions:
+        EBSEnabled: True
+        #Iops: Integer
+        # In GiB, 10 is the smallest possible for t2.small
+        VolumeSize: 10
+        VolumeType: gp2        
+      ElasticsearchClusterConfig:
+        #DedicatedMasterCount: Integer
+        #DedicatedMasterEnabled: Boolean
+        #DedicatedMasterType: String
+        InstanceCount: 1
+        # t2.micro only supports 2.3 and 1.5
+        InstanceType: t2.small.elasticsearch
+        #ZoneAwarenessEnabled: Boolean
+      ElasticsearchVersion: 6.2
+      #EncryptionAtRestOptions: 
+      #  EncryptionAtRestOptions
+      #SnapshotOptions:
+      #  SnapshotOptions
+      #Tags:
+      #  - Resource Tag
+      #VPCOptions: 
+      #  VPCOptions
+                       
+  #################################################
+  # Elasticsearch end
+  #################################################
+
 Outputs:
   ApiUrl:
     Description: URL of your API endpoint
