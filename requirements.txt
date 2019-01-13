@@ -1,3 +1,4 @@
 nose
 boto3
 jsonschema
+localstack

@@ -3,6 +3,8 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Update CBERS STAC catalog'
 
 Parameters:
+  StackName:
+    Type: String
   STACBucket:
     Type: String
   OperatorEmail:
@@ -52,12 +54,13 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        #- "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
         # @todo check if ReadOnlyAccess is needed with FullAccess
         - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonESFullAccess"
       Path: "/"
 
   ApiGatewayRole:
@@ -394,6 +397,26 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  CreateElasticIndexFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.create_stac_index_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      # Dependencies (check ES version):
+      # $pip install Elasticsearch==6.2.0 requests "urllib3<1.23,>=1.21.1" aws-requests-auth -t ./
+      Description: >
+        Create Elasticsearch STAC index
+      Timeout: 30
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
   ConsumeReconcileQueueFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -545,10 +568,18 @@ Resources:
   Elasticsearch:
     Type: AWS::Elasticsearch::Domain
     Properties:
-      #AccessPolicies: JSON object
+      DomainName: !Sub "${StackName}-es"
+      AccessPolicies:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS: !GetAtt [LambdaRole, Arn]
+            Action: "es:*"
+            Resource:
+              - !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${StackName}-es/*"
       #AdvancedOptions:
       #  String: String
-      #DomainName: String
       # EBSOptions required for t2.small
       EBSOptions:
         EBSEnabled: True
