@@ -28,8 +28,8 @@ class ElasticsearchTest(unittest.TestCase):
     def test_connection(self):
         """test_connection"""
 
-        if 'CI' in os.environ.keys():
-            return
+        #if 'CI' in os.environ.keys():
+        #    return
 
         # Parameters may be obtained from localstack, using
         # default parameters for now
