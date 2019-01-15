@@ -11,7 +11,7 @@ class ElasticsearchTest(unittest.TestCase):
 
     def setUp(self):
         """localstack ES setup"""
-        infra.start_infra(async=True, apis=['es', 'elasticsearch'])
+        infra.start_infra(asynchronous=True, apis=['es', 'elasticsearch'])
 
     def tearDown(self):
         """localstack ES teardown"""
