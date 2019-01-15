@@ -4,21 +4,23 @@ import os
 import time
 import unittest
 from localstack.services import infra
-from localstack.utils.aws import aws_stack
-from sam.elasticsearch.es import es_connect
+#from localstack.utils.aws import aws_stack
+from sam.elasticsearch.es import es_connect, create_stac_index
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
 
     def setUp(self):
         """localstack ES setup"""
-
-        # Skipping ES tests in CircleCI for now, see
-        # https://discuss.circleci.com/t/
-        # circle-2-localstack-support/18420/3
-        # for possible workaround
-        if 'CI' not in os.environ.keys():
-            infra.start_infra(asynchronous=True, apis=['es', 'elasticsearch'])
+        # We only try to start localstack ES if there is
+        # no connection to the server.
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        if not es_client.ping():
+            # Skipping localstack setup when running in CircleCI
+            if 'CI' not in os.environ.keys():
+                infra.start_infra(asynchronous=True,
+                                  apis=['es', 'elasticsearch'])
 
     def tearDown(self):
         """localstack ES teardown"""
@@ -27,9 +29,6 @@ class ElasticsearchTest(unittest.TestCase):
 
     def test_connection(self):
         """test_connection"""
-
-        #if 'CI' in os.environ.keys():
-        #    return
 
         # Parameters may be obtained from localstack, using
         # default parameters for now
@@ -45,6 +44,15 @@ class ElasticsearchTest(unittest.TestCase):
             else:
                 time.sleep(1)
         self.assertTrue(es_client.ping())
+
+    def test_create_index(self):
+        """test_create_index"""
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        if es_client.indices.exists('stac'):
+            es_client.indices.delete(index='stac')
+        create_stac_index(es_client, timeout=60)
+        self.assertTrue(es_client.indices.exists('stac'))
 
 if __name__ == '__main__':
     unittest.main()

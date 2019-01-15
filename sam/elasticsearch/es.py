@@ -25,6 +25,30 @@ def es_connect(endpoint: str, port: int,
                               http_auth=http_auth)
     return es_client
 
+def create_stac_index(es_client, timeout: int=30):
+    """
+    Create STAC index.
+
+    :param es_client: Elasticsearch client
+    :param timeout int: timeout in seconds
+    """
+    mapping = '''
+{
+    "mappings": {
+        "_doc": {
+            "properties": {
+                "geometry": {
+                    "type": "geo_shape",
+                    "tree": "quadtree",
+                    "precision": "100m"
+                }
+            }
+        }
+    }
+}'''
+    es_client.indices.create(index='stac', body=mapping,
+                             request_timeout=timeout)
+
 def create_stac_index_handler(event, context):
     """
     Create STAC elasticsearch index
@@ -45,3 +69,4 @@ def create_stac_index_handler(event, context):
                            port=int(os.environ['ES_PORT']),
                            http_auth=auth)
     print(es_client.info())
+    create_stac_index(es_client)
