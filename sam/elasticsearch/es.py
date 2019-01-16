@@ -1,6 +1,7 @@
 """es"""
 
 import os
+import json
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
@@ -25,7 +26,7 @@ def es_connect(endpoint: str, port: int,
                               http_auth=http_auth)
     return es_client
 
-def create_stac_index(es_client, timeout: int=30):
+def create_stac_index(es_client, timeout: int = 30):
     """
     Create STAC index.
 
@@ -49,6 +50,22 @@ def create_stac_index(es_client, timeout: int=30):
     es_client.indices.create(index='stac', body=mapping,
                              request_timeout=timeout)
 
+def create_document_in_index(es_client, stac_item: str,
+                             timeout: str = '30s'):
+    """
+    Create document in STAC index
+
+    :param es_client: Elasticsearch client
+    :param stac_item: String representing the STAC item
+    :param timeout str: timeout
+    """
+
+    document = json.loads(stac_item)
+
+    es_client.create(index='stac', id=document['id'],
+                     body=document, doc_type='_doc',
+                     timeout=timeout)
+
 def create_stac_index_handler(event, context):
     """
     Create STAC elasticsearch index
@@ -68,5 +85,19 @@ def create_stac_index_handler(event, context):
     es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
                            port=int(os.environ['ES_PORT']),
                            http_auth=auth)
-    print(es_client.info())
+    #print(es_client.info())
     create_stac_index(es_client)
+
+def create_documents_handler(event, context):
+    """
+    Include document in index
+    """
+
+    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                               aws_region=os.environ['AWS_REGION'],
+                               aws_service='es')
+    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
+                           port=int(os.environ['ES_PORT']),
+                           http_auth=auth)
+    #print(es_client.info())
+    #create_document_in_index(es_client)

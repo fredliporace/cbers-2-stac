@@ -5,7 +5,8 @@ import time
 import unittest
 from localstack.services import infra
 #from localstack.utils.aws import aws_stack
-from sam.elasticsearch.es import es_connect, create_stac_index
+from sam.elasticsearch.es import es_connect, create_stac_index, \
+    create_document_in_index
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -53,6 +54,24 @@ class ElasticsearchTest(unittest.TestCase):
             es_client.indices.delete(index='stac')
         create_stac_index(es_client, timeout=60)
         self.assertTrue(es_client.indices.exists('stac'))
+
+    def test_create_document_in_index(self):
+        """test_create_document_in_index"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        self.assertFalse(es_client.exists(index='stac', doc_type='_doc',
+                                          id='CBERS_4_MUX_20170528_090_084_L2'))
+        with open('test/CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_item = fin.read()
+        create_document_in_index(es_client=es_client,
+                                 stac_item=stac_item)
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
 
 if __name__ == '__main__':
     unittest.main()
