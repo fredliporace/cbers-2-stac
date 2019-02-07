@@ -56,11 +56,13 @@ Resources:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
         #- "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
         # @todo check if ReadOnlyAccess is needed with FullAccess
-        - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+        #- "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
         - "arn:aws:iam::aws:policy/AmazonESFullAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+
       Path: "/"
 
   ApiGatewayRole:
@@ -283,6 +285,46 @@ Resources:
       EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
       FunctionName: !Ref UpdateCatalogPrefixFunction
 
+  # This queue subscribes to the new STAC item SNS topic
+  # and has a lambda trigger that inserts the item into
+  # the search backend (Elasticsearch for now)
+  InsertIntoElasticsearchQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+      VisibilityTimeout: 120
+
+  InsertIntoElasticsearchSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: !Ref CBERSSTACItemTopic
+
+  InsertIntoElasticsearchQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt InsertIntoElasticsearchQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref CBERSSTACItemTopic
+      Queues:
+        - !Ref InsertIntoElasticsearchQueue
+
+  InsertIntoElasticsearchQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      EventSourceArn: !GetAtt [InsertIntoElasticsearchQueue, Arn]
+      FunctionName: !Ref ConsumeInsertIntoElasticsearchQueueFunction
+
   #################################################
   # SQS/Subscription end
   #################################################
@@ -439,6 +481,25 @@ Resources:
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+
+  ConsumeInsertIntoElasticsearchQueueFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.create_documents_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: >
+        Consume STAC items from queue, inserting into ES
+      Timeout: 45
+      ReservedConcurrentExecutions: 3
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   StacEndpointFunction:
     Type: 'AWS::Serverless::Function'
