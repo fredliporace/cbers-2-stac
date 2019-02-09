@@ -352,7 +352,7 @@ Resources:
         - HttpMethod: "*"
           ResourcePath: "/*"
           LoggingLevel: ERROR      # INFO or ERROR
-          #DataTraceEnabled: true  # Put logs into cloudwatch
+          DataTraceEnabled: true  # Put logs into cloudwatch
           #MetricsEnabled: true    # Enable detailed metrics (error 404, latence, ...)
 
   #################################################
