@@ -20,11 +20,12 @@ def handler(event, context): # pylint: disable=unused-argument
     Lambda entry point
     """
 
-    if event['path'] == '/stac':
-        document = get_root_catalog(bucket=os.environ['CBERS_STAC_BUCKET'])
-    else:
-        raise ValueError("Path unknown: {path}".format(path=event['path']))
+    #if event['path'] == '/stac':
+    #    document = get_root_catalog(bucket=os.environ['CBERS_STAC_BUCKET'])
+    #else:
+    #    raise ValueError("Path unknown: {path}".format(path=event['path']))
 
+    document = get_root_catalog(bucket=os.environ['CBERS_STAC_BUCKET'])
     retmsg = {
         'statusCode': '200',
         'body': json.dumps(document, indent=2),
