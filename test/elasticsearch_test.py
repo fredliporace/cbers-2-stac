@@ -3,12 +3,14 @@
 import os
 import time
 import unittest
+import json
 from localstack.services import infra
-from elasticsearch.helpers import bulk, BulkIndexError
+from elasticsearch.helpers import BulkIndexError
+from elasticsearch import ConflictError
 #from localstack.utils.aws import aws_stack
 from sam.elasticsearch.es import es_connect, create_stac_index, \
-    create_document_in_index, bulk_create_document_in_index
-
+    create_document_in_index, bulk_create_document_in_index, \
+    stac_search
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -73,15 +75,39 @@ class ElasticsearchTest(unittest.TestCase):
             stac_item = fin.read()
         create_document_in_index(es_client=es_client,
                                  stac_item=stac_item)
-        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
-                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
 
-        # Tests uddate with the same id
+        # Calling create again should raise an exception...
+        with self.assertRaises(ConflictError):
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        # .. unless we use upsert
         create_document_in_index(es_client=es_client,
                                  stac_item=stac_item,
                                  update_if_exists=True)
         self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
                                          id='CBERS_4_MUX_20170528_090_084_L2'))
+
+        # Reset index and call create with upsert option
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        self.assertFalse(es_client.
+                         exists(index='stac', doc_type='_doc',
+                                id='CBERS_4_MUX_20170528_090_084_L2'))
+        create_document_in_index(es_client=es_client,
+                                 stac_item=stac_item,
+                                 update_if_exists=True)
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
 
     def test_bulk_create_document_in_index(self):
         """test_bulk_create_document_in_index"""
@@ -107,10 +133,15 @@ class ElasticsearchTest(unittest.TestCase):
         bulk_create_document_in_index(es_client=es_client,
                                       stac_items=stac_items)
 
-        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
-                                         id='CBERS_4_MUX_20170528_090_084_L2'))
-        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
-                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_AWFI_20170409_167_123_L4')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_AWFI_20170409_167_123_L4')
 
         # Calling create again should raise an exception...
         with self.assertRaises(BulkIndexError):
@@ -121,6 +152,69 @@ class ElasticsearchTest(unittest.TestCase):
         bulk_create_document_in_index(es_client=es_client,
                                       stac_items=stac_items,
                                       update_if_exists=True)
+
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_AWFI_20170409_167_123_L4')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_AWFI_20170409_167_123_L4')
+
+        # Resets index and calls bulk with upsert from the start
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        self.assertFalse(es_client.
+                         exists(index='stac', doc_type='_doc',
+                                id='CBERS_4_MUX_20170528_090_084_L2'))
+
+        bulk_create_document_in_index(es_client=es_client,
+                                      stac_items=stac_items,
+                                      update_if_exists=True)
+
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_AWFI_20170409_167_123_L4')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_AWFI_20170409_167_123_L4')
+
+
+    def test_stac_search(self):
+        """test_stac_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        res = stac_search(es_client=es_client)
+        print(json.dumps(res, indent=2))
+        self.assertEqual(res['hits']['total'], 2)
 
 if __name__ == '__main__':
     unittest.main()

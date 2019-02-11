@@ -525,8 +525,10 @@ Resources:
   StacSearchEndpointFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
-      CodeUri: stac_search_endpoint
-      Handler: code.handler
+      CodeUri: elasticsearch
+      Handler: es.stac_search_endpoint_handler
+      #CodeUri: stac_search_endpoint
+      #Handler: code.handler
       Role: !GetAtt LambdaRole.Arn
       Policies:
       Description: >
@@ -537,7 +539,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref StacApi
-            Path: /stac
+            Path: /stac/search
             Method: ANY
       DeadLetterQueue:
         Type: 'SQS'

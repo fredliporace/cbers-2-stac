@@ -166,7 +166,7 @@ def bulk_create_document_in_index(es_client,
             bulk_item['_id'] = dict_item['id']
             bulk_item['_op_type'] = 'create'
             bulk_item['_index'] = 'stac'
-            bulk_item['doc'] = dict_item
+            bulk_item['_source'] = dict_item
             stac_updates.append(bulk_item)
         else:
             bulk_item = dict()
@@ -203,10 +203,42 @@ def create_document_in_index(es_client,
     else:
         document = dict()
         document['doc'] = json.loads(stac_item)
-        document['upsert'] = document['doc']
+        document['doc_as_upsert'] = True
         es_client.update(index='stac', id=document['doc']['id'],
                          body=document, doc_type='_doc',
                          request_timeout=timeout)
+
+def stac_search(es_client):
+    """
+    Search STAC items
+
+    :param es_client: Elasticsearch client
+    """
+
+    query = {
+        "query": {
+            "bool": {
+                "must": {
+                    "range": {"properties.datetime": {"gte": "2014-10-21T20:03:12.963", "lte": "2018-11-24T20:03:12.963"}}
+                },
+                "filter": {
+                    "geo_shape": {
+                        "geometry": {
+                            "shape": {
+                                "type": "envelope",
+                                "coordinates" : [[-180.0, -90.0], [180.0, 90.0]]
+                            },
+                            "relation": "intersects"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    res = es_client.search(index='stac',
+                           doc_type='_doc',
+                           body=query)
+    return res
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
     """
@@ -263,3 +295,36 @@ def create_documents_handler(event,
 
     #print(es_client.info())
     #create_document_in_index(es_client)
+
+def stac_search_endpoint_handler(event,
+                                 context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point
+    """
+
+    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                               aws_region=os.environ['AWS_REGION'],
+                               aws_service='es')
+    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
+                           port=int(os.environ['ES_PORT']),
+                           http_auth=auth)
+
+    #print(json.dumps(event), indent=2)
+    if event['httpMethod'] == 'GET':
+        document = dict()
+        qsp = event['queryStringParameters']
+        document['bbox'] = qsp.get('bbox', '-180,-90,180,90')
+        document['time'] = qsp.get('time', 'Nonono')
+        document['limit'] = int(qsp.get('limit', '10'))
+    else:
+        document = json.loads(event['body'])
+
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(document, indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
+
+    return retmsg
