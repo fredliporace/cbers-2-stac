@@ -527,13 +527,15 @@ Resources:
     Properties:
       CodeUri: elasticsearch
       Handler: es.stac_search_endpoint_handler
-      #CodeUri: stac_search_endpoint
-      #Handler: code.handler
       Role: !GetAtt LambdaRole.Arn
       Policies:
       Description: >
         stac/search API endpoint
       Timeout: 55
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
       Events:
         StacEndpointApi:
           Type: Api
