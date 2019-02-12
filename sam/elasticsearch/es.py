@@ -5,6 +5,7 @@ import json
 import boto3
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
+from elasticsearch_dsl import Search
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
 SQS_CLIENT = boto3.client('sqs')
@@ -208,13 +209,21 @@ def create_document_in_index(es_client,
                          body=document, doc_type='_doc',
                          request_timeout=timeout)
 
-def stac_search(es_client):
+def stac_search(es_client, start_date: str = None, end_date: str = None,
+                bbox: list = None):
     """
     Search STAC items
 
     :param es_client: Elasticsearch client
+    :param start_date str: ditto, format: 2014-10-21T20:03:12.963
+    :param end_date str: ditto, same format as above
+    :param bbox list: bounding box envelope, GeoJSON style
+                      [[-180.0, -90.0], [180.0, 90.0]]
     """
 
+    # @todo include support for third coordinate in bbox
+
+    """
     query = {
         "query": {
             "bool": {
@@ -238,7 +247,27 @@ def stac_search(es_client):
     res = es_client.search(index='stac',
                            doc_type='_doc',
                            body=query)
-    return res
+
+    """
+
+    search = Search(using=es_client, index='stac', doc_type='_doc')
+    # https://stackoverflow.com/questions/39263663/elasticsearch-dsl-py-query-formation
+    query = search.query()
+    if start_date or end_date:
+        date_range = dict()
+        date_range['properties.datetime'] = dict()
+        if start_date:
+            date_range['properties.datetime']['gte'] = start_date
+        if end_date:
+            date_range['properties.datetime']['lte'] = end_date
+        query = search.query("range", **date_range)
+    if bbox:
+        query = query.filter("geo_shape",
+                             geometry={"shape": {"type": "envelope",
+                                                 "coordinates" : bbox},
+                                       "relation": "intersects"})
+
+    return query.execute()
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
     """

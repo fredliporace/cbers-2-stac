@@ -212,9 +212,28 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
                                          id='CBERS_4_AWFI_20170409_167_123_L4'))
 
+        # All items are returned for empty query
         res = stac_search(es_client=es_client)
-        print(json.dumps(res, indent=2))
         self.assertEqual(res['hits']['total'], 2)
+
+        # Single item depending on date range
+        res = stac_search(es_client=es_client,
+                          start_date='2017-05-28T00:00:00.000')
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
+
+        res = stac_search(es_client=es_client,
+                          end_date='2017-04-10T00:00:00.000')
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0]['id'], 'CBERS_4_AWFI_20170409_167_123_L4')
+
+        # Geo search
+        res = stac_search(es_client=es_client,
+                          start_date='2010-04-10T00:00:00.000',
+                          end_date='2018-04-10T00:00:00.000',
+                          bbox=[[24.13, 14.34], [24.13, 14.34]])
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
 
 if __name__ == '__main__':
     unittest.main()
