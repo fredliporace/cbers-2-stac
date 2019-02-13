@@ -447,7 +447,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Policies:
       # Dependencies (check ES version):
-      # $pip install Elasticsearch==6.2.0 requests "urllib3<1.23,>=1.21.1" aws-requests-auth -t ./
+      # $pip install Elasticsearch==6.2.0 elasticsearch-dsl==6.2.0 requests "urllib3<1.23,>=1.21.1" aws-requests-auth -t ./
       Description: >
         Create Elasticsearch STAC index
       Timeout: 30
@@ -512,6 +512,9 @@ Resources:
         stac API endpoint
       Timeout: 55
       Events:
+        # This information is not injected in the swagger template,
+        # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+        # If the lambda changes then the swagger file must be changed
         StacEndpointApi:
           Type: Api
           Properties:
@@ -537,6 +540,7 @@ Resources:
           ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
           ES_PORT: 443
       Events:
+        # Attention! See comment above about endpoint
         StacEndpointApi:
           Type: Api
           Properties:

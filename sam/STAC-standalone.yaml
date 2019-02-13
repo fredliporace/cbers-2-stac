@@ -20,6 +20,11 @@ servers:
     description: Development server
   - url: 'http://www.cool-sat.com'
     description: Production server
+x-amazon-apigateway-request-validators:
+  basic:
+    validateRequestBody: true
+    validateRequestParameters: true
+x-amazon-apigateway-request-validator: basic 
 paths:
   /stac:
     get:
@@ -39,13 +44,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/catalogDefinition'
-      # This duplicates information on Cloudformation template, check
-      # if necessary.
-      #x-amazon-apigateway-integration:
-      #  httpMethod: post
-      #  type: aws_proxy
-      #  uri:
-      #    Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacEndpointFunction.Arn}/invocations
+      # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacEndpointFunction.Arn}/invocations
   /stac/search:
     get:
       summary: Search STAC items by simple filtering.
@@ -78,11 +82,11 @@ paths:
             text/html:
               schema:
                 type: string
-      #x-amazon-apigateway-integration:
-      #  httpMethod: post
-      #  type: aws_proxy
-      #  uri:
-      #    Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
     post:
       summary: Search STAC items by full-featured filtering.
       description: >-
@@ -115,11 +119,11 @@ paths:
             text/html:
               schema:
                 type: string
-      #x-amazon-apigateway-integration:
-      #  httpMethod: post
-      #  type: aws_proxy
-      #  uri:
-      #    Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
 components:
   parameters:
     limit:
