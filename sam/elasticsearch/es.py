@@ -99,6 +99,45 @@ def bulk_process_insert_queue(es_client, queue: str,
                 QueueUrl=queue,
                 ReceiptHandle=receipt)
 
+def parse_datetime(dtime: str):
+    """
+    Parse a datetime or period string from STAC request.
+
+    :param dtime str: input datetime:
+                        A date-time: "2018-02-12T23:20:50Z"
+                        A period: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+                          or "2018-02-12T00:00:00Z/P1M6DT12H31M12S", the
+                          former is not supported yet.
+                      None is returned if None is inpue
+    :return: start, end, equal to None if not defined
+    """
+
+    if not dtime:
+        return None, None
+
+    fields = dtime.split('/')
+    assert len(fields) < 3 and fields, "Can't parse " + dtime
+    start = fields[0]
+    end = None
+    if len(fields) == 2:
+        end = fields[1]
+    return start, end
+
+def parse_bbox(bbox: str):
+    """
+    Parse a bbox in string format from a STAC request
+
+    :param bbox str: input bbox
+    :return: List of floats
+    :rtype: list
+    """
+
+    els = bbox.split(',')
+    bbox_l = list()
+    bbox_l.append([float(els[0]), float(els[1])])
+    bbox_l.append([float(els[2]), float(els[3])])
+    return bbox_l
+
 def es_connect(endpoint: str, port: int,
                use_ssl: bool = True, verify_certs: bool = True,
                http_auth=None, timeout: int = 30):
@@ -266,7 +305,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
                              geometry={"shape": {"type": "envelope",
                                                  "coordinates" : bbox},
                                        "relation": "intersects"})
-
+    print(json.dumps(query.to_dict(), indent=2))
     return query.execute()
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
@@ -338,19 +377,32 @@ def stac_search_endpoint_handler(event,
                            port=int(os.environ['ES_PORT']),
                            http_auth=auth)
 
-    #print(json.dumps(event), indent=2)
+    #print(json.dumps(event, indent=2))
     if event['httpMethod'] == 'GET':
         document = dict()
         qsp = event['queryStringParameters']
-        document['bbox'] = qsp.get('bbox', '-180,-90,180,90')
-        document['time'] = qsp.get('time', 'Nonono')
+        document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
+        document['time'] = qsp.get('time', None)
         document['limit'] = int(qsp.get('limit', '10'))
     else:
         document = json.loads(event['body'])
+        document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
+                            [document['bbox'][2], document['bbox'][3]]]
+
+    start, end = None, None
+    if document.get('time'):
+        start, end = parse_datetime(document['time'])
+
+    res = stac_search(es_client=es_client,
+                      start_date=start, end_date=end,
+                      bbox=document['bbox'])
+    results = list()
+    for item in res:
+        results.append(item.to_dict())
 
     retmsg = {
         'statusCode': '200',
-        'body': json.dumps(document, indent=2),
+        'body': json.dumps(results, indent=2),
         'headers': {
             'Content-Type': 'application/json',
         }

@@ -10,7 +10,7 @@ from elasticsearch import ConflictError
 #from localstack.utils.aws import aws_stack
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
-    stac_search
+    stac_search, parse_datetime, parse_bbox
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -31,6 +31,33 @@ class ElasticsearchTest(unittest.TestCase):
         """localstack ES teardown"""
         if 'CI' not in os.environ.keys():
             infra.stop_infra()
+
+    def test_parse_datetime(self):
+        """test_parse_datetime"""
+
+        start, end = parse_datetime("2018-02-12T23:20:50Z")
+        self.assertEqual(start, "2018-02-12T23:20:50Z")
+        self.assertIsNone(end)
+
+        start, end = parse_datetime("2018-02-12T00:00:00Z/2018-03-18T12:31:12Z")
+        self.assertEqual(start, "2018-02-12T00:00:00Z")
+        self.assertEqual(end, "2018-03-18T12:31:12Z")
+
+        with self.assertRaises(AssertionError):
+            start, end = parse_datetime("2018-02-12T00:00:00Z/2018-03-18T"
+                                        "12:31:12Z/ERROR")
+
+        start, end = parse_datetime(None)
+        self.assertIsNone(start)
+        self.assertIsNone(end)
+
+    def test_parse_bbox(self):
+        """test_parse_bbox"""
+
+        bbox = parse_bbox("-180,-90,180,90")
+        self.assertEqual(len(bbox), 2)
+        self.assertEqual(bbox[0], [-180, -90])
+        self.assertEqual(bbox[1], [180, 90])
 
     def test_connection(self):
         """test_connection"""
@@ -234,6 +261,11 @@ class ElasticsearchTest(unittest.TestCase):
                           bbox=[[24.13, 14.34], [24.13, 14.34]])
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
+
+        #print(res.to_dict())
+        #for hit in res:
+        #    print(hit.to_dict())
+        #self.assertFalse(True)
 
 if __name__ == '__main__':
     unittest.main()
