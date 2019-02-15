@@ -305,7 +305,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
                              geometry={"shape": {"type": "envelope",
                                                  "coordinates" : bbox},
                                        "relation": "intersects"})
-    print(json.dumps(query.to_dict(), indent=2))
+    #print(json.dumps(query.to_dict(), indent=2))
     return query.execute()
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
@@ -396,9 +396,12 @@ def stac_search_endpoint_handler(event,
     res = stac_search(es_client=es_client,
                       start_date=start, end_date=end,
                       bbox=document['bbox'])
-    results = list()
+    results = dict()
+    results["type"] = "FeatureCollection"
+    results["features"] = list()
+
     for item in res:
-        results.append(item.to_dict())
+        results["features"].append(item.to_dict())
 
     retmsg = {
         'statusCode': '200',
