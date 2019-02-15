@@ -381,9 +381,14 @@ def stac_search_endpoint_handler(event,
     if event['httpMethod'] == 'GET':
         document = dict()
         qsp = event['queryStringParameters']
-        document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
-        document['time'] = qsp.get('time', None)
-        document['limit'] = int(qsp.get('limit', '10'))
+        if qsp:
+            document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
+            document['time'] = qsp.get('time', None)
+            document['limit'] = int(qsp.get('limit', '10'))
+        else:
+            document['bbox'] = parse_bbox('-180,-90,180,90')
+            document['time'] = None
+            document['limit'] = 10
     else:
         document = json.loads(event['body'])
         document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
