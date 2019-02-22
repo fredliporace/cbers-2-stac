@@ -346,7 +346,8 @@ Resources:
         'Fn::Transform':
            Name: 'AWS::Include'
            Parameters:
-             Location: STAC-standalone.yaml
+             #Location: STAC-standalone.yaml
+             Location: STAC-query.yaml
       #DefinitionUri: STAC-standalone.yaml
       MethodSettings:
         - HttpMethod: "*"
