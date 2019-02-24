@@ -421,7 +421,7 @@ def stac_search_endpoint_handler(event,
         document = json.loads(event['body'])
         document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
                             [document['bbox'][2], document['bbox'][3]]]
-        print(document)
+        #print(document)
 
     start, end = None, None
     if document.get('time'):
