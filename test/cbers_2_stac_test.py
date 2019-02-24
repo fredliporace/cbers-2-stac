@@ -75,10 +75,14 @@ class CERS2StacTest(unittest.TestCase):
 
         # geometry
         self.assertEqual(len(smeta['geometry']['coordinates'][0][0]), 5)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1], -23.152887)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0], -63.086835)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1], -23.152887)
-        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0], -63.086835)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][1],
+                         -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][0][0],
+                         -63.086835)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][1],
+                         -23.152887)
+        self.assertEqual(smeta['geometry']['coordinates'][0][0][4][0],
+                         -63.086835)
 
         # properties
         self.assertEqual(smeta['properties']['datetime'], '2017-04-09T14:09:23Z')
@@ -183,8 +187,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
                              None)
         res = diff_files(ref_output_filename, output_filename)
-        # @TODO update reference item file
-        # self.assertEqual(len(res), 0, res)
+        self.assertEqual(len(res), 0, res)
 
         # AWFI
         output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
@@ -197,8 +200,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema, resolver=resolver),
                              None)
         res = diff_files(ref_output_filename, output_filename)
-        # @TODO update reference item file
-        #self.assertEqual(len(res), 0, res)
+        self.assertEqual(len(res), 0, res)
 
     def test_json_schema(self):
         """test_json_schema"""

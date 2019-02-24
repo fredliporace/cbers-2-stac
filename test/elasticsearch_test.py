@@ -98,7 +98,7 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertFalse(es_client.
                          exists(index='stac', doc_type='_doc',
                                 id='CBERS_4_MUX_20170528_090_084_L2'))
-        with open('test/CBERS_4_MUX_20170528_090_084_L2.json',
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
                   'r') as fin:
             stac_item = fin.read()
         create_document_in_index(es_client=es_client,
@@ -151,10 +151,10 @@ class ElasticsearchTest(unittest.TestCase):
 
         # Two distinct items, create
         stac_items = list()
-        with open('test/CBERS_4_MUX_20170528_090_084_L2.json',
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
                   'r') as fin:
             stac_items.append(fin.read())
-        with open('test/CBERS_4_AWFI_20170409_167_123_L4.json',
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
                   'r') as fin:
             stac_items.append(fin.read())
 
