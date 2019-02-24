@@ -328,9 +328,11 @@ def process_query_extension(dsl_query, query_params: dict):
     :return: DSL extended with query parameters
     """
 
+    # See for reference on how to extend to complete STAC query extension
+    # https://stackoverflow.com/questions/43138089/elasticsearch-dsl-python-unpack-q-queries
     for key in query_params:
-        assert isinstance(query_params[key], str), \
-            "Supports only eq operator as string"
+        assert not isinstance(query_params[key], dict), \
+            "Dicts not supported yet in queries"
         dsl_query = dsl_query.query(Q("match",
                                       **{"properties."+key:query_params[key]}))
 

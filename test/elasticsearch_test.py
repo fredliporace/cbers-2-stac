@@ -286,6 +286,14 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
                          'L4')
 
+        query = process_query_extension(dsl_query=empty_query,
+                                        query_params={"cbers:path":90})
+        #print(json.dumps(query.to_dict(), indent=2))
+        res = query.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:path'],
+                         90)
+
         #print(res.to_dict())
         #for hit in res:
         #    print(hit.to_dict())
