@@ -50,13 +50,9 @@ CMETA = {
 }
 
 S3_CLIENT = boto3.client('s3')
-
 SQS_CLIENT = boto3.client('sqs')
-
 SNS_CLIENT = boto3.client('sns')
-
 DB_CLIENT = boto3.client('dynamodb')
-
 
 def parse_quicklook_key(key):
     """
@@ -334,7 +330,7 @@ def process_queue(cbers_pds_bucket,
             break
 
 
-def handler(event, context):
+def handler(event, context): # pylint: disable=unused-argument
     """Lambda entry point for actively consuming messages from queue.
     Event keys:
     """

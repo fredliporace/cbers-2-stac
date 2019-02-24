@@ -42,6 +42,7 @@
     "eo:sun_elevation": 70.3079,
     "eo:off_nadir": -0.00744884,
     "eo:epsg": 32627,
+    "eo:instrument": "MUX",
     "cbers:data_type": "L2",
     "cbers:path": 90,
     "cbers:row": 84

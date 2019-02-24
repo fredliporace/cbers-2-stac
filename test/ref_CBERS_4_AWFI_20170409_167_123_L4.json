@@ -42,6 +42,7 @@
     "eo:sun_elevation": 53.4479,
     "eo:off_nadir": -0.00828942,
     "eo:epsg": 32757,
+    "eo:instrument": "AWFI",
     "cbers:data_type": "L4",
     "cbers:path": 167,
     "cbers:row": 123

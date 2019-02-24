@@ -177,7 +177,8 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['id'] = 'CBERS_%s_%s_%s_' \
                       '%03d_%03d_L%s' % (cbers['number'],
                                          cbers['sensor'],
-                                         cbers['acquisition_day'].replace('-', ''),
+                                         cbers['acquisition_day'].\
+                                         replace('-', ''),
                                          int(cbers['path']),
                                          int(cbers['row']),
                                          cbers['processing_level'])
@@ -214,25 +215,28 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['links'] = list()
 
     # links, self
-    stac_item['links'].append(build_link('self',
-                                         build_absolute_prefix(buckets['stac'],
-                                                               cbers['sat_sensor'],
-                                                               int(cbers['path']),
-                                                               int(cbers['row'])) + \
-                                         stac_item['id'] + '.json'))
+    stac_item['links'].\
+        append(build_link('self',
+                          build_absolute_prefix(buckets['stac'],
+                                                cbers['sat_sensor'],
+                                                int(cbers['path']),
+                                                int(cbers['row'])) + \
+                          stac_item['id'] + '.json'))
 
     # links, parent
-    stac_item['links'].append(build_link('parent',
-                                         build_absolute_prefix(buckets['stac'],
-                                                               cbers['sat_sensor'],
-                                                               int(cbers['path'])) + \
-                                         'catalog.json'))
+    stac_item['links'].\
+        append(build_link('parent',
+                          build_absolute_prefix(buckets['stac'],
+                                                cbers['sat_sensor'],
+                                                int(cbers['path'])) + \
+                          'catalog.json'))
 
     # links, collection
-    stac_item['links'].append(build_link('collection',
-                                         stac_prefix + 'collections/' + cbers['mission'] + \
-                                         '_' + cbers['number'] + \
-                                         '_' + cbers['sensor'] + '_collection.json'))
+    stac_item['links'].\
+        append(build_link('collection',
+                          stac_prefix + 'collections/' + cbers['mission'] + \
+                          '_' + cbers['number'] + \
+                          '_' + cbers['sensor'] + '_collection.json'))
 
     # EO section
     stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
@@ -241,6 +245,7 @@ def build_stac_item_keys(cbers, buckets):
     assert cbers['projection_name'] == 'UTM', \
         'Unsupported projection ' + cbers['projection_name']
     stac_item['properties']['eo:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
+    stac_item['properties']['eo:sensor'] = cbers['sensor']
     # Missing fields (not available from CBERS metadata)
     # eo:cloud_cover
 
@@ -251,23 +256,29 @@ def build_stac_item_keys(cbers, buckets):
 
     # Assets
     stac_item['assets'] = OrderedDict()
-    stac_item['assets']['thumbnail'] = build_asset(meta_prefix + \
-                                                   cbers['download_url'] + '/' + \
-                                                   cbers['no_level_id'] + '.jpg',
-                                                   asset_type="image/jpeg")
+    stac_item['assets']\
+        ['thumbnail'] = build_asset(meta_prefix + \
+                                    cbers['download_url'] + \
+                                    '/' + \
+                                    cbers['no_level_id'] + \
+                                    '.jpg',
+                                    asset_type="image/jpeg")
 
-    stac_item['assets']['metadata'] = build_asset(main_prefix + \
-                                                  cbers['download_url'] + '/' + \
-                                                  cbers['meta_file'],
-                                                  asset_type="text/xml",
-                                                  title="INPE original metadata")
+    stac_item['assets']\
+        ['metadata'] = build_asset(main_prefix + \
+                                   cbers['download_url'] + \
+                                   '/' + \
+                                   cbers['meta_file'],
+                                   asset_type="text/xml",
+                                   title="INPE original metadata")
     for index, band in enumerate(cbers['bands']):
         band_id = "B" + band
         stac_item['assets'][band_id] = \
             build_asset(main_prefix + \
                         cbers['download_url'] + '/' + \
                         stac_item['id'] + '_BAND' + band + '.tif',
-                        asset_type="image/vnd.stac.geotiff; cloud-optimized=true",
+                        asset_type="image/vnd.stac.geotiff; "\
+                        "cloud-optimized=true",
                         band_index=index)
     return stac_item
 
