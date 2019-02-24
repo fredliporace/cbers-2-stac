@@ -251,7 +251,7 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 300
+      VisibilityTimeout: 1000
       RedrivePolicy:
         deadLetterTargetArn:    
             "Fn::GetAtt":       
@@ -292,7 +292,10 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 120
+      # This needs to be updated when the timeout for
+      # ConsumeInsertIntoElasticsearchQueueFunction is
+      # chaged, use 5-6 times the timeout value
+      VisibilityTimeout: 270
 
   InsertIntoElasticsearchSubscription:
     Type: 'AWS::SNS::Subscription'
@@ -475,7 +478,7 @@ Resources:
       # to reconcile from root. This may be improved if the reconcile
       # queue is populated with all children prefixes instead of a single
       # one.
-      Timeout: 295
+      Timeout: 900
       Environment:
         Variables:
           NEW_SCENES_QUEUE: !Ref NewScenesQueue
@@ -492,6 +495,8 @@ Resources:
       Policies: 
       Description: >
         Consume STAC items from queue, inserting into ES
+      # Visibity timeout for InsertIntoElasticsearchQueue needs
+      # to be updated when timeout changes, use 5-6x as guideline
       Timeout: 45
       ReservedConcurrentExecutions: 3
       Environment:
@@ -655,13 +660,13 @@ Resources:
         EBSEnabled: True
         #Iops: Integer
         # In GiB, 10 is the smallest possible for t2.small
-        VolumeSize: 10
+        VolumeSize: 20
         VolumeType: gp2        
       ElasticsearchClusterConfig:
         #DedicatedMasterCount: Integer
         #DedicatedMasterEnabled: Boolean
         #DedicatedMasterType: String
-        InstanceCount: 1
+        InstanceCount: 2
         # t2.micro only supports 2.3 and 1.5
         InstanceType: t2.small.elasticsearch
         #ZoneAwarenessEnabled: Boolean

@@ -24,15 +24,18 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
                 #print(file['Key'])
                 message = dict()
                 message['Message'] = json.dumps({'Records':[{'s3':{'object':{'key':file['Key']}}}]})
-                SQS_CLIENT.send_message(QueueUrl=queue, MessageBody=json.dumps(message))
+                SQS_CLIENT.send_message(QueueUrl=queue,
+                                        MessageBody=json.dumps(message))
         if not files['IsTruncated']:
             break
-        files = S3_CLIENT.list_objects_v2(Bucket=bucket,
-                                          Prefix=prefix,
-                                          ContinuationToken=files['NextContinuationToken'],
-                                          RequestPayer='requester')
+        files = S3_CLIENT.\
+                list_objects_v2(Bucket=bucket,
+                                Prefix=prefix,
+                                ContinuationToken=\
+                                files['NextContinuationToken'],
+                                RequestPayer='requester')
 
-def handler(event, context):
+def handler(event, context): # pylint: disable=unused-argument
     """Lambda entry point
     Event keys:
       prefix(string): Common prefix of S3 keys to be sent to queue
