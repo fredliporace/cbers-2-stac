@@ -10,7 +10,8 @@ from elasticsearch import ConflictError
 #from localstack.utils.aws import aws_stack
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
-    stac_search, parse_datetime, parse_bbox
+    stac_search, parse_datetime, parse_bbox, \
+    process_query_extension
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -223,10 +224,10 @@ class ElasticsearchTest(unittest.TestCase):
         es_client = es_connect('localhost', port=4571,
                                use_ssl=False, verify_certs=False)
         stac_items = list()
-        with open('test/CBERS_4_MUX_20170528_090_084_L2.json',
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
                   'r') as fin:
             stac_items.append(fin.read())
-        with open('test/CBERS_4_AWFI_20170409_167_123_L4.json',
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
                   'r') as fin:
             stac_items.append(fin.read())
 
@@ -240,17 +241,17 @@ class ElasticsearchTest(unittest.TestCase):
                                          id='CBERS_4_AWFI_20170409_167_123_L4'))
 
         # All items are returned for empty query
-        res = stac_search(es_client=es_client)
+        res = stac_search(es_client=es_client).execute()
         self.assertEqual(res['hits']['total'], 2)
 
         # Single item depending on date range
         res = stac_search(es_client=es_client,
-                          start_date='2017-05-28T00:00:00.000')
+                          start_date='2017-05-28T00:00:00.000').execute()
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
 
         res = stac_search(es_client=es_client,
-                          end_date='2017-04-10T00:00:00.000')
+                          end_date='2017-04-10T00:00:00.000').execute()
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0]['id'], 'CBERS_4_AWFI_20170409_167_123_L4')
 
@@ -258,14 +259,36 @@ class ElasticsearchTest(unittest.TestCase):
         res = stac_search(es_client=es_client,
                           start_date='2010-04-10T00:00:00.000',
                           end_date='2018-04-10T00:00:00.000',
-                          bbox=[[24.13, 14.34], [24.13, 14.34]])
+                          bbox=[[24.13, 14.34], [24.13, 14.34]]).execute()
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
+        #print(res[0].to_dict())
+
+        # Query extension
+        empty_query = stac_search(es_client=es_client)
+        res = process_query_extension(dsl_query=empty_query,
+                                      query_params={}).execute()
+        self.assertEqual(res['hits']['total'], 2)
+
+        query = process_query_extension(dsl_query=empty_query,
+                                        query_params={"cbers:data_type":"L2"})
+        #print(json.dumps(query.to_dict(), indent=2))
+        res = query.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+
+        query = process_query_extension(dsl_query=empty_query,
+                                        query_params={"cbers:data_type":"L4"})
+        #print(json.dumps(query.to_dict(), indent=2))
+        res = query.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L4')
 
         #print(res.to_dict())
         #for hit in res:
         #    print(hit.to_dict())
-        #self.assertFalse(True)
 
 if __name__ == '__main__':
     unittest.main()

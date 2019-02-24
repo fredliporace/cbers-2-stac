@@ -5,7 +5,7 @@ import json
 import boto3
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
-from elasticsearch_dsl import Search
+from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
 SQS_CLIENT = boto3.client('sqs')
@@ -258,6 +258,8 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     :param end_date str: ditto, same format as above
     :param bbox list: bounding box envelope, GeoJSON style
                       [[-180.0, -90.0], [180.0, 90.0]]
+    :rtype: es.Search
+    :return: built query
     """
 
     # @todo include support for third coordinate in bbox
@@ -305,8 +307,34 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
                              geometry={"shape": {"type": "envelope",
                                                  "coordinates" : bbox},
                                        "relation": "intersects"})
+
+    #query = query.query(Q("multi_match",
+    #                      query="aa",
+    #                      fields=['properties.provider']))
+    #query = query.query(Q("match",
+    #                      properties__datetime="2017-05-28T09:01:17Z"))
+    #query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
+
     #print(json.dumps(query.to_dict(), indent=2))
-    return query.execute()
+    return query
+
+def process_query_extension(dsl_query, query_params: dict):
+    """
+    Extends received query to include query extension parameters
+
+    :param dsl_query: ES DSL object
+    :param query_params dict: Query parameters, as defined in STAC
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    for key in query_params:
+        assert isinstance(query_params[key], str), \
+            "Supports only eq operator as string"
+        dsl_query = dsl_query.query(Q("match",
+                                      **{"properties."+key:query_params[key]}))
+
+    return dsl_query
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
     """
@@ -393,14 +421,19 @@ def stac_search_endpoint_handler(event,
         document = json.loads(event['body'])
         document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
                             [document['bbox'][2], document['bbox'][3]]]
+        print(document)
 
     start, end = None, None
     if document.get('time'):
         start, end = parse_datetime(document['time'])
 
-    res = stac_search(es_client=es_client,
-                      start_date=start, end_date=end,
-                      bbox=document['bbox'])
+    query = stac_search(es_client=es_client,
+                        start_date=start, end_date=end,
+                        bbox=document['bbox'])
+    if document.get('query'):
+        query = process_query_extension(dsl_query=query,
+                                        query_params=document['query'])
+    res = query.execute()
     results = dict()
     results["type"] = "FeatureCollection"
     results["features"] = list()
