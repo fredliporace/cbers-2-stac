@@ -244,7 +244,8 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])
     assert cbers['projection_name'] == 'UTM', \
         'Unsupported projection ' + cbers['projection_name']
-    stac_item['properties']['eo:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
+    stac_item['properties']\
+        ['eo:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
     stac_item['properties']['eo:instrument'] = cbers['sensor']
     # Missing fields (not available from CBERS metadata)
     # eo:cloud_cover
