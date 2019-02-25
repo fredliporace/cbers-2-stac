@@ -420,7 +420,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Policies: 
       Description: Generate levels into output table from input table
-      Timeout: 300
+      Timeout: 900
       Environment:
         Variables:
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
@@ -498,7 +498,7 @@ Resources:
       # Visibity timeout for InsertIntoElasticsearchQueue needs
       # to be updated when timeout changes, use 5-6x as guideline
       Timeout: 45
-      ReservedConcurrentExecutions: 3
+      ReservedConcurrentExecutions: 1
       Environment:
         Variables:
           ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
@@ -660,15 +660,18 @@ Resources:
         EBSEnabled: True
         #Iops: Integer
         # In GiB, 10 is the smallest possible for t2.small
-        VolumeSize: 20
+        # medium instance value must be between 10 and 35
+        # https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html
+        VolumeSize: 100
         VolumeType: gp2        
       ElasticsearchClusterConfig:
         #DedicatedMasterCount: Integer
         #DedicatedMasterEnabled: Boolean
         #DedicatedMasterType: String
-        InstanceCount: 2
+        InstanceCount: 1
         # t2.micro only supports 2.3 and 1.5
-        InstanceType: t2.small.elasticsearch
+        #InstanceType: t2.small.elasticsearch
+        InstanceType: m3.medium.elasticsearch
         #ZoneAwarenessEnabled: Boolean
       ElasticsearchVersion: 6.2
       #EncryptionAtRestOptions: 

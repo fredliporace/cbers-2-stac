@@ -24,7 +24,8 @@ class GenerateCatalogLevelsToBeUpdated():
     Items are removed input table after being processed.
     """
 
-    def __init__(self, input_table, output_table, queue, limit=1000):
+    def __init__(self, input_table, output_table, queue, limit=1000,
+                 iterations=100):
         """
         Ctor.
         input_table(string): DynamoDB table with STAC items
@@ -37,6 +38,7 @@ class GenerateCatalogLevelsToBeUpdated():
         self._output_table = output_table
         self._queue = queue
         self._limit = limit
+        self._iterations = iterations
 
     @property
     def items(self):
@@ -71,12 +73,15 @@ class GenerateCatalogLevelsToBeUpdated():
             TableName=self._input_table,
             Limit=self._limit)
         self.__parse_items(response['Items'])
-        while 'LastEvaluatedKey' in response:
+        iterations = 1
+        while 'LastEvaluatedKey' in response and \
+              iterations <= self._iterations:
             response = DB_CLIENT.scan(
                 TableName=self._input_table,
                 Limit=self._limit,
                 ExclusiveStartKey=response['LastEvaluatedKey'])
             self.__parse_items(response['Items'])
+            iterations += 1
         #print(self._levels_to_be_updated)
         #print(self._items)
         # Update catalog level table and send prefix to catalog update queue
@@ -106,5 +111,6 @@ def handler(event, context):
     gcl = GenerateCatalogLevelsToBeUpdated(input_table=os.environ['CATALOG_UPDATE_TABLE'],
                                            output_table=\
                                            os.environ.get('CATALOG_LEVELS_UPDATE_TABLE'),
-                                           queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'])
+                                           queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'],
+                                           iterations=4)
     gcl.process()

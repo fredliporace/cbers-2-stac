@@ -140,7 +140,7 @@ def parse_bbox(bbox: str):
 
 def es_connect(endpoint: str, port: int,
                use_ssl: bool = True, verify_certs: bool = True,
-               http_auth=None, timeout: int = 30):
+               http_auth=None, timeout: int = 60):
     """
     Connects to ES endpoint, returns Elasticsarch
     low level client.
