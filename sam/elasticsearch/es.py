@@ -9,6 +9,7 @@ from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
 SQS_CLIENT = boto3.client('sqs')
+ES_CLIENT = None
 
 def sqs_messages(queue: str):
     """
@@ -178,11 +179,21 @@ def create_stac_index(es_client, timeout: int = 30):
                     "type": "geo_shape",
                     "tree": "quadtree",
                     "precision": "100m"
-                }
+                },
+                "assets": {
+                	"enabled": false
+                },
+                "bbox": {
+                	"enabled": false
+                },
+                "links": {
+        		    "enabled": false
+          		}
             }
         }
     }
-}'''
+}
+'''
     es_client.indices.create(index='stac', body=mapping,
                              request_timeout=timeout)
 
@@ -366,18 +377,21 @@ def create_documents_handler(event,
     Include document in index
     """
 
-    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                               aws_region=os.environ['AWS_REGION'],
-                               aws_service='es')
-    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                           port=int(os.environ['ES_PORT']),
-                           http_auth=auth)
+    global ES_CLIENT # pylint: disable=global-statement
+    if not ES_CLIENT:
+        print("Creating ES connection")
+        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                                   aws_region=os.environ['AWS_REGION'],
+                                   aws_service='es')
+        ES_CLIENT = es_connect(endpoint=os.environ['ES_ENDPOINT'],
+                               port=int(os.environ['ES_PORT']),
+                               http_auth=auth)
     if 'queue' in event:
         # Read STAC items from queue
         #process_insert_queue(es_client=es_client,
         #                     queue=event['queue'],
         #                     delete_messages=False)
-        bulk_process_insert_queue(es_client=es_client,
+        bulk_process_insert_queue(es_client=ES_CLIENT,
                                   queue=event['queue'],
                                   delete_messages=True,
                                   batch_size=10)
@@ -387,7 +401,7 @@ def create_documents_handler(event,
         for record in event['Records']:
             #print(json.dumps(record, indent=2))
             stac_items.append(json.loads(record['body'])['Message'])
-        bulk_create_document_in_index(es_client=es_client,
+        bulk_create_document_in_index(es_client=ES_CLIENT,
                                       stac_items=stac_items,
                                       update_if_exists=True)
 
