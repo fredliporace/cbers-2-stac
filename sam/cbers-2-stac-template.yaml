@@ -178,13 +178,13 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 60
+      VisibilityTimeout: 385
       RedrivePolicy:
         deadLetterTargetArn:    
             "Fn::GetAtt":
               - ProcessNewSceneQueueFunctionDLQ
               - Arn                     
-        maxReceiveCount: 1
+        maxReceiveCount: 3
 
   # This queue is subscribed to topics from all quicklooks,
   # PAN5 and PAN10 are ignored for now
@@ -195,12 +195,12 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook'
 
-  #NewAWFISceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
+  NewAWFISceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
 
   #NewPAN10SceneSubscription:
   #  Type: 'AWS::SNS::Subscription'
@@ -257,14 +257,14 @@ Resources:
             "Fn::GetAtt":       
               - ConsumeReconcileQueueFunctionDLQ
               - Arn                     
-        maxReceiveCount: 1
+        maxReceiveCount: 3
 
   ReconcileQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      # @todo try to increase batch size depending on measured
-      # lambda execution time
-      BatchSize: 10
+      # Limit to 5 directories for each lambda execution, listing
+      # searching for .jpg may take a long time
+      BatchSize: 5
       EventSourceArn: !GetAtt [ReconcileQueue, Arn]
       FunctionName: !Ref ConsumeReconcileQueueFunction
       Enabled: True
@@ -479,6 +479,9 @@ Resources:
       # queue is populated with all children prefixes instead of a single
       # one.
       Timeout: 900
+      # Limit the number of instances simultaneously
+      # accessing S3 for listing
+      # ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           NEW_SCENES_QUEUE: !Ref NewScenesQueue
