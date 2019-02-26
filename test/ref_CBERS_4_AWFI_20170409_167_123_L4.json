@@ -54,7 +54,7 @@
     },
     {
       "rel": "parent",
-      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/167/catalog.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/167/123/catalog.json"
     },
     {
       "rel": "collection",

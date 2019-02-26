@@ -1,0 +1,62 @@
+{
+  "stac_version": "0.6.0",
+  "id": "CBERS4/PAN10M",
+  "title": "CBERS 4 PAN10M Imagery",
+  "description": "CBERS 4 PAN10M Imagery",
+  "license": "CC-BY-SA-3.0",
+  "providers": [
+    {
+      "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+      "roles": ["producer"],
+      "url": "http://www.cbers.inpe.br"
+    },
+    {
+      "name": "AMS Kepler",
+      "roles": ["processor"],
+      "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
+      "url": "https://github.com/fredliporace/cbers-on-aws"
+    },
+    {
+      "name": "Amazon Web Services",
+      "roles": ["host"],
+      "url": "https://registry.opendata.aws/cbers/"
+    }
+  ],
+  "extent": {
+    "spatial": [
+      -180.0,
+      -83.0,
+      180.0,
+      83.0
+    ],
+    "temporal": [
+      "2014-12-08T00:00:00Z",
+      null
+    ]
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://s3.amazonaws.com/cbers-stac-0-6/collections/CBERS_4_PAN10M_collection.json"
+    }
+  ],
+  "properties": {
+    "eo:gsd": 10.0,
+    "eo:platform": "CBERS-4",
+    "eo:instrument": "PAN10M",
+    "eo:bands": [
+      {
+        "name": "B2",
+        "common_name": "green"
+      },
+      {
+        "name": "B3",
+        "common_name": "red"
+      },
+      {
+        "name": "B4",
+        "common_name": "nir"
+      }      
+    ]
+  }
+}

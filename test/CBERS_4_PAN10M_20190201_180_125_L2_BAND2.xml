@@ -1,0 +1,634 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<prdf xmlns="http://www.gisplan.com.br/xmlsat" generator="G2T" generatorVersion="6.7.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gisplan.com.br/xmlsat /sge/install/x86_64/etc/../etc/schemas/prdf.xsd">
+
+  <satellite>
+    <name>CBERS</name>
+    <number>4</number>
+    <instrument channel="1">PAN10M</instrument>
+  </satellite>
+
+  <software>G2T</software>
+
+  <version>6.7.1</version>
+
+  <revolutionNumber>0</revolutionNumber>
+
+  <mirrorAngle>17163</mirrorAngle>
+
+  <imageMode>VIEW</imageMode>
+
+  <availableBands>
+    <band gain="5">2</band>
+    <band gain="5">3</band>
+    <band gain="4">4</band>
+  </availableBands>
+
+  <orientationAngle>
+    <degree>8</degree>
+    <minute>30</minute>
+    <second>15</second>
+    <millisecond>645</millisecond>
+  </orientationAngle>
+
+  <sunIncidenceAngle>
+    <degree>35</degree>
+    <minute>25</minute>
+    <second>33</second>
+    <millisecond>650</millisecond>
+  </sunIncidenceAngle>
+
+  <viewing>
+    <begin>2019-02-01T14:36:29.434</begin>
+    <center>2019-02-01T14:36:38.421</center>
+    <end>2019-02-01T14:36:47.409</end>
+  </viewing>
+
+  <reception>
+    <begin>2019-02-01T14:36:29.442</begin>
+    <center>2019-02-01T14:36:38.429</center>
+    <end>2019-02-01T14:36:47.417</end>
+  </reception>
+
+  <image>
+    <receivingStation>CBA</receivingStation>
+    <processingStation>"Cachoeira Paulista"</processingStation>
+    <processingTime>2019-02-01T17:12:09.261859</processingTime>
+    <level>2</level>
+    <columns>8471</columns>
+    <lines>12715</lines>
+    <verticalPixelSize>10.000000</verticalPixelSize>
+    <horizontalPixelSize>10.000000</horizontalPixelSize>
+    <orbitDirection>Descending</orbitDirection>
+    <timeStamp>
+      <begin>2019-02-01T14:36:29.446670</begin>
+      <center>2019-02-01T14:36:38.420775</center>
+      <end>2019-02-01T14:36:47.397045</end>
+    </timeStamp>
+    <path>180</path>
+    <row>125</row>
+    <shiftFromNominal>0</shiftFromNominal>
+    <shiftFromNominalInSeconds>0</shiftFromNominalInSeconds>
+    <shiftFromNominalInPercent>0</shiftFromNominalInPercent>
+    <sunPosition>
+      <elevation>57.0749</elevation>
+      <sunAzimuth>87.5261</sunAzimuth>
+    </sunPosition>
+    <offNadirAngle>17163</offNadirAngle>
+    <subSatellitePath>180</subSatellitePath>
+    <boresightMatrix>
+      <value col="0" row="0">0.999984</value>
+      <value col="1" row="0">-0.001400</value>
+      <value col="2" row="0">0.005527</value>
+      <value col="0" row="1">0.001362</value>
+      <value col="1" row="1">0.999976</value>
+      <value col="2" row="1">0.006812</value>
+      <value col="0" row="2">-0.005536</value>
+      <value col="1" row="2">-0.006804</value>
+      <value col="2" row="2">0.999962</value>
+    </boresightMatrix>
+    <ephemerisMode>AUTO</ephemerisMode>
+    <boundingBox>
+      <UL>
+        <line>8.000000</line>
+        <column>0.000000</column>
+        <latitude>-21.735336</latitude>
+        <longitude>-71.580613</longitude>
+        <northing>7594240</northing>
+        <easting>233070</easting>
+      </UL>
+      <UR>
+        <line>8.000000</line>
+        <column>6026.000000</column>
+        <latitude>-21.746077</latitude>
+        <longitude>-70.762020</longitude>
+        <northing>7594240</northing>
+        <easting>317780</easting>
+      </UR>
+      <LR>
+        <line>12008.000000</line>
+        <column>6026.000000</column>
+        <latitude>-22.894227</latitude>
+        <longitude>-70.776497</longitude>
+        <northing>7467090</northing>
+        <easting>317780</easting>
+      </LR>
+      <LL>
+        <line>12008.000000</line>
+        <column>0.000000</column>
+        <latitude>-22.882858</latitude>
+        <longitude>-71.601800</longitude>
+        <northing>7467090</northing>
+        <easting>233070</easting>
+      </LL>
+      <CT>
+        <line>6008.000000</line>
+        <column>3013.000000</column>
+        <latitude>-22.315166</latitude>
+        <longitude>-71.180151</longitude>
+        <northing>7530665</northing>
+        <easting>275425</easting>
+      </CT>
+    </boundingBox>
+    <imageData>
+      <UL>
+        <line>8.000000</line>
+        <column>0.000000</column>
+        <latitude>-21.739123</latitude>
+        <longitude>-71.337745</longitude>
+        <northing>7594220</northing>
+        <easting>258208</easting>
+      </UL>
+      <UR>
+        <line>8.000000</line>
+        <column>6026.000000</column>
+        <latitude>-21.826063</latitude>
+        <longitude>-70.763197</longitude>
+        <northing>7585382</northing>
+        <easting>317759</easting>
+      </UR>
+      <LR>
+        <line>12008.000000</line>
+        <column>6026.000000</column>
+        <latitude>-22.891288</latitude>
+        <longitude>-71.021141</longitude>
+        <northing>7467092</northing>
+        <easting>292675</easting>
+      </LR>
+      <LL>
+        <line>12008.000000</line>
+        <column>0.000000</column>
+        <latitude>-22.803609</latitude>
+        <longitude>-71.600225</longitude>
+        <northing>7475872</northing>
+        <easting>233077</easting>
+      </LL>
+      <CT>
+        <line>6008.000000</line>
+        <column>3013.000000</column>
+        <latitude>-22.271366</latitude>
+        <longitude>-71.050471</longitude>
+        <northing>7535703</northing>
+        <easting>288721</easting>
+      </CT>
+    </imageData>
+    <attitudes>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:27</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:28</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:29</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:30</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:31</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:32</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:33</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:34</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:35</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:36</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:37</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:38</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:39</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:40</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:41</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:42</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:43</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:44</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:45</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:46</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:47</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:48</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:49</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2019-02-01T14:36:50</time>
+        <roll>-0.0073997</roll>
+        <pitch>-0.0303739</pitch>
+        <yaw>-0.0281983</yaw>
+        <deltaRoll>-5.96505e-06</deltaRoll>
+        <deltaPitch>-2.06307e-05</deltaPitch>
+        <deltaYaw>-1.51216e-05</deltaYaw>
+      </attitude>
+    </attitudes>
+    <ephemerides>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:27</time>
+        <x>2196468.596263</x>
+        <y>-6279827.498600</y>
+        <z>-2639259.460042</z>
+        <vx>-2457.998621</vx>
+        <vy>2013.071186</vy>
+        <vz>-6852.221951</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:28</time>
+        <x>2194009.533930</x>
+        <y>-6277810.815192</y>
+        <z>-2646110.213566</z>
+        <vx>-2460.083490</vx>
+        <vy>2020.228838</vy>
+        <vz>-6849.339778</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:29</time>
+        <x>2191548.520629</x>
+        <y>-6275786.942024</y>
+        <z>-2652958.209742</z>
+        <vx>-2462.161849</vx>
+        <vy>2027.382986</vy>
+        <vz>-6846.453730</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:30</time>
+        <x>2189085.381924</x>
+        <y>-6273755.935845</y>
+        <z>-2659803.245509</z>
+        <vx>-2464.235717</vx>
+        <vy>2034.531210</vy>
+        <vz>-6843.558703</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:31</time>
+        <x>2186620.120397</x>
+        <y>-6271717.803888</y>
+        <z>-2666645.320412</z>
+        <vx>-2466.305635</vx>
+        <vy>2041.675631</vy>
+        <vz>-6840.654674</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:32</time>
+        <x>2184152.768225</x>
+        <y>-6269672.544813</y>
+        <z>-2673484.468236</z>
+        <vx>-2468.371934</vx>
+        <vy>2048.819218</vy>
+        <vz>-6837.742468</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:33</time>
+        <x>2181683.333788</x>
+        <y>-6267620.164173</y>
+        <z>-2680320.695231</z>
+        <vx>-2470.435112</vx>
+        <vy>2055.964256</vy>
+        <vz>-6834.822228</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:34</time>
+        <x>2179211.821698</x>
+        <y>-6265560.673275</y>
+        <z>-2687154.009425</z>
+        <vx>-2472.495970</vx>
+        <vy>2063.114108</vy>
+        <vz>-6831.894033</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:35</time>
+        <x>2176738.301905</x>
+        <y>-6263493.985178</y>
+        <z>-2693984.394345</z>
+        <vx>-2474.550462</vx>
+        <vy>2070.255399</vy>
+        <vz>-6828.958922</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:36</time>
+        <x>2174262.774886</x>
+        <y>-6261420.113843</y>
+        <z>-2700811.845510</z>
+        <vx>-2476.598898</vx>
+        <vy>2077.388252</vy>
+        <vz>-6826.017183</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:37</time>
+        <x>2171785.181105</x>
+        <y>-6259339.175989</y>
+        <z>-2707636.363331</z>
+        <vx>-2478.644694</vx>
+        <vy>2084.524455</vy>
+        <vz>-6823.068778</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:38</time>
+        <x>2169305.529882</x>
+        <y>-6257251.152972</y>
+        <z>-2714457.947807</z>
+        <vx>-2480.688379</vx>
+        <vy>2091.662145</vy>
+        <vz>-6820.113705</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:39</time>
+        <x>2166823.839584</x>
+        <y>-6255156.008061</y>
+        <z>-2721276.598937</z>
+        <vx>-2482.730111</vx>
+        <vy>2098.797649</vy>
+        <vz>-6817.151967</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:40</time>
+        <x>2164340.123212</x>
+        <y>-6253053.722740</y>
+        <z>-2728092.320663</z>
+        <vx>-2484.770733</vx>
+        <vy>2105.928737</vy>
+        <vz>-6814.183751</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:41</time>
+        <x>2161854.343640</x>
+        <y>-6250944.237947</y>
+        <z>-2734905.056634</z>
+        <vx>-2486.805445</vx>
+        <vy>2113.056019</vy>
+        <vz>-6811.205866</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:42</time>
+        <x>2159366.504606</x>
+        <y>-6248827.566788</y>
+        <z>-2741714.785938</z>
+        <vx>-2488.833833</vx>
+        <vy>2120.180221</vy>
+        <vz>-6808.218379</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:43</time>
+        <x>2156876.654622</x>
+        <y>-6246703.833784</y>
+        <z>-2748521.481169</z>
+        <vx>-2490.859533</vx>
+        <vy>2127.302111</vy>
+        <vz>-6805.226166</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:44</time>
+        <x>2154384.794043</x>
+        <y>-6244573.018306</y>
+        <z>-2755325.156033</z>
+        <vx>-2492.882386</vx>
+        <vy>2134.422403</vy>
+        <vz>-6802.228005</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:45</time>
+        <x>2151890.915008</x>
+        <y>-6242435.074501</y>
+        <z>-2762125.832003</z>
+        <vx>-2494.901594</vx>
+        <vy>2141.541810</vy>
+        <vz>-6799.221615</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:46</time>
+        <x>2149395.016266</x>
+        <y>-6240289.976803</y>
+        <z>-2768923.524305</z>
+        <vx>-2496.916870</vx>
+        <vy>2148.661045</vy>
+        <vz>-6796.205568</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:47</time>
+        <x>2146897.095142</x>
+        <y>-6238137.690161</y>
+        <z>-2775718.255747</z>
+        <vx>-2498.927846</vx>
+        <vy>2155.781340</vy>
+        <vz>-6793.177815</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:48</time>
+        <x>2144397.169587</x>
+        <y>-6235978.320047</y>
+        <z>-2782509.937748</z>
+        <vx>-2500.935482</vx>
+        <vy>2162.895561</vy>
+        <vz>-6790.145634</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:49</time>
+        <x>2141895.244668</x>
+        <y>-6233811.876454</y>
+        <z>-2789298.555158</z>
+        <vx>-2502.939565</vx>
+        <vy>2170.004115</vy>
+        <vz>-6787.109597</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2019-02-01T14:36:50</time>
+        <x>2139391.320405</x>
+        <y>-6231638.339143</y>
+        <z>-2796084.157049</z>
+        <vx>-2504.937666</vx>
+        <vy>2177.115325</vy>
+        <vz>-6784.066200</vz>
+      </ephemeris>
+    </ephemerides>
+    <interpolation>BC</interpolation>
+    <datumName>WGS84</datumName>
+    <semiMajorAxis>6378137.000000</semiMajorAxis>
+    <flattening>0.003353</flattening>
+    <xShiftToWGS84>0.000000</xShiftToWGS84>
+    <yShiftToWGS84>0.000000</yShiftToWGS84>
+    <zShiftToWGS84>0.000000</zShiftToWGS84>
+    <projectionName>UTM</projectionName>
+    <originLongitude>-69</originLongitude>
+    <originLatitude>0</originLatitude>
+    <scaleFactor>0.999600</scaleFactor>
+    <falseEasting>500000.000000</falseEasting>
+    <falseNorthing>10000000.000000</falseNorthing>
+    <loadedCalibration>/sge/install/x86_64/etc/../var/technical_database/CBERS-4/PAN10M/20141201000000000.cal</loadedCalibration>
+    <loadedCpf>/sge/install/x86_64/etc/../var/technical_database/CBERS-4/PAN10M/20190116120800000.cpf</loadedCpf>
+    <band2>/sge/TIFF/CBERS4/2019_02/CBERS_4_PAN10M_DRD_2019_02_01.14_28_30_CB11/180_125_0/2_BC_UTM_WGS84/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.tif</band2>
+    <integrationTime>
+      <band name="2">1496</band>
+      <band name="3">1496</band>
+      <band name="4">1496</band>
+    </integrationTime>
+    <timeCodeSource>ON_BOARD_TIME</timeCodeSource>
+  </image>
+
+</prdf>

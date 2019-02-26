@@ -228,7 +228,8 @@ def build_stac_item_keys(cbers, buckets):
         append(build_link('parent',
                           build_absolute_prefix(buckets['stac'],
                                                 cbers['sat_sensor'],
-                                                int(cbers['path'])) + \
+                                                int(cbers['path']),
+                                                int(cbers['row'])) + \
                           'catalog.json'))
 
     # links, collection
