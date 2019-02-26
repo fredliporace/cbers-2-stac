@@ -187,7 +187,6 @@ Resources:
         maxReceiveCount: 3
 
   # This queue is subscribed to topics from all quicklooks,
-  # PAN5 and PAN10 are ignored for now
   NewMUXSceneSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -202,19 +201,19 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
 
-  #NewPAN10SceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
+  NewPAN10SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
 
-  #NewPAN5SceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
+  NewPAN5SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'

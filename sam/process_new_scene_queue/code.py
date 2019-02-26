@@ -107,8 +107,10 @@ def get_s3_keys(quicklook_key):
     stac_key = "%s/%s/%s/%s/%s.json" % (qdict['satellite'], qdict['camera'],
                                         qdict['path'], qdict['row'],
                                         qdict['scene_id'])
-    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (qdict['satellite'], qdict['camera'],
-                                                          qdict['path'], qdict['row'],
+    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (qdict['satellite'],
+                                                          qdict['camera'],
+                                                          qdict['path'],
+                                                          qdict['row'],
                                                           qdict['scene_id'],
                                                           qdict['scene_id'],
                                                           CMETA[qdict['camera']]['meta_band'])
@@ -195,9 +197,11 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
 
     print(msg['key'])
     metadata_keys = get_s3_keys(msg['key'])
-    # Currently only MUX and AWFI
-    if metadata_keys['quicklook_keys']['camera'] not in ('MUX', 'AWFI'):
-        return
+
+    assert metadata_keys['quicklook_keys']\
+        ['camera'] in ('MUX', 'AWFI', 'PAN10M', 'PAN5M'), \
+        "Unrecognized key: " + metadata_keys['quicklook_keys']['camera']
+
     local_inpe_metadata = '/tmp/' + \
         metadata_keys['inpe_metadata'].split('/')[-1]
     local_stac_item = '/tmp/' + \
