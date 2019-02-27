@@ -670,10 +670,19 @@ Resources:
         #DedicatedMasterCount: Integer
         #DedicatedMasterEnabled: Boolean
         #DedicatedMasterType: String
-        InstanceCount: 1
+        InstanceCount: 2
         # t2.micro only supports 2.3 and 1.5
-        #InstanceType: t2.small.elasticsearch
+        # t2.small volume size must be between 10 and 35
+        # InstanceType: t2.small.elasticsearch
         InstanceType: m3.medium.elasticsearch
+        # c4.xlarge, 1 node, 2 bulk instances, 10 messages per bulk
+        #  index rate: 250
+        #  lambda execution time: 4s
+        #InstanceType: c4.xlarge.elasticsearch
+        # m4.large, 2 nodes, ?? bulk instances, 10 messages per bulk
+        #  index rate: started 250, then 60
+        #  lambda execution time: started 1s, then 10-20s
+        #InstanceType: m4.large.elasticsearch
         #ZoneAwarenessEnabled: Boolean
       ElasticsearchVersion: 6.2
       #EncryptionAtRestOptions: 
