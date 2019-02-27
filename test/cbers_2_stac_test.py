@@ -75,6 +75,12 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['origin_longitude'], '-93')
         self.assertEqual(meta['origin_latitude'], '0')
 
+        # PAN10, no gain attribute for each band
+        meta = get_keys_from_cbers('test/CBERS_4_PAN10M_NOGAIN.xml')
+        self.assertEqual(meta['sensor'], 'PAN10M')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4')
+        self.assertEqual(meta['projection_name'], 'UTM')
 
     def test_build_awfi_stac_item_keys(self):
         """test_awfi_build_stac_item_keys"""
@@ -380,6 +386,21 @@ class CERS2StacTest(unittest.TestCase):
                                                       'test/ref_CBERS')
         convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_PAN5M_'\
                              '20161009_219_050_L2_BAND1.xml',
+                             stac_metadata_filename=output_filename,
+                             buckets=buckets)
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema,
+                                      resolver=resolver),
+                             None)
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
+
+        # PAN10M, no gain
+        output_filename = 'test/CBERS_4_PAN10M_NOGAIN.json'
+        ref_output_filename = output_filename.replace('test/CBERS',
+                                                      'test/ref_CBERS')
+        convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_PAN10M_'
+                             'NOGAIN.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
         with open(output_filename) as fp_in:

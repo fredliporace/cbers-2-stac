@@ -55,31 +55,49 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['path'] = image.find('x:path', nsp).text
     metadata['row'] = image.find('x:row', nsp).text
     metadata['processing_level'] = image.find('x:level', nsp).text
-    metadata['vertical_pixel_size'] = image.find('x:verticalPixelSize', nsp).text
-    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize', nsp).text
+    metadata['vertical_pixel_size'] = image.find('x:verticalPixelSize',
+                                                 nsp).text
+    metadata['horizontal_pixel_size'] = image.find('x:horizontalPixelSize',
+                                                   nsp).text
     metadata['projection_name'] = image.find('x:projectionName', nsp).text
     metadata['origin_latitude'] = image.find('x:originLatitude', nsp).text
     metadata['origin_longitude'] = image.find('x:originLongitude', nsp).text
 
     imagedata = image.find('x:imageData', nsp)
-    metadata['ul_lat'] = imagedata.find('x:UL', nsp).find('x:latitude', nsp).text
-    metadata['ul_lon'] = imagedata.find('x:UL', nsp).find('x:longitude', nsp).text
-    metadata['ur_lat'] = imagedata.find('x:UR', nsp).find('x:latitude', nsp).text
-    metadata['ur_lon'] = imagedata.find('x:UR', nsp).find('x:longitude', nsp).text
-    metadata['lr_lat'] = imagedata.find('x:LR', nsp).find('x:latitude', nsp).text
-    metadata['lr_lon'] = imagedata.find('x:LR', nsp).find('x:longitude', nsp).text
-    metadata['ll_lat'] = imagedata.find('x:LL', nsp).find('x:latitude', nsp).text
-    metadata['ll_lon'] = imagedata.find('x:LL', nsp).find('x:longitude', nsp).text
+    metadata['ul_lat'] = imagedata.find('x:UL',
+                                        nsp).find('x:latitude', nsp).text
+    metadata['ul_lon'] = imagedata.find('x:UL',
+                                        nsp).find('x:longitude', nsp).text
+    metadata['ur_lat'] = imagedata.find('x:UR',
+                                        nsp).find('x:latitude', nsp).text
+    metadata['ur_lon'] = imagedata.find('x:UR',
+                                        nsp).find('x:longitude', nsp).text
+    metadata['lr_lat'] = imagedata.find('x:LR',
+                                        nsp).find('x:latitude', nsp).text
+    metadata['lr_lon'] = imagedata.find('x:LR',
+                                        nsp).find('x:longitude', nsp).text
+    metadata['ll_lat'] = imagedata.find('x:LL',
+                                        nsp).find('x:latitude', nsp).text
+    metadata['ll_lon'] = imagedata.find('x:LL',
+                                        nsp).find('x:longitude', nsp).text
 
     boundingbox = image.find('x:boundingBox', nsp)
-    metadata['bb_ul_lat'] = boundingbox.find('x:UL', nsp).find('x:latitude', nsp).text
-    metadata['bb_ul_lon'] = boundingbox.find('x:UL', nsp).find('x:longitude', nsp).text
-    metadata['bb_ur_lat'] = boundingbox.find('x:UR', nsp).find('x:latitude', nsp).text
-    metadata['bb_ur_lon'] = boundingbox.find('x:UR', nsp).find('x:longitude', nsp).text
-    metadata['bb_lr_lat'] = boundingbox.find('x:LR', nsp).find('x:latitude', nsp).text
-    metadata['bb_lr_lon'] = boundingbox.find('x:LR', nsp).find('x:longitude', nsp).text
-    metadata['bb_ll_lat'] = boundingbox.find('x:LL', nsp).find('x:latitude', nsp).text
-    metadata['bb_ll_lon'] = boundingbox.find('x:LL', nsp).find('x:longitude', nsp).text
+    metadata['bb_ul_lat'] = boundingbox.find('x:UL',
+                                             nsp).find('x:latitude', nsp).text
+    metadata['bb_ul_lon'] = boundingbox.find('x:UL',
+                                             nsp).find('x:longitude', nsp).text
+    metadata['bb_ur_lat'] = boundingbox.find('x:UR',
+                                             nsp).find('x:latitude', nsp).text
+    metadata['bb_ur_lon'] = boundingbox.find('x:UR',
+                                             nsp).find('x:longitude', nsp).text
+    metadata['bb_lr_lat'] = boundingbox.find('x:LR',
+                                             nsp).find('x:latitude', nsp).text
+    metadata['bb_lr_lon'] = boundingbox.find('x:LR',
+                                             nsp).find('x:longitude', nsp).text
+    metadata['bb_ll_lat'] = boundingbox.find('x:LL',
+                                             nsp).find('x:latitude', nsp).text
+    metadata['bb_ll_lon'] = boundingbox.find('x:LL',
+                                             nsp).find('x:longitude', nsp).text
 
     sun_position = image.find('x:sunPosition', nsp)
     metadata['sun_elevation'] = sun_position.find('x:elevation', nsp).text
@@ -97,11 +115,12 @@ def get_keys_from_cbers(cbers_metadata):
     for band in available_bands.findall('x:band', nsp):
         metadata['bands'].append(band.text)
         key = 'band_%s_gain' % (band.text)
-        metadata[key] = band.attrib['gain']
+        metadata[key] = band.attrib.get('gain')
 
     # viewing node information
     viewing = root.find('x:viewing', nsp)
-    metadata['acquisition_date'] = viewing.find('x:center', nsp).text.replace('T', ' ')
+    metadata['acquisition_date'] = viewing.find('x:center',
+                                                nsp).text.replace('T', ' ')
     metadata['acquisition_day'] = metadata['acquisition_date'].split(' ')[0]
 
     # derived fields
@@ -113,13 +132,17 @@ def get_keys_from_cbers(cbers_metadata):
                                              int(metadata['row']))
 
     # example: CBERS4/MUX/071/092/CBERS_4_MUX_20171105_071_092_L2
-    metadata['download_url'] = 'CBERS%s/%s/%03d/%03d/%s' % (metadata['number'],
-                                                            metadata['sensor'],
-                                                            int(metadata['path']),
-                                                            int(metadata['row']),
-                                                            re.sub(r'_BAND\d+.xml', '',
-                                                                   os.path.
-                                                                   basename(cbers_metadata)))
+    metadata['download_url'] = 'CBERS%s/'\
+                               '%s/'\
+                               '%03d/%03d/'\
+                               '%s' % (metadata['number'],
+                                       metadata['sensor'],
+                                       int(metadata['path']),
+                                       int(metadata['row']),
+                                       re.sub(r'_BAND\d+.xml',
+                                              '',
+                                              os.path.
+                                              basename(cbers_metadata)))
     metadata['sat_sensor'] = 'CBERS%s/%s' % (metadata['number'],
                                              metadata['sensor'])
     metadata['meta_file'] = os.path.basename(cbers_metadata)
