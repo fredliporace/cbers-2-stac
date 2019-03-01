@@ -9,6 +9,7 @@ from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
 SQS_CLIENT = boto3.client('sqs')
+S3 = boto3.resource('s3')
 ES_CLIENT = None
 
 def sqs_messages(queue: str):
@@ -33,6 +34,42 @@ def sqs_messages(queue: str):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
+def stac_item_from_s3_key(bucket: str, key: str):
+    """
+    Return a stac item from a s3 key
+
+    :param key str: s3 key
+    :param bucket str: bucket name
+    :rtype: dict
+    :return: stac item
+    """
+
+    obj = S3.Object(bucket, key)
+    return json.loads(obj.get()['Body'].read().decode('utf-8'))
+
+def strip_stac_item(item: dict):
+    """
+    Strips a stac item, removing not stored fields
+
+    :param item dict: input stac item
+    :rtype: dict
+    :return: stripped stac item
+    """
+
+    strip = item
+    strip.pop('bbox')
+    s3_key = None
+    for link in item['links']:
+        if link['rel'] == 'self':
+            s3_key = link['href']
+    assert s3_key is not None, "Can't find self key"
+    strip.pop('links')
+    strip.pop('assets')
+
+    # https://cbers-stac-0-6.s3.amazonaws.com/CBERS4/PAN5M/156/107/CBERS_4_PAN5M_20150610_156_107_L4.json
+    strip['s3_key'] = '/'.join(s3_key.split('/')[3:])
+
+    return strip
 
 def process_insert_queue(es_client, queue: str,
                          batch_size: int = 1,
@@ -66,7 +103,8 @@ def process_insert_queue(es_client, queue: str,
 
 def bulk_process_insert_queue(es_client, queue: str,
                               batch_size: int = 1,
-                              delete_messages: bool = True):
+                              delete_messages: bool = True,
+                              stripped: bool = False):
     """
     Read queue with itemsto be inserted and send the items
     to ES.
@@ -91,7 +129,8 @@ def bulk_process_insert_queue(es_client, queue: str,
 
     bulk_create_document_in_index(es_client=es_client,
                                   stac_items=items,
-                                  update_if_exists=True)
+                                  update_if_exists=True,
+                                  stripped=stripped)
 
     # Remove messages from queue
     if delete_messages:
@@ -163,22 +202,39 @@ def es_connect(endpoint: str, port: int,
     return es_client
 
 
-def create_stac_index(es_client, timeout: int = 30):
+def create_stac_index(es_client, mapping_name: str = "whole",
+                      timeout: int = 30):
     """
     Create STAC index.
 
     :param es_client: Elasticsearch client
+    :param mapping_name: Mapping to be created, the following options
+      are supported:
+        "whole": whole stac item is stored, geo and properties indexed
+        "restricted": only geometry, properties and id are stored and indexed.
+                      an additional field is included with the static item
+                      key in S3
     :param timeout int: timeout in seconds
     """
-    mapping = '''
+
+    assert mapping_name in ("whole", "restricted"), \
+        "Unrecognized mapping name, " + mapping_name
+
+    # Check for geometry precision and impact on indexing performance
+    # http://teknosrc.com/elasticsearch-geo-shape-slow-indexing-performance-solved/
+    # https://www.elastic.co/guide/en/elasticsearch/reference/6.2/geo-shape.html
+
+    # @todo this index selection turns out to be not necessary, remove
+
+    mapping = dict()
+    mapping['whole'] = '''
 {
     "mappings": {
         "_doc": {
             "properties": {
                 "geometry": {
                     "type": "geo_shape",
-                    "tree": "quadtree",
-                    "precision": "100m"
+                    "tree": "quadtree"
                 },
                 "assets": {
                 	"enabled": false
@@ -187,19 +243,45 @@ def create_stac_index(es_client, timeout: int = 30):
                 	"enabled": false
                 },
                 "links": {
-        		    "enabled": false
-          		}
+        		"enabled": false
+          	}
             }
         }
     }
 }
 '''
-    es_client.indices.create(index='stac', body=mapping,
+
+    mapping['restricted'] = '''
+{
+    "mappings": {
+        "_doc": {
+            "properties": {
+                "geometry": {
+                    "type": "geo_shape",
+                    "tree": "quadtree"
+                },
+                "assets": {
+                    "enabled": false
+                },
+                "bbox": {
+                    "enabled": false
+                },
+                "links": {
+                    "enabled": false
+          	}
+            }
+        }
+    }
+}
+'''
+
+    es_client.indices.create(index='stac', body=mapping[mapping_name],
                              request_timeout=timeout)
 
 def bulk_create_document_in_index(es_client,
                                   stac_items: list,
                                   update_if_exists: bool = False,
+                                  stripped: bool = False,
                                   timeout: int = 30):
     """
     Create operation, bulk mode
@@ -210,7 +292,10 @@ def bulk_create_document_in_index(es_client,
     stac_updates = list()
 
     for item in stac_items:
-        dict_item = json.loads(item)
+        if not stripped:
+            dict_item = json.loads(item)
+        else:
+            dict_item = strip_stac_item(json.loads(item))
         if not update_if_exists:
             bulk_item = dict()
             bulk_item['_type'] = '_doc'
@@ -236,6 +321,7 @@ def bulk_create_document_in_index(es_client,
 def create_document_in_index(es_client,
                              stac_item: str,
                              update_if_exists: bool = False,
+                             stripped: bool = False,
                              timeout: int = 30):
     """
     Create document in STAC index
@@ -245,15 +331,18 @@ def create_document_in_index(es_client,
     :param timeout int: timeout in seconds
     """
 
+    if not stripped:
+        item = json.loads(stac_item)
+    else:
+        item = strip_stac_item(json.loads(stac_item))
 
     if not update_if_exists:
-        document = json.loads(stac_item)
-        es_client.create(index='stac', id=document['id'],
-                         body=document, doc_type='_doc',
+        es_client.create(index='stac', id=item['id'],
+                         body=item, doc_type='_doc',
                          request_timeout=timeout)
     else:
         document = dict()
-        document['doc'] = json.loads(stac_item)
+        document['doc'] = item
         document['doc_as_upsert'] = True
         es_client.update(index='stac', id=document['doc']['id'],
                          body=document, doc_type='_doc',
@@ -388,13 +477,15 @@ def create_documents_handler(event,
                                http_auth=auth)
     if 'queue' in event:
         # Read STAC items from queue
-        #process_insert_queue(es_client=es_client,
-        #                     queue=event['queue'],
-        #                     delete_messages=False)
-        bulk_process_insert_queue(es_client=ES_CLIENT,
-                                  queue=event['queue'],
-                                  delete_messages=True,
-                                  batch_size=10)
+        for _ in range(int(os.environ['BULK_CALLS'])):
+            #process_insert_queue(es_client=es_client,
+            #                     queue=event['queue'],
+            #                     delete_messages=False)
+            bulk_process_insert_queue(es_client=ES_CLIENT,
+                                      queue=event['queue'],
+                                      delete_messages=True,
+                                      batch_size=int(os.environ['BULK_SIZE']),
+                                      stripped='ES_STRIPPED' in os.environ)
     elif 'Records' in event:
         # Lambda called from SQS trigger
         stac_items = list()
@@ -403,7 +494,8 @@ def create_documents_handler(event,
             stac_items.append(json.loads(record['body'])['Message'])
         bulk_create_document_in_index(es_client=ES_CLIENT,
                                       stac_items=stac_items,
-                                      update_if_exists=True)
+                                      update_if_exists=True,
+                                      stripped='ES_STRIPPED' in os.environ)
 
     #print(es_client.info())
     #create_document_in_index(es_client)
@@ -455,7 +547,14 @@ def stac_search_endpoint_handler(event,
     results["features"] = list()
 
     for item in res:
-        results["features"].append(item.to_dict())
+        item_dict = item.to_dict()
+        # If s3_key is present then we recover the original item from
+        # the STAC bucket
+        if 's3_key' in item_dict:
+            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
+                                                                'STAC_BUCKET'],
+                                              key=item_dict['s3_key'])
+        results["features"].append(item_dict)
 
     retmsg = {
         'statusCode': '200',

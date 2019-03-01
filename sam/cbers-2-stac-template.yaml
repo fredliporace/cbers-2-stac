@@ -18,7 +18,6 @@ Globals:
         CBERS_PDS_BUCKET: cbers-pds
         CBERS_META_PDS_BUCKET: cbers-meta-pds
         CBERS_STAC_BUCKET: !Ref STACBucket
-        MESSAGE_BATCH_SIZE: 0
         DELETE_MESSAGES: 1
 
 Resources:
@@ -505,6 +504,10 @@ Resources:
         Variables:
           ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
           ES_PORT: 443
+          # @todo configure this as template parameter
+          ES_STRIPPED: YES
+          BULK_CALLS: 1
+          BULK_SIZE: 10
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
@@ -664,21 +667,29 @@ Resources:
         # In GiB, 10 is the smallest possible for t2.small
         # medium instance value must be between 10 and 35
         # https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html
-        VolumeSize: 100
+        VolumeSize: 35
         VolumeType: gp2        
       ElasticsearchClusterConfig:
         #DedicatedMasterCount: Integer
         #DedicatedMasterEnabled: Boolean
         #DedicatedMasterType: String
-        InstanceCount: 2
+        InstanceCount: 1
         # t2.micro only supports 2.3 and 1.5
         # t2.small volume size must be between 10 and 35
-        # InstanceType: t2.small.elasticsearch
-        InstanceType: m3.medium.elasticsearch
+        InstanceType: t2.small.elasticsearch
+        #InstanceType: m3.medium.elasticsearch
+        # c4.large, 1 node, 1 bulk instance, 10 messages per bulk
+        #  index rate: 40
+        #  lambda execution time: 11s
+        #InstanceType: c4.large.elasticsearch
         # c4.xlarge, 1 node, 2 bulk instances, 10 messages per bulk
         #  index rate: 250
         #  lambda execution time: 4s
+        # c4.xlarge, 1 node, 2 bulk instances, 10 messages per bulk
+        #  index rate: 70
+        #  lambda execution time: 16s
         #InstanceType: c4.xlarge.elasticsearch
+        #InstanceType: c4.8xlarge.elasticsearch
         # m4.large, 2 nodes, ?? bulk instances, 10 messages per bulk
         #  index rate: started 250, then 60
         #  lambda execution time: started 1s, then 10-20s

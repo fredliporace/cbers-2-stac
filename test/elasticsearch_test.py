@@ -11,7 +11,8 @@ from elasticsearch import ConflictError
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
-    process_query_extension
+    process_query_extension, strip_stac_item, \
+    stac_item_from_s3_key
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -59,6 +60,18 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(len(bbox), 2)
         self.assertEqual(bbox[0], [-180, -90])
         self.assertEqual(bbox[1], [180, 90])
+
+    def test_strip_stac_item(self):
+        """test_strip_stac_item"""
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            item = json.loads(fin.read())
+        self.assertTrue('bbox' in item)
+        strip = strip_stac_item(item)
+        self.assertFalse('bbox' in strip)
+        self.assertEqual(strip['s3_key'],
+                         "CBERS4/MUX/090/084/CBERS_4_MUX_20170528_"\
+                         "090_084_L2.json")
 
     def test_connection(self):
         """test_connection"""
@@ -136,6 +149,27 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(doc['_source']['id'],
                          'CBERS_4_MUX_20170528_090_084_L2')
 
+    def test_create_stripped_document_in_index(self):
+        """test_create_stripped_document_in_index"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        self.assertFalse(es_client.
+                         exists(index='stac', doc_type='_doc',
+                                id='CBERS_4_MUX_20170528_090_084_L2'))
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_item = json.loads(fin.read())
+        create_document_in_index(es_client=es_client,
+                                 stac_item=json.\
+                                 dumps(strip_stac_item(stac_item)))
+        doc = es_client.get(index='stac', doc_type='_doc',
+                            id='CBERS_4_MUX_20170528_090_084_L2')
+        self.assertEqual(doc['_source']['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
 
     def test_bulk_create_document_in_index(self):
         """test_bulk_create_document_in_index"""
