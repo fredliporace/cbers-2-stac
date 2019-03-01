@@ -368,6 +368,19 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
 
+  DLQReplayFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dlq_replay
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Move messages from 'source_queue' to 'target_queue'
+      Timeout: 55
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
   ProcessNewSceneQueueFunction:
     Type: 'AWS::Serverless::Function'
     Properties:

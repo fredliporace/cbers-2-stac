@@ -41,8 +41,25 @@ def handler(event, context): # pylint: disable=unused-argument
       prefix(string): Common prefix of S3 keys to be sent to queue
     """
 
-    for record in event['Records']:
-        populate_queue_with_quicklooks(bucket=os.environ['CBERS_PDS_BUCKET'],
-                                       prefix=record['body'],
+    if 'queue' in event:
+        # Consume payload data from job queue, one job only
+        response = SQS_CLIENT.receive_message(QueueUrl=event['queue'])
+        receipt_handle = response['Messages'][0]['ReceiptHandle']
+        populate_queue_with_quicklooks(bucket=os.\
+                                       environ['CBERS_PDS_BUCKET'],
+                                       prefix=response['Messages'][0]['Body'],
                                        suffix='.jpg',
                                        queue=os.environ['NEW_SCENES_QUEUE'])
+        #r_params.append(json.loads(response['Messages'][0]['Body']))
+        #print(json.dumps(response, indent=2))
+        SQS_CLIENT.delete_message(QueueUrl=event['queue'],
+                                  ReceiptHandle=receipt_handle)
+
+    else:
+        # Lambda called from SQS trigger
+        for record in event['Records']:
+            populate_queue_with_quicklooks(bucket=os.\
+                                           environ['CBERS_PDS_BUCKET'],
+                                           prefix=record['body'],
+                                           suffix='.jpg',
+                                           queue=os.environ['NEW_SCENES_QUEUE'])
