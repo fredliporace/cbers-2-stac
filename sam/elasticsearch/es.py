@@ -349,7 +349,7 @@ def create_document_in_index(es_client,
                          request_timeout=timeout)
 
 def stac_search(es_client, start_date: str = None, end_date: str = None,
-                bbox: list = None):
+                bbox: list = None, limit: int = 10):
     """
     Search STAC items
 
@@ -358,6 +358,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     :param end_date str: ditto, same format as above
     :param bbox list: bounding box envelope, GeoJSON style
                       [[-180.0, -90.0], [180.0, 90.0]]
+    :param limit int: number of returned records
     :rtype: es.Search
     :return: built query
     """
@@ -416,7 +417,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     #query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
 
     #print(json.dumps(query.to_dict(), indent=2))
-    return query
+    return query[0:limit]
 
 def process_query_extension(dsl_query, query_params: dict):
     """
@@ -537,7 +538,8 @@ def stac_search_endpoint_handler(event,
 
     query = stac_search(es_client=es_client,
                         start_date=start, end_date=end,
-                        bbox=document['bbox'])
+                        bbox=document['bbox'],
+                        limit=document['limit'])
     if document.get('query'):
         query = process_query_extension(dsl_query=query,
                                         query_params=document['query'])

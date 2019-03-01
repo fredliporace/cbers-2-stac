@@ -282,6 +282,12 @@ class ElasticsearchTest(unittest.TestCase):
         time.sleep(2)
         res = stac_search(es_client=es_client).execute()
         self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(len(res), 2)
+
+        # Test limit on the number of results
+        res = stac_search(es_client=es_client, limit=1).execute()
+        self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(len(res), 1)
 
         # Single item depending on date range
         res = stac_search(es_client=es_client,
