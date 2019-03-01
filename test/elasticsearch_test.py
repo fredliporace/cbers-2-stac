@@ -274,7 +274,12 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
                                          id='CBERS_4_AWFI_20170409_167_123_L4'))
 
-        # All items are returned for empty query
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
         res = stac_search(es_client=es_client).execute()
         self.assertEqual(res['hits']['total'], 2)
 
