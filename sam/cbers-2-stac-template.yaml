@@ -3,6 +3,8 @@ Transform: 'AWS::Serverless-2016-10-31'
 Description: 'Update CBERS STAC catalog'
 
 Parameters:
+  StackName:
+    Type: String
   STACBucket:
     Type: String
   OperatorEmail:
@@ -16,7 +18,6 @@ Globals:
         CBERS_PDS_BUCKET: cbers-pds
         CBERS_META_PDS_BUCKET: cbers-meta-pds
         CBERS_STAC_BUCKET: !Ref STACBucket
-        MESSAGE_BATCH_SIZE: 0
         DELETE_MESSAGES: 1
 
 Resources:
@@ -52,13 +53,31 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-        - "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
+        #- "arn:aws:iam::aws:policy/service-role/AWSBatchServiceRole"
         # @todo check if ReadOnlyAccess is needed with FullAccess
-        - "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+        #- "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
         - "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonSNSFullAccess"
         - "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+        - "arn:aws:iam::aws:policy/AmazonESFullAccess"
+        - "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
+
       Path: "/"
+
+  ApiGatewayRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs
 
   #################################################
   # Roles end
@@ -158,16 +177,15 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 60
+      VisibilityTimeout: 385
       RedrivePolicy:
         deadLetterTargetArn:    
             "Fn::GetAtt":
               - ProcessNewSceneQueueFunctionDLQ
               - Arn                     
-        maxReceiveCount: 1
+        maxReceiveCount: 3
 
   # This queue is subscribed to topics from all quicklooks,
-  # PAN5 and PAN10 are ignored for now
   NewMUXSceneSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -175,26 +193,26 @@ Resources:
       Protocol: 'sqs'
       TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook'
 
-  #NewAWFISceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
+  NewAWFISceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
 
-  #NewPAN10SceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
+  NewPAN10SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
 
-  #NewPAN5SceneSubscription:
-  #  Type: 'AWS::SNS::Subscription'
-  #  Properties:
-  #    Endpoint: !GetAtt NewScenesQueue.Arn
-  #    Protocol: 'sqs'
-  #    TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
+  NewPAN5SceneSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt NewScenesQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
@@ -217,7 +235,6 @@ Resources:
   NewScenesQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      # @todo Adjust batch size
       BatchSize: 10
       EventSourceArn: !GetAtt [NewScenesQueue, Arn]
       FunctionName: !Ref ProcessNewSceneQueueFunction
@@ -231,20 +248,20 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 300
+      VisibilityTimeout: 1000
       RedrivePolicy:
         deadLetterTargetArn:    
             "Fn::GetAtt":       
               - ConsumeReconcileQueueFunctionDLQ
               - Arn                     
-        maxReceiveCount: 1
+        maxReceiveCount: 3
 
   ReconcileQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      # @todo try to increase batch size depending on measured
-      # lambda execution time
-      BatchSize: 10
+      # Limit to 5 directories for each lambda execution, listing
+      # searching for .jpg may take a long time
+      BatchSize: 5
       EventSourceArn: !GetAtt [ReconcileQueue, Arn]
       FunctionName: !Ref ConsumeReconcileQueueFunction
       Enabled: True
@@ -260,13 +277,86 @@ Resources:
   CatalogPrefixUpdateQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
     Properties:
-      # @todo Adjust batch size
       BatchSize: 10
       EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
       FunctionName: !Ref UpdateCatalogPrefixFunction
 
+  # This queue subscribes to the new STAC item SNS topic
+  # and has a lambda trigger that inserts the item into
+  # the search backend (Elasticsearch for now)
+  InsertIntoElasticsearchQueue:
+    Type: 'AWS::SQS::Queue'
+    Properties:
+      MessageRetentionPeriod: 1209600
+      # This needs to be updated when the timeout for
+      # ConsumeInsertIntoElasticsearchQueueFunction is
+      # chaged, use 5-6 times the timeout value
+      VisibilityTimeout: 180
+
+  InsertIntoElasticsearchSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: !Ref CBERSSTACItemTopic
+
+  InsertIntoElasticsearchQueuePolicy:
+    Type: 'AWS::SQS::QueuePolicy'
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            AWS: '*'
+          Action: 'SQS:SendMessage'
+          Resource: !GetAtt InsertIntoElasticsearchQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref CBERSSTACItemTopic
+      Queues:
+        - !Ref InsertIntoElasticsearchQueue
+
+  InsertIntoElasticsearchQueueTrigger:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 10
+      EventSourceArn: !GetAtt [InsertIntoElasticsearchQueue, Arn]
+      FunctionName: !Ref ConsumeInsertIntoElasticsearchQueueFunction
+
   #################################################
   # SQS/Subscription end
+  #################################################
+
+  #################################################
+  # Api Gateway start
+  #################################################
+
+  ApiAccount:
+    Type: AWS::ApiGateway::Account
+    Properties: 
+      CloudWatchRoleArn: !GetAtt ApiGatewayRole.Arn
+
+  StacApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      DefinitionBody:
+        'Fn::Transform':
+           Name: 'AWS::Include'
+           Parameters:
+             #Location: STAC-standalone.yaml
+             Location: STAC-query.yaml
+      #DefinitionUri: STAC-standalone.yaml
+      MethodSettings:
+        - HttpMethod: "*"
+          ResourcePath: "/*"
+          LoggingLevel: ERROR      # INFO or ERROR
+          DataTraceEnabled: true  # Put logs into cloudwatch
+          #MetricsEnabled: true    # Enable detailed metrics (error 404, latence, ...)
+
+  #################################################
+  # Api Gateway end
   #################################################
 
   #################################################
@@ -277,6 +367,19 @@ Resources:
     Type: 'AWS::SQS::Queue'
     Properties:
       MessageRetentionPeriod: 1209600
+
+  DLQReplayFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: dlq_replay
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: Move messages from 'source_queue' to 'target_queue'
+      Timeout: 55
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   ProcessNewSceneQueueFunction:
     Type: 'AWS::Serverless::Function'
@@ -326,7 +429,7 @@ Resources:
       Role: !GetAtt LambdaRole.Arn
       Policies: 
       Description: Generate levels into output table from input table
-      Timeout: 300
+      Timeout: 900
       Environment:
         Variables:
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
@@ -349,6 +452,26 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  CreateElasticIndexFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.create_stac_index_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      # Dependencies (check ES version):
+      # $pip install Elasticsearch==6.2.0 elasticsearch-dsl==6.2.0 requests "urllib3<1.23,>=1.21.1" aws-requests-auth -t ./
+      Description: >
+        Create Elasticsearch STAC index
+      Timeout: 30
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
   ConsumeReconcileQueueFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -362,15 +485,94 @@ Resources:
       # This timeout is big since this function list the quicklooks
       # for whole S3 prefix, this may take a long time if we choose
       # to reconcile from root. This may be improved if the reconcile
-      # queue is populated with all child prefixes instead of a single
+      # queue is populated with all children prefixes instead of a single
       # one.
-      Timeout: 295
+      Timeout: 900
+      # Limit the number of instances simultaneously
+      # accessing S3 for listing
+      # ReservedConcurrentExecutions: 10
       Environment:
         Variables:
           NEW_SCENES_QUEUE: !Ref NewScenesQueue
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+
+  ConsumeInsertIntoElasticsearchQueueFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.create_documents_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies: 
+      Description: >
+        Consume STAC items from queue, inserting into ES
+      # Visibity timeout for InsertIntoElasticsearchQueue needs
+      # to be updated when timeout changes, use 5-6x as guideline
+      Timeout: 30
+      # Concurrent executions tuned to work with t2.small.elasticsearch
+      ReservedConcurrentExecutions: 5
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+          # @todo configure this as template parameter
+          ES_STRIPPED: YES
+          BULK_CALLS: 1
+          BULK_SIZE: 10
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  StacEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: stac_endpoint
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        stac API endpoint
+      Timeout: 55
+      Events:
+        # This information is not injected in the swagger template,
+        # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+        # If the lambda changes then the swagger file must be changed
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /stac
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  StacSearchEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.stac_search_endpoint_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        stac/search API endpoint
+      Timeout: 55
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+      Events:
+        # Attention! See comment above about endpoint
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /stac/search
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   ConsumeReconcileQueueFunctionDLQ: 
     Type: 'AWS::SQS::Queue'
@@ -450,3 +652,70 @@ Resources:
   #################################################
   # DynamoDB end
   #################################################
+
+  #################################################
+  # Elasticsearch start
+  #################################################
+
+  Elasticsearch:
+    Type: AWS::Elasticsearch::Domain
+    Properties:
+      DomainName: !Sub "${StackName}-es"
+      AccessPolicies:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              AWS: !GetAtt [LambdaRole, Arn]
+            Action: "es:*"
+            Resource:
+              - !Sub "arn:aws:es:${AWS::Region}:${AWS::AccountId}:domain/${StackName}-es/*"
+      #AdvancedOptions:
+      #  String: String
+      # EBSOptions required for t2.small
+      EBSOptions:
+        EBSEnabled: True
+        #Iops: Integer
+        # In GiB, 10 is the smallest possible for t2.small
+        # medium instance value must be between 10 and 35
+        # https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html
+        VolumeSize: 35
+        VolumeType: gp2        
+      ElasticsearchClusterConfig:
+        #DedicatedMasterCount: Integer
+        #DedicatedMasterEnabled: Boolean
+        #DedicatedMasterType: String
+        InstanceCount: 1
+        # t2.micro only supports 2.3 and 1.5
+        # t2.small volume size must be between 10 and 35
+        InstanceType: t2.small.elasticsearch
+        #InstanceType: m3.medium.elasticsearch
+        #InstanceType: c4.large.elasticsearch
+        #InstanceType: c4.xlarge.elasticsearch
+        #InstanceType: c4.8xlarge.elasticsearch
+        #InstanceType: m4.large.elasticsearch
+        #ZoneAwarenessEnabled: Boolean
+      ElasticsearchVersion: 6.2
+      #EncryptionAtRestOptions: 
+      #  EncryptionAtRestOptions
+      #SnapshotOptions:
+      #  SnapshotOptions
+      #Tags:
+      #  - Resource Tag
+      #VPCOptions: 
+      #  VPCOptions
+                       
+  #################################################
+  # Elasticsearch end
+  #################################################
+
+Outputs:
+  ApiUrl:
+    Description: URL of your API endpoint
+    Value: !Join
+      - ''
+      - - https://
+        - !Ref StacApi
+        - '.execute-api.'
+        - !Ref 'AWS::Region'
+        - '.amazonaws.com'

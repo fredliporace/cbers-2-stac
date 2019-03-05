@@ -1,0 +1,82 @@
+{
+  "id": "CBERS_4_PAN5M_20161009_219_050_L2",
+  "type": "Feature",
+  "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+      [
+        [
+          [
+            -92.935537,
+            44.092251
+          ],
+          [
+            -92.202142,
+            43.984174
+          ],
+          [
+            -91.817844,
+            45.036879
+          ],
+          [
+            -92.564259,
+            45.146873
+          ],
+          [
+            -92.935537,
+            44.092251
+          ]
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    -92.935654,
+    43.986901,
+    -91.815646,
+    45.141575
+  ],
+  "properties": {
+    "datetime": "2016-10-09T17:14:38Z",
+    "eo:sun_azimuth": 167.751,
+    "eo:sun_elevation": 38.3015,
+    "eo:off_nadir": -0.0050659,
+    "eo:epsg": 32793,
+    "eo:instrument": "PAN5M",
+    "cbers:data_type": "L2",
+    "cbers:path": 219,
+    "cbers:row": 50
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2.json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/PAN5M/219/050/catalog.json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://cbers-stac.s3.amazonaws.com/collections/CBERS_4_PAN5M_collection.json"
+    }
+  ],
+  "assets": {
+    "thumbnail": {
+      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050.jpg",
+      "type": "image/jpeg"
+    },
+    "metadata": {
+      "href": "s3://cbers-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml",
+      "title": "INPE original metadata",
+      "type": "text/xml"
+    },
+    "B1": {
+      "href": "s3://cbers-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.tif",
+      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "eo:bands": [
+        0
+      ]
+    }
+  }
+}
