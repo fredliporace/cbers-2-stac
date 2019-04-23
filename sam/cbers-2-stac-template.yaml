@@ -87,9 +87,49 @@ Resources:
   # SNS Topic start
   #################################################
 
-  # @todo allow everybody to subscribe to topic
   CBERSSTACItemTopic:
     Type: 'AWS::SNS::Topic'
+
+  CBERSSTACItemTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Id: __default_policy_ID
+        Statement:
+          - Sid: CB_OWN_STATEMENT_ID
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - SNS:GetTopicAttributes
+              - SNS:SetTopicAttributes
+              - SNS:AddPermission
+              - SNS:RemovePermission
+              - SNS:DeleteTopic
+              - SNS:Subscribe
+              - SNS:ListSubscriptionsByTopic
+              - SNS:Publish
+              - SNS:Receive
+            Resource: !Ref CBERSSTACItemTopic
+            Condition:
+              StringEquals:
+                AWS:SourceOwner: !Ref AWS::AccountId
+          - Sid: CB_PUBLIC_SUBSCRIPTION_ID
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - SNS:Subscribe
+              - SNS:Receive
+            Resource: !Ref CBERSSTACItemTopic
+            Condition:
+              StringEquals:
+                SNS:Protocol:
+                  - sqs
+                  - lambda
+      Topics:
+        - !Ref CBERSSTACItemTopic
 
   AlarmTopic:
     Type: AWS::SNS::Topic
