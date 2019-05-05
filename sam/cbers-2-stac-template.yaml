@@ -719,7 +719,9 @@ Resources:
         # In GiB, 10 is the smallest possible for t2.small
         # medium instance value must be between 10 and 35
         # https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html
-        VolumeSize: 35
+        # Using 10 GiB for testing
+        #VolumeSize: 35
+        VolumeSize: 10
         VolumeType: gp2        
       ElasticsearchClusterConfig:
         #DedicatedMasterCount: Integer
