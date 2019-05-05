@@ -1,5 +1,5 @@
 {
-  "stac_version": "0.6.0",
+  "stac_version": "0.7.0",
   "id": "CBERS4/PAN10M",
   "title": "CBERS 4 PAN10M Imagery",
   "description": "CBERS 4 PAN10M Imagery",

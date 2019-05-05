@@ -199,7 +199,8 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(catalog['links'][1]['rel'], 'root')
         self.assertEqual(catalog['links'][1]['href'],
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
-        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.schema_,
+                                  resolver=self.resolver_),
                          None)
 
     def root_catalog_schema_test(self):
@@ -207,12 +208,14 @@ class UpdateCatalogTreeTest(unittest.TestCase):
 
         with open('stac_catalogs/catalog.json', 'r') as catalog_file:
             catalog = json.loads(catalog_file.read())
-        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.schema_,
+                                  resolver=self.resolver_),
                          None)
 
         with open('stac_catalogs/CBERS4/catalog.json', 'r') as catalog_file:
             catalog = json.loads(catalog_file.read())
-        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.schema_,
+                                  resolver=self.resolver_),
                          None)
 
     @unittest.skip("Require AWS credentials and environment")

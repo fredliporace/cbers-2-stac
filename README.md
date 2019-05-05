@@ -7,3 +7,6 @@ Generates a STAC static and dynamic catalog of CBERS-4 AWFI, MUX, PAN10M and PAN
 A live example of the full [CBERS catalog in AWS](https://registry.opendata.aws/cbers/), daily updated, is available from:
 
 arn:aws:s3:::cbers-stac-0-6
+
+# Documentation TODOs
+ - [] STAC static bucket must be manually created

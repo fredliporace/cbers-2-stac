@@ -186,7 +186,7 @@ def base_stac_catalog(bucket, satellite, mission=None, camera=None, path=None, r
         description += ' row %s' % (row)
     description += ' catalog'
 
-    stac_catalog['stac_version'] = '0.6.0'
+    stac_catalog['stac_version'] = '0.7.0'
     stac_catalog['id'] = name
     stac_catalog['description'] = description
 

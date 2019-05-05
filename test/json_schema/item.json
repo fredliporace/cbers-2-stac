@@ -1,13 +1,13 @@
 {
-  "$schema": "http://json-schema.org/draft-06/schema#",
-  "id": "item.json#",
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "item.json#",
   "title": "STAC Item",
   "type": "object",
   "description": "This object represents the metadata for an item in a SpatioTemporal Asset Catalog.",
   "additionalProperties": true,
   "allOf": [
     {
-      "$ref": "#/definitions/core"
+      "$ref": "item.json#/definitions/core"
     }
   ],
   "definitions": {
@@ -25,8 +25,11 @@
           "required": [
             "id",
             "type",
+            "geometry",
             "links",
-            "assets"
+            "assets",
+            "bbox",
+            "properties"
           ],
           "properties": {
             "id": {
@@ -66,6 +69,11 @@
                   "format": "date-time"
                 }
               }
+            },
+            "collection": {
+              "title": "Collection ID",
+              "description": "The ID of the STAC Collection this Item references to.",
+              "type": "string"
             }
           }
         }
