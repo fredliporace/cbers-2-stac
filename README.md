@@ -9,4 +9,8 @@ A live example of the full [CBERS catalog in AWS](https://registry.opendata.aws/
 arn:aws:s3:::cbers-stac-0-6
 
 # Documentation TODOs
- - [] STAC static bucket must be manually created
+ -  [] STAC static bucket must be manually created, it is not part of the stack
+
+# STAC
+ - [ ] Definitions for collections are duplicated, better to include them in catalog only?
+ - [ ] Forbidden characters in catalog ids 

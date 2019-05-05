@@ -1,6 +1,6 @@
 {
   "stac_version": "0.7.0",
-  "id": "CBERS4/MUX",
+  "id": "CBERS4MUX",
   "title": "CBERS 4 MUX Imagery",
   "description": "CBERS 4 MUX Imagery",
   "license": "CC-BY-SA-3.0",
@@ -37,7 +37,7 @@
   "links": [
     {
       "rel": "self",
-      "href": "https://s3.amazonaws.com/cbers-stac-0-6/collections/CBERS_4_MUX_collection.json"
+      "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/MUX/collection.json"
     }
   ],
   "properties": {
