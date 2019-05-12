@@ -36,6 +36,7 @@
     24.812825,
     14.98818
   ],
+  "collection": "CBERS4MUX",
   "properties": {
     "datetime": "2017-05-28T09:01:17Z",
     "eo:sun_azimuth": 66.2923,
@@ -58,7 +59,7 @@
     },
     {
       "rel": "collection",
-      "href": "https://cbers-stac.s3.amazonaws.com/collections/CBERS_4_MUX_collection.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/collection.json"
     }
   ],
   "assets": {

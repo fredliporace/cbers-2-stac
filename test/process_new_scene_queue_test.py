@@ -21,6 +21,7 @@ class ProcessNewSceneTest(unittest.TestCase):
         self.assertEqual(keys['path'], '155')
         self.assertEqual(keys['row'], '135')
         self.assertEqual(keys['scene_id'], 'CBERS_4_AWFI_20170515_155_135_L2')
+        self.assertEqual(keys['collection'], 'CBERS4AWFI')
 
     def get_s3_keys_test(self):
         """get_s3_keys_test"""

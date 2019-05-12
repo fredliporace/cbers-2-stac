@@ -10,6 +10,7 @@ import boto3
 from botocore.errorfactory import ClientError
 
 from utils import build_absolute_prefix
+from definitions import BASE_CATALOG
 
 S3_CLIENT = boto3.client('s3')
 SQS_CLIENT = boto3.client('sqs')
@@ -54,10 +55,11 @@ def get_catalog_info(key):
     """
     Returns an dict representing the catalog level, instrument, path and
     row. Keys are:
-     - level(int)
+     - level(int), 0 is the deepest level, satellite/camera/path/row
      - satellite, mission, camera, path, row
     represents the key containing the items. Value is increased
     for each parent dir.
+     - is_collection: bool if catalog at the level is a collection
 
     Input:
     key(string): 'directory' key
@@ -68,12 +70,14 @@ def get_catalog_info(key):
     # Level
     levels = key.split('/')
     level = 4 - len(levels)
-    assert level >= 0 and level <= 2, "Unsupported level " + str(level)
+    assert 0 <= level <= 2, "Unsupported level " + str(level)
     ret['level'] = level
     ret['satellite+mission'] = None
     ret['camera'] = None
     ret['path'] = None
     ret['row'] = None
+    # @todo not currently used, check for removal
+    ret['is_collection'] = (level == 2)
 
     keys = ['satellite+mission', 'camera', 'path', 'row']
     for index, key_id in enumerate(levels):
@@ -150,10 +154,12 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
-def base_stac_catalog(bucket, satellite, mission=None, camera=None, path=None, row=None):
-    """JSON STAC catalog with common items"""
+def base_stac_catalog(bucket, satellite,
+                      mission=None, camera=None,
+                      path=None, row=None):
+    """JSON STAC catalog or collection with common items"""
 
-    stac_catalog = OrderedDict()
+    stac_catalog = BASE_CATALOG
 
     name = satellite
     description = name
@@ -186,16 +192,23 @@ def base_stac_catalog(bucket, satellite, mission=None, camera=None, path=None, r
         description += ' row %s' % (row)
     description += ' catalog'
 
-    stac_catalog['stac_version'] = '0.7.0'
     stac_catalog['id'] = name
     stac_catalog['description'] = description
 
     stac_catalog['links'] = list()
 
+    # Checks if on collection level
+    if camera and not path and not row:
+        json_filename = 'collection.json'
+    else:
+        json_filename = 'catalog.json'
+
     # @todo use common function to build links, see item construction
     self_link = OrderedDict()
     self_link['rel'] = 'self'
-    self_link['href'] = build_absolute_prefix(bucket, sat_sensor, path, row) + 'catalog.json'
+    self_link['href'] = build_absolute_prefix(bucket,
+                                              sat_sensor,
+                                              path, row) + json_filename
     stac_catalog['links'].append(self_link)
 
     root_link = OrderedDict()
@@ -203,15 +216,22 @@ def base_stac_catalog(bucket, satellite, mission=None, camera=None, path=None, r
     root_link['href'] = build_absolute_prefix(bucket) + 'catalog.json'
     stac_catalog['links'].append(root_link)
 
+    if path and not row:
+        parent_json_filename = 'collection.json'
+    else:
+        parent_json_filename = 'catalog.json'
+
     if mission or camera or path or row:
 
         parent_link = OrderedDict()
         parent_link['rel'] = 'parent'
-        parent_link['href'] = '../catalog.json'
+        parent_link['href'] = '../' + parent_json_filename
         stac_catalog['links'].append(parent_link)
 
     return stac_catalog
 
+# @todo this is the original method to update catalogs,
+# it is not currently used. Remove.
 def update_catalog_tree(stac_item, buckets):
     """
     Traverse STAC catalog tree and update links
@@ -360,7 +380,7 @@ def process_queue(cbers_pds_bucket,
         if processed_messages == message_batch_size:
             break
 
-def active_handler(event, context):
+def active_handler(event, context): # pylint: disable=unused-argument
     """Lambda entry point for actively consuming messages from update catalog.
     Event keys:
     """
@@ -370,9 +390,10 @@ def active_handler(event, context):
                   cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
                   queue=os.environ['CATALOG_UPDATE_QUEUE'],
                   message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
-                  delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
+                  delete_processed_messages=\
+                  int(os.environ['DELETE_MESSAGES']) == 1)
 
-def trigger_handler(event, context):
+def trigger_handler(event, context):  # pylint: disable=unused-argument
     """Lambda entry point for SQS trigger integration
     Event keys:
     """

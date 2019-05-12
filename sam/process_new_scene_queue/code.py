@@ -83,7 +83,8 @@ def parse_quicklook_key(key):
         'camera': match.group('camera'),
         'path': match.group('path'),
         'row': match.group('row'),
-        'scene_id': match.group('scene_id')
+        'scene_id': match.group('scene_id'),
+        'collection': match.group('satellite') + match.group('camera')
     }
 
 

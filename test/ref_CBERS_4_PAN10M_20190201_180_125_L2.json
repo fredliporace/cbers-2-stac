@@ -36,6 +36,7 @@
     -70.76202,
     -21.746077
   ],
+  "collection": "CBERS4PAN10M",
   "properties": {
     "datetime": "2019-02-01T14:36:38Z",
     "eo:sun_azimuth": 87.5261,
@@ -58,7 +59,7 @@
     },
     {
       "rel": "collection",
-      "href": "https://cbers-stac.s3.amazonaws.com/collections/CBERS_4_PAN10M_collection.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/PAN10M/collection.json"
     }
   ],
   "assets": {
