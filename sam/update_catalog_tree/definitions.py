@@ -11,9 +11,6 @@ BASE_CATALOG = OrderedDict({
 })
 
 BASE_COLLECTION = OrderedDict({
-    "stac_version": STAC_VERSION,
-    "id": None,
-    "title": None,
     "license": "CC-BY-SA-3.0",
     "providers": [
         {
@@ -54,4 +51,81 @@ BASE_COLLECTION = OrderedDict({
     }
 })
 
-
+CAMERA_PROPERTIES = {
+    "MUX":{
+        "eo:gsd": 20.0,
+        "eo:platform": "CBERS-4",
+        "eo:instrument": "MUX",
+        "eo:bands": [
+            {
+                "name": "B5",
+                "common_name": "blue"
+            },
+            {
+                "name": "B6",
+                "common_name": "green"
+            },
+            {
+                "name": "B7",
+                "common_name": "red"
+            },
+            {
+                "name": "B8",
+                "common_name": "nir"
+            }
+        ]
+    },
+    "AWFI":{
+        "eo:gsd": 64.0,
+        "eo:platform": "CBERS-4",
+        "eo:instrument": "AWFI",
+        "eo:bands": [
+            {
+                "name": "B13",
+                "common_name": "blue"
+            },
+            {
+                "name": "B14",
+                "common_name": "green"
+            },
+            {
+                "name": "B15",
+                "common_name": "red"
+            },
+            {
+                "name": "B16",
+                "common_name": "nir"
+            }
+        ]
+    },
+    "PAN5M":{
+        "eo:gsd": 5.0,
+        "eo:platform": "CBERS-4",
+        "eo:instrument": "PAN5M",
+        "eo:bands": [
+            {
+                "name": "B1",
+                "common_name": "pan"
+            }
+        ]
+    },
+    "PAN10M":{
+        "eo:gsd": 10.0,
+        "eo:platform": "CBERS-4",
+        "eo:instrument": "PAN10M",
+        "eo:bands": [
+            {
+                "name": "B2",
+                "common_name": "green"
+            },
+            {
+                "name": "B3",
+                "common_name": "red"
+            },
+            {
+                "name": "B4",
+                "common_name": "nir"
+            }
+        ]
+    }
+}

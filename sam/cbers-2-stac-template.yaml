@@ -313,6 +313,12 @@ Resources:
     Properties:
       MessageRetentionPeriod: 1209600
       VisibilityTimeout: 60
+      RedrivePolicy:
+        deadLetterTargetArn:    
+            "Fn::GetAtt":
+              - GeneralLambdaDLQ
+              - Arn                     
+        maxReceiveCount: 3
 
   CatalogPrefixUpdateQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping

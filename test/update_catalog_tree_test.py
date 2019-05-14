@@ -24,14 +24,24 @@ class UpdateCatalogTreeTest(unittest.TestCase):
     def setUpClass(cls):
         shutil.copy2('sam/process_new_scene_queue/utils.py',
                      'sam/update_catalog_tree/utils.py')
-        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+        json_schema_path = os.path.join(os.path.\
+                                        dirname(os.path.abspath(__file__)),
                                         'json_schema/')
+        # Catalog schema validator
         schema_path = os.path.join(json_schema_path,
                                    'catalog.json')
-        cls.resolver_ = RefResolver('file://' + json_schema_path + '/',
-                                    None)
+        cls.cat_resolver_ = RefResolver('file://' + json_schema_path + '/',
+                                        None)
         with open(schema_path) as fp_schema:
-            cls.schema_ = json.load(fp_schema)
+            cls.cat_schema_ = json.load(fp_schema)
+
+        # Collection schema validator
+        schema_path = os.path.join(json_schema_path,
+                                   'collection.json')
+        cls.col_resolver_ = RefResolver('file://' + json_schema_path + '/',
+                                        None)
+        with open(schema_path) as fp_schema:
+            cls.col_schema_ = json.load(fp_schema)
 
     def get_items_from_s3_test(self):
         """get_items_from_s3_test"""
@@ -98,17 +108,21 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(len(catalog['links']), 5)
         self.assertEqual(catalog['links'][0]['rel'], 'self')
         self.assertEqual(catalog['links'][0]['href'],
-                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/083/095/catalog.json')
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/'\
+                         'MUX/083/095/catalog.json')
         self.assertEqual(catalog['links'][1]['rel'], 'root')
         self.assertEqual(catalog['links'][1]['href'],
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
         self.assertEqual(catalog['links'][2]['rel'], 'parent')
         self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
         self.assertEqual(catalog['links'][3]['rel'], 'item')
-        self.assertEqual(catalog['links'][3]['href'], 'CBERS_4_MUX_20170714_083_095_L4.json')
+        self.assertEqual(catalog['links'][3]['href'],
+                         'CBERS_4_MUX_20170714_083_095_L4.json')
         self.assertEqual(catalog['links'][4]['rel'], 'item')
-        self.assertEqual(catalog['links'][4]['href'], 'CBERS_4_MUX_20180903_083_095_L2.json')
-        self.assertEqual(validate(catalog, self.schema_, resolver=self.resolver_),
+        self.assertEqual(catalog['links'][4]['href'],
+                         'CBERS_4_MUX_20180903_083_095_L2.json')
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
         catalog = build_catalog_from_s3(bucket='cbers-stac',
@@ -120,7 +134,8 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(len(catalog['links']), 32)
         self.assertEqual(catalog['links'][0]['rel'], 'self')
         self.assertEqual(catalog['links'][0]['href'],
-                         'https://cbers-stac.s3.amazonaws.com/CBERS4/MUX/083/catalog.json')
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/'\
+                         'MUX/083/catalog.json')
         self.assertEqual(catalog['links'][1]['rel'], 'root')
         self.assertEqual(catalog['links'][1]['href'],
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
@@ -130,11 +145,11 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(catalog['links'][3]['href'], '083/catalog.json')
         self.assertEqual(catalog['links'][-1]['rel'], 'child')
         self.assertEqual(catalog['links'][-1]['href'], '111/catalog.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
-    def base_stac_catalog_test(self):
+    def base_stac_catalog_test(self): # pylint: disable=too-many-statements
         """base_stac_catalog_test"""
 
         catalog = base_stac_catalog('cbers-stac', 'CBERS', '4',
@@ -151,9 +166,30 @@ class UpdateCatalogTreeTest(unittest.TestCase):
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
         self.assertEqual(catalog['links'][2]['rel'], 'parent')
         self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
+        self.assertTrue('license' not in catalog)
+
+        # Same as before using concatenated satellite+mission
+        catalog = base_stac_catalog('cbers-stac', 'CBERS4', None,
+                                    'AWFI', '130', '100')
+        self.assertEqual(catalog['id'], 'CBERS4 AWFI 130/100')
+        self.assertEqual(catalog['description'],
+                         'CBERS4 AWFI camera path 130 row 100 catalog')
+        self.assertEqual(catalog['links'][0]['rel'], 'self')
+        self.assertEqual(catalog['links'][0]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/'
+                         '130/100/catalog.json')
+        self.assertEqual(catalog['links'][1]['rel'], 'root')
+        self.assertEqual(catalog['links'][1]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/catalog.json')
+        self.assertEqual(catalog['links'][2]['rel'], 'parent')
+        self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
+                         None)
+        self.assertTrue('license' not in catalog)
 
         catalog = base_stac_catalog('cbers-stac', 'CBERS', '4', 'AWFI', '130')
         self.assertEqual(catalog['id'], 'CBERS4 AWFI 130')
@@ -168,12 +204,13 @@ class UpdateCatalogTreeTest(unittest.TestCase):
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
         self.assertEqual(catalog['links'][2]['rel'], 'parent')
         self.assertEqual(catalog['links'][2]['href'], '../collection.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
+        # This is the collection level
         catalog = base_stac_catalog('cbers-stac', 'CBERS', '4', 'AWFI')
-        self.assertEqual(catalog['id'], 'CBERS4 AWFI')
+        self.assertEqual(catalog['id'], 'CBERS4AWFI')
         self.assertEqual(catalog['description'],
                          'CBERS4 AWFI camera catalog')
         self.assertEqual(catalog['links'][0]['rel'], 'self')
@@ -185,8 +222,29 @@ class UpdateCatalogTreeTest(unittest.TestCase):
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
         self.assertEqual(catalog['links'][2]['rel'], 'parent')
         self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(catalog['properties']['eo:gsd'], 64.0)
+        self.assertEqual(validate(catalog, self.col_schema_,
+                                  resolver=self.col_resolver_),
+                         None)
+
+        # This is the collection level using satellite and mission
+        # concatenated
+        catalog = base_stac_catalog('cbers-stac', 'CBERS4', None, 'AWFI')
+        self.assertEqual(catalog['id'], 'CBERS4AWFI')
+        self.assertEqual(catalog['description'],
+                         'CBERS4 AWFI camera catalog')
+        self.assertEqual(catalog['links'][0]['rel'], 'self')
+        self.assertEqual(catalog['links'][0]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/'
+                         'collection.json')
+        self.assertEqual(catalog['links'][1]['rel'], 'root')
+        self.assertEqual(catalog['links'][1]['href'],
+                         'https://cbers-stac.s3.amazonaws.com/catalog.json')
+        self.assertEqual(catalog['links'][2]['rel'], 'parent')
+        self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
+        self.assertEqual(catalog['properties']['eo:gsd'], 64.0)
+        self.assertEqual(validate(catalog, self.col_schema_,
+                                  resolver=self.col_resolver_),
                          None)
 
         catalog = base_stac_catalog('cbers-stac', 'CBERS', '4')
@@ -202,8 +260,8 @@ class UpdateCatalogTreeTest(unittest.TestCase):
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
         self.assertEqual(catalog['links'][2]['rel'], 'parent')
         self.assertEqual(catalog['links'][2]['href'], '../catalog.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
         catalog = base_stac_catalog('cbers-stac', 'CBERS')
@@ -217,23 +275,23 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         self.assertEqual(catalog['links'][1]['rel'], 'root')
         self.assertEqual(catalog['links'][1]['href'],
                          'https://cbers-stac.s3.amazonaws.com/catalog.json')
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
-    def root_catalog_schema_test(self):
-        """root_catalog_schema_test"""
+    def root_catalog_cat_schema_test(self):
+        """root_catalog_cat_schema_test"""
 
         with open('stac_catalogs/catalog.json', 'r') as catalog_file:
             catalog = json.loads(catalog_file.read())
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
         with open('stac_catalogs/CBERS4/catalog.json', 'r') as catalog_file:
             catalog = json.loads(catalog_file.read())
-        self.assertEqual(validate(catalog, self.schema_,
-                                  resolver=self.resolver_),
+        self.assertEqual(validate(catalog, self.cat_schema_,
+                                  resolver=self.cat_resolver_),
                          None)
 
     @unittest.skip("Require AWS credentials and environment")
