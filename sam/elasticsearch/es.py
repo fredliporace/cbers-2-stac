@@ -530,6 +530,7 @@ def stac_search_endpoint_handler(event,
         document = json.loads(event['body'])
         document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
                             [document['bbox'][2], document['bbox'][3]]]
+        document['limit'] = int(document.get('limit', '10'))
         #print(document)
 
     start, end = None, None
