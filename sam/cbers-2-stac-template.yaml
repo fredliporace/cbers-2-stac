@@ -391,9 +391,7 @@ Resources:
         'Fn::Transform':
            Name: 'AWS::Include'
            Parameters:
-             #Location: STAC-standalone.yaml
-             Location: STAC-query.yaml
-      #DefinitionUri: STAC-standalone.yaml
+             Location: STAC07-query.yaml
       MethodSettings:
         - HttpMethod: "*"
           ResourcePath: "/*"
@@ -593,6 +591,16 @@ Resources:
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
+  # See https://github.com/awslabs/serverless-application-model/issues/59
+  # This not seems to be needed aymore, keeping as reference just in case
+  #StacEndpointPermission:
+  #  Type: "AWS::Lambda::Permission"
+  #  Properties:
+  #    Action: lambda:InvokeFunction
+  #    FunctionName: !Ref StacEndpointFunction
+  #    Principal: apigateway.amazonaws.com
+  #    #SourceARN: arn:aws:execute-api:<region>:<accountNumber>:<restApiId>/<stage>/<method>/<path>
 
   StacSearchEndpointFunction:
     Type: 'AWS::Serverless::Function'
