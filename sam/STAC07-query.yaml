@@ -208,46 +208,52 @@ paths:
         type: aws_proxy
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacEndpointFunction.Arn}/invocations
-#  /stac/search:
-#    get:
-#      summary: Search STAC items with simple filtering.
-#      description: >-
-#        Retrieve Items matching filters. Intended as a shorthand API for simple
-#        queries.
-#
-#
-#        This method is optional, but you MUST implement `POST /stac/search` if
-#        you want to implement this method.
-#      operationId: getSearchSTAC
-#      tags:
-#        - STAC
-#      parameters:
-#        - $ref: '#/components/parameters/bbox'
-#        - $ref: '#/components/parameters/time'
-#        - $ref: '#/components/parameters/limit'
-#        - $ref: '#/components/parameters/page'
-#        - $ref: '#/components/parameters/ids'
-#        - $ref: '#/components/parameters/collections'
-#        - $ref: '#/components/parameters/query'
-#      responses:
-#        '200':
-#          description: A feature collection.
-#          content:
-#            application/geo+json:
-#              schema:
-#                $ref: '#/components/schemas/itemCollection'
-#            text/html:
-#              schema:
-#                type: string
-#        default:
-#          description: An error occurred.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/exception'
-#            text/html:
-#              schema:
-#                type: string
+  /stac/search:
+    get:
+      summary: Search STAC items with simple filtering.
+      description: >-
+        Retrieve Items matching filters. Intended as a shorthand API for simple
+        queries.
+
+
+        This method is optional, but you MUST implement `POST /stac/search` if
+        you want to implement this method.
+      operationId: getSearchSTAC
+      tags:
+        - STAC
+      parameters:
+        - $ref: '#/components/parameters/bbox'
+        - $ref: '#/components/parameters/time'
+        - $ref: '#/components/parameters/limit'
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/ids'
+        - $ref: '#/components/parameters/collections'
+        - $ref: '#/components/parameters/query'
+      responses:
+        '200':
+          description: A feature collection.
+          content:
+            application/geo+json:
+              schema:
+                $ref: '#/components/schemas/itemCollection'
+            text/html:
+              schema:
+                type: string
+        default:
+          description: An error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/exception'
+            text/html:
+              schema:
+                type: string
+      # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
 #    post:
 #      summary: Search STAC items with full-featured filtering.
 #      description: >-
@@ -286,6 +292,12 @@ paths:
 #            text/html:
 #              schema:
 #                type: string
+#      # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+#      x-amazon-apigateway-integration:
+#        httpMethod: post
+#        type: aws_proxy
+#        uri:
+#          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacSearchEndpointFunction.Arn}/invocations
 #components:
 #  parameters:
 #    collectionId:
