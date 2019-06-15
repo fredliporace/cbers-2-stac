@@ -11,8 +11,7 @@ from elasticsearch import ConflictError
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
-    process_query_extension, strip_stac_item, \
-    stac_item_from_s3_key
+    process_query_extension, strip_stac_item
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
