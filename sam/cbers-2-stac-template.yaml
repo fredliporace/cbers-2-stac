@@ -616,6 +616,7 @@ Resources:
         Variables:
           ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
           ES_PORT: 443
+          ES_SSL: YES
       Events:
         # Attention! See comment above about endpoint
         StacEndpointApi:

@@ -507,12 +507,27 @@ def stac_search_endpoint_handler(event,
     Lambda entry point
     """
 
-    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                               aws_region=os.environ['AWS_REGION'],
-                               aws_service='es')
+    # Check for local development or production environment
+    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
+        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                                   aws_region=os.environ['AWS_REGION'],
+                                   aws_service='es')
+    else:
+        auth = None
+
+    #print(os.environ['ES_ENDPOINT'])
+    #print(os.environ['ES_PORT'])
+    #print(os.environ['ES_SSL'])
+    #print(auth)
     es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
                            port=int(os.environ['ES_PORT']),
+                           use_ssl=(auth is not None),
+                           verify_certs=(auth is not None),
                            http_auth=auth)
+    #print(es_client)
+    #print("Checking ES connecion")
+    #print(es_client.ping())
+    #print("Checking ES connecion end")
 
     #print(json.dumps(event, indent=2))
     if event['httpMethod'] == 'GET':
