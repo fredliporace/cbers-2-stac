@@ -431,11 +431,27 @@ def process_query_extension(dsl_query, query_params: dict):
 
     # See for reference on how to extend to complete STAC query extension
     # https://stackoverflow.com/questions/43138089/elasticsearch-dsl-python-unpack-q-queries
+    # key is the property being queried
     for key in query_params:
-        assert not isinstance(query_params[key], dict), \
-            "Dicts not supported yet in queries"
-        dsl_query = dsl_query.query(Q("match",
-                                      **{"properties."+key:query_params[key]}))
+        assert isinstance(query_params[key], dict), \
+            "Query prop must be a dictionary"
+        for operator in query_params[key]:
+            if operator == 'eq':
+                dsl_query = dsl_query.\
+                            query(Q("match",
+                                    **{"properties."+key:query_params[key]\
+                                       [operator]}))
+            elif operator == 'neq':
+                dsl_query = dsl_query.\
+                            query(~Q("match", # pylint: disable=invalid-unary-operand-type
+                                     **{"properties."+key:query_params[key]\
+                                        [operator]}))
+
+            else:
+                raise RuntimeError("{op} is not a supported operator".\
+                                   format(op=operator))
+        #dsl_query = dsl_query.query(Q("match",
+        #                              **{"properties."+key:query_params[key]}))
 
     return dsl_query
 
@@ -533,6 +549,7 @@ def stac_search_endpoint_handler(event,
     if event['httpMethod'] == 'GET':
         document = dict()
         qsp = event['queryStringParameters']
+        # @todo process query extension for GET
         if qsp:
             document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
             document['time'] = qsp.get('time', None)
@@ -552,13 +569,18 @@ def stac_search_endpoint_handler(event,
     if document.get('time'):
         start, end = parse_datetime(document['time'])
 
+    # Build basic query object
     query = stac_search(es_client=es_client,
                         start_date=start, end_date=end,
                         bbox=document['bbox'],
                         limit=document['limit'])
+
+    # Process 'query' extension
     if document.get('query'):
         query = process_query_extension(dsl_query=query,
                                         query_params=document['query'])
+
+    # Execute query
     res = query.execute()
     results = dict()
     results["type"] = "FeatureCollection"

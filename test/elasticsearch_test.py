@@ -248,8 +248,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'CBERS_4_AWFI_20170409_167_123_L4')
 
 
-    def test_stac_search(self):
-        """test_stac_search"""
+    def test_basic_search(self):
+        """test_basic_search"""
 
         # Create an empty index
         self.test_create_index()
@@ -341,6 +341,83 @@ class ElasticsearchTest(unittest.TestCase):
         #print(res.to_dict())
         #for hit in res:
         #    print(hit.to_dict())
+
+    def test_query_extension_search(self):
+        """test_query_extension_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params={})
+
+        # Start with an empty query
+        self.assertDictEqual(q_dsl.to_dict()['query'],
+                             {'match_all': {}})
+
+        # eq operator
+        q_payload = {'eo:instrument': {'eq':'MUX'},
+                     'cbers:data_type': {'eq':'L2'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.assertDictEqual(q_dsl.to_dict()['query'],
+                             {'bool': {'must':
+                                       [{'match':
+                                         {'properties.eo:instrument':
+                                          'MUX'}},
+                                        {'match':
+                                         {'properties.cbers:data_type':
+                                          'L2'}}]}})
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+
+        # neq and eq operator
+        q_payload = {'eo:instrument': {'eq':'MUX'},
+                     'cbers:data_type': {'neq':'L4'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool': {'must_not':
+                                      [{'match':
+                                        {'properties.cbers:data_type':
+                                         'L4'}}],
+                                      'must':
+                                      [{'match':
+                                        {'properties.eo:instrument':
+                                         'MUX'}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
 
 if __name__ == '__main__':
     unittest.main()
