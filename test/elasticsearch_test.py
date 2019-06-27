@@ -308,14 +308,15 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
         #print(res[0].to_dict())
 
-        # Query extension
+        # Query extension (eq operator only)
         empty_query = stac_search(es_client=es_client)
         res = process_query_extension(dsl_query=empty_query,
                                       query_params={}).execute()
         self.assertEqual(res['hits']['total'], 2)
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:data_type":"L2"})
+                                        query_params={"cbers:data_type":
+                                                      {"eq":"L2"}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
@@ -323,7 +324,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'L2')
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:data_type":"L4"})
+                                        query_params={"cbers:data_type":
+                                                      {"eq":"L4"}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
@@ -331,7 +333,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'L4')
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:path":90})
+                                        query_params={"cbers:path":
+                                                      {"eq":90}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
