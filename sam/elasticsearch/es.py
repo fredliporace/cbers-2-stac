@@ -446,7 +446,12 @@ def process_query_extension(dsl_query, query_params: dict):
                             query(~Q("match", # pylint: disable=invalid-unary-operand-type
                                      **{"properties."+key:query_params[key]\
                                         [operator]}))
-
+            elif operator in ['gt', 'gte', 'lt', 'lte']:
+                dsl_query = dsl_query.\
+                            query(Q("range",
+                                    **{"properties."+key:{operator:\
+                                                          query_params[key]\
+                                                          [operator]}}))
             else:
                 raise RuntimeError("{op} is not a supported operator".\
                                    format(op=operator))

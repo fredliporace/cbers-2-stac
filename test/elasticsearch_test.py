@@ -422,5 +422,29 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
                          'L2')
 
+        # gt, gte, lt, lte operators
+        q_payload = {"cbers:path": {"gte":90, "lte":90}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        #print(q_dsl.to_dict()['query'])
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool': {'must':
+                                      [{'range':
+                                        {'properties.cbers:path':
+                                         {'gte': 90}}},
+                                       {'range':
+                                        {'properties.cbers:path':
+                                         {'lte': 90}}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:path'], 90)
+
+        q_payload = {"cbers:path": {"gt":90, "lt":90}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 0)
+
 if __name__ == '__main__':
     unittest.main()
