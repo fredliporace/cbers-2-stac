@@ -452,6 +452,24 @@ def process_query_extension(dsl_query, query_params: dict):
                                     **{"properties."+key:{operator:\
                                                           query_params[key]\
                                                           [operator]}}))
+            elif operator == 'startsWith':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":query_params[key]\
+                                       [operator]+"*"}))
+            elif operator == 'endsWith':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":"*"+query_params[key]\
+                                       [operator]}))
+            elif operator == 'contains':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":"*"+query_params[key]\
+                                       [operator]+"*"}))
             else:
                 raise RuntimeError("{op} is not a supported operator".\
                                    format(op=operator))

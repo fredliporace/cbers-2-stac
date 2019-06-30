@@ -446,5 +446,42 @@ class ElasticsearchTest(unittest.TestCase):
         res = q_dsl.execute()
         self.assertEqual(res['hits']['total'], 0)
 
+        # startsWith operator
+        q_payload = {'cbers:data_type': {'startsWith':'L'},
+                     'eo:instrument': {'startsWith':'MU'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool':
+                             {'must':
+                              [{'query_string':
+                                {'default_field': 'properties.cbers:data_type',
+                                 'query': 'L*'}},
+                               {'query_string':
+                                {'default_field': 'properties.eo:instrument',
+                                 'query': 'MU*'}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+        # endsWith, contains operators
+        q_payload = {'cbers:data_type': {'endsWith':'2'},
+                     'eo:instrument': {'contains':'U'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        print(q_dsl.to_dict()['query'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+
+
 if __name__ == '__main__':
     unittest.main()
