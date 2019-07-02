@@ -419,6 +419,27 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     #print(json.dumps(query.to_dict(), indent=2))
     return query[0:limit]
 
+def process_intersects_filter(dsl_query, geometry: dict):
+    """
+    Extends received query to include intersect filter with provided
+    geometry
+
+    :param dsl_query: ES DSL object
+    :param geometry dict: geometry as GeoJSON
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    dsl_query = dsl_query.\
+                filter("geo_shape",
+                       geometry={"shape":
+                                 {"type":
+                                  geometry["geometry"]["type"],
+                                  "coordinates":
+                                  geometry["geometry"]["coordinates"]},
+                                 "relation": "intersects"})
+    return dsl_query
+
 def process_query_extension(dsl_query, query_params: dict):
     """
     Extends received query to include query extension parameters
@@ -581,10 +602,14 @@ def stac_search_endpoint_handler(event,
             document['bbox'] = parse_bbox('-180,-90,180,90')
             document['time'] = None
             document['limit'] = 10
-    else:
+    else: # POST
         document = json.loads(event['body'])
-        document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
-                            [document['bbox'][2], document['bbox'][3]]]
+        # bbox is not mandatory
+        if document.get('bbox'):
+            document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
+                                [document['bbox'][2], document['bbox'][3]]]
+        else:
+            document['bbox'] = None
         document['limit'] = int(document.get('limit', '10'))
         #print(document)
 
@@ -602,6 +627,11 @@ def stac_search_endpoint_handler(event,
     if document.get('query'):
         query = process_query_extension(dsl_query=query,
                                         query_params=document['query'])
+
+    # Process 'intersects' filter
+    if document.get('intersects'):
+        query = process_intersects_filter(dsl_query=query,
+                                          geometry=document['intersects'])
 
     # Execute query
     res = query.execute()

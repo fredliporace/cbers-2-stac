@@ -717,7 +717,7 @@ components:
       allOf:
         - $ref: '#/components/schemas/bboxFilter'
         - $ref: '#/components/schemas/timeFilter'
-#        - $ref: '#/components/schemas/intersectsFilter'
+        - $ref: '#/components/schemas/intersectsFilter'
         - type: object
           properties:
             limit:
@@ -775,12 +775,12 @@ components:
       properties:
         time:
           $ref: '#/components/schemas/time'
-#    intersectsFilter:
-#      type: object
-#      description: Only returns items that intersect with the provided polygon.
-#      properties:
-#        intersects:
-#          $ref: 'https://stacspec.org/assets/Geometry.json'
+    intersectsFilter:
+      type: object
+      description: Only returns items that intersect with the provided polygon.
+      properties:
+        intersects:
+          $ref: 'https://stacspec.org/assets/Geometry.json'
     time:
       type: string
       description: >

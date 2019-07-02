@@ -11,7 +11,8 @@ from elasticsearch import ConflictError
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
-    process_query_extension, strip_stac_item
+    process_query_extension, strip_stac_item, \
+    process_intersects_filter
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -345,7 +346,7 @@ class ElasticsearchTest(unittest.TestCase):
         #for hit in res:
         #    print(hit.to_dict())
 
-    def test_query_extension_search(self):
+    def test_query_extension_search(self): # pylint: disable=too-many-statements
         """test_query_extension_search"""
 
         # Create an empty index
@@ -481,7 +482,87 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
                          'MUX')
 
+    def test_process_intersects_filter(self):
+        """test_process_intersects_filter"""
 
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+        geometry = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -180.,
+                            -90.
+                        ],
+                        [
+                            -180.,
+                            90.
+                        ],
+                        [
+                            180.,
+                            90.
+                        ],
+                        [
+                            180.,
+                            -90.
+                        ],
+                        [
+                            -180.,
+                            -90.
+                        ]
+                    ]
+                ]
+            }
+        }
+        q_dsl = process_intersects_filter(dsl_query=empty_query,
+                                          geometry=geometry)
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 2)
+
+        # Change the polygon to intersect with a single scene
+        geometry["geometry"]["coordinates"] = [[
+            [23, 13],
+            [25, 13],
+            [25, 15],
+            [23, 15],
+            [23, 13]]]
+        q_dsl = process_intersects_filter(dsl_query=empty_query,
+                                          geometry=geometry)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
 
 if __name__ == '__main__':
     unittest.main()
