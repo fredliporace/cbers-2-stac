@@ -349,7 +349,7 @@ def create_document_in_index(es_client,
                          request_timeout=timeout)
 
 def stac_search(es_client, start_date: str = None, end_date: str = None,
-                bbox: list = None, limit: int = 10):
+                bbox: list = None, limit: int = 10, page: int = 1):
     """
     Search STAC items
 
@@ -358,7 +358,8 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     :param end_date str: ditto, same format as above
     :param bbox list: bounding box envelope, GeoJSON style
                       [[-180.0, -90.0], [180.0, 90.0]]
-    :param limit int: number of returned records
+    :param limit int: max number of returned records
+    :param page int: page number starting from 1
     :rtype: es.Search
     :return: built query
     """
@@ -409,6 +410,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
                                                  "coordinates" : bbox},
                                        "relation": "intersects"})
 
+    query = query.sort('_id')
     #query = query.query(Q("multi_match",
     #                      query="aa",
     #                      fields=['properties.provider']))
@@ -417,7 +419,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     #query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
 
     #print(json.dumps(query.to_dict(), indent=2))
-    return query[0:limit]
+    return query[(page - 1) * limit:page * limit]
 
 def process_intersects_filter(dsl_query, geometry: dict):
     """
@@ -598,10 +600,12 @@ def stac_search_endpoint_handler(event,
             document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
             document['time'] = qsp.get('time', None)
             document['limit'] = int(qsp.get('limit', '10'))
+            document['page'] = int(qsp.get('page', '1'))
         else:
             document['bbox'] = parse_bbox('-180,-90,180,90')
             document['time'] = None
             document['limit'] = 10
+            document['page'] = 1
     else: # POST
         document = json.loads(event['body'])
         # bbox is not mandatory
@@ -611,6 +615,7 @@ def stac_search_endpoint_handler(event,
         else:
             document['bbox'] = None
         document['limit'] = int(document.get('limit', '10'))
+        document['page'] = int(document.get('page', '1'))
         #print(document)
 
     start, end = None, None
@@ -621,7 +626,8 @@ def stac_search_endpoint_handler(event,
     query = stac_search(es_client=es_client,
                         start_date=start, end_date=end,
                         bbox=document['bbox'],
-                        limit=document['limit'])
+                        limit=document['limit'],
+                        page=document['page'])
 
     # Process 'query' extension
     if document.get('query'):

@@ -564,5 +564,53 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
                          'MUX')
 
+    def test_paging(self):
+        """test_paging"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = stac_search(es_client=es_client, limit=1, page=1).execute()
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(res[0]['id'],
+                         'CBERS_4_AWFI_20170409_167_123_L4')
+
+        res = stac_search(es_client=es_client, limit=1, page=2).execute()
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(res[0]['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        # past last page
+        res = stac_search(es_client=es_client, limit=1, page=3).execute()
+        self.assertEqual(len(res), 0)
+        self.assertEqual(res['hits']['total'], 2)
+
 if __name__ == '__main__':
     unittest.main()
