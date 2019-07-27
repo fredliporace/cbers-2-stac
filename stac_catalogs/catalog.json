@@ -6,6 +6,7 @@
   "links": [
     { "rel": "self", "href": "https://cbers-stac-0-7.s3.amazonaws.com/catalog.json" },
     { "rel": "root", "href": "https://cbers-stac-0-7.s3.amazonaws.com/catalog.json"},
+    { "rel": "child", "href": "https://cbers-stac-0-7.s3.amazonaws.com/collections/CBERS4MUX" },
     { "rel": "child", "href": "CBERS4/catalog.json" }
   ]
 }

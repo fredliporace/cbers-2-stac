@@ -442,6 +442,23 @@ def process_intersects_filter(dsl_query, geometry: dict):
                                  "relation": "intersects"})
     return dsl_query
 
+def process_collections_filter(dsl_query, collections: list):
+    """
+    Extends received query to filter only items belonging the
+    desried collection list
+
+    :param dsl_query: ES DSL object
+    :param collections list: string list of collections
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    for collection in collections:
+        dsl_query = dsl_query.\
+            query(Q("match",
+                    **{"collection":collection}))
+    return dsl_query
+
 def process_query_extension(dsl_query, query_params: dict):
     """
     Extends received query to include query extension parameters
@@ -638,6 +655,11 @@ def stac_search_endpoint_handler(event,
     if document.get('intersects'):
         query = process_intersects_filter(dsl_query=query,
                                           geometry=document['intersects'])
+
+    # Process 'collections' filter
+    if document.get('collections'):
+        query = process_collections_filter(dsl_query=query,
+                                           collections=document['collections'])
 
     # Execute query
     res = query.execute()
