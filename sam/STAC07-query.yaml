@@ -66,58 +66,68 @@ paths:
 #            application/json:
 #              schema:
 #                $ref: '#/components/schemas/exception'
-#  /collections:
-#    get:
-#      summary: describe the feature collections in the dataset
-#      operationId: describeCollections
-#      tags:
-#        - Capabilities
-#      responses:
-#        '200':
-#          description: Metdata about the feature collections shared by this API.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/content'
-#            text/html:
-#              schema:
-#                type: string
-#        default:
-#          description: An error occurred.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/exception'
-#            text/html:
-#              schema:
-#                type: string
-#  '/collections/{collectionId}':
-#    get:
-#      summary: 'describe the {collectionId} feature collection'
-#      operationId: describeCollection
-#      tags:
-#        - Capabilities
-#      parameters:
-#        - $ref: '#/components/parameters/collectionId'
-#      responses:
-#        '200':
-#          description: 'Metadata about the {collectionId} collection shared by this API.'
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/collectionInfo'
-#            text/html:
-#              schema:
-#                type: string
-#        default:
-#          description: An error occurred.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/exception'
-#            text/html:
-#              schema:
-#                type: string
+  /collections:
+    get:
+      summary: describe the feature collections in the dataset
+      operationId: describeCollections
+      tags:
+        - Capabilities
+      responses:
+        '200':
+          description: Metdata about the feature collections shared by this API.
+          content:
+            #application/json:
+            #  schema:
+            #    $ref: '#/components/schemas/content'
+            text/html:
+              schema:
+                type: string
+        default:
+          description: An error occurred.
+          content:
+            #application/json:
+            #  schema:
+            #    $ref: '#/components/schemas/exception'
+            text/html:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WFS3CollectionIdEndpointFunction.Arn}/invocations
+  '/collections/{collectionId}':
+    get:
+      summary: 'describe the {collectionId} feature collection'
+      operationId: describeCollection
+      tags:
+        - Capabilities
+      parameters:
+        - $ref: '#/components/parameters/collectionId'
+      responses:
+        '200':
+          description: 'Metadata about the {collectionId} collection shared by this API.'
+          content:
+            #application/json:
+            #  schema:
+            #    $ref: '#/components/schemas/collectionInfo'
+            text/html:
+              schema:
+                type: string
+        default:
+          description: An error occurred.
+          content:
+            #application/json:
+            #  schema:
+            #    $ref: '#/components/schemas/exception'
+            text/html:
+              schema:
+                type: string
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${WFS3CollectionIdEndpointFunction.Arn}/invocations
 #  '/collections/{collectionId}/items':
 #    get:
 #      summary: 'retrieve features of feature collection {collectionId}'

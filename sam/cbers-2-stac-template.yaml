@@ -629,6 +629,33 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  WFS3CollectionIdEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: elasticsearch
+      Handler: es.wfs3_collectionid_endpoint_handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        WFS3 collection/{collectionId} endpoint
+      Timeout: 55
+      Environment:
+        Variables:
+          ES_ENDPOINT: !GetAtt Elasticsearch.DomainEndpoint
+          ES_PORT: 443
+          ES_SSL: YES
+      Events:
+        # Attention! See comment above about endpoint
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /collections/*
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+        
   ConsumeReconcileQueueFunctionDLQ: 
     Type: 'AWS::SQS::Queue'
     Properties:
