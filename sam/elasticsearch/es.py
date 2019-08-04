@@ -8,6 +8,8 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
+from utils import get_collection_s3_key, get_collection_ids
+
 SQS_CLIENT = boto3.client('sqs')
 S3 = boto3.resource('s3')
 ES_CLIENT = None
@@ -687,22 +689,38 @@ def stac_search_endpoint_handler(event,
 
     return retmsg
 
+def wfs3_collections_endpoint_handler(event, context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point serving WFS3 collections requests
+    """
+
+    collections = dict()
+    collections['collections'] = list()
+    collections['links'] = list()
+    cids = get_collection_ids()
+    for cid in cids:
+        collections['collections'].\
+            append(stac_item_from_s3_key(bucket=os.environ['CBERS_STAC_BUCKET'],
+                                         key=get_collection_s3_key(cid)))
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(collections, indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
+
+    return retmsg
+
 def wfs3_collectionid_endpoint_handler(event,
                                        context):  # pylint: disable=unused-argument
     """
-    Lambda entry point serving WFS3 requests
+    Lambda entry point serving WFS3 collection/{collectionId} requests
     """
 
     cid = event['pathParameters']['collectionId']
-    cid = cid.replace('CBERS4', 'CBERS4/')
-    # Example
-    # https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/MUX/collection.json
-    key = '{}/collection.json'.format(cid)
     collection = stac_item_from_s3_key(bucket=os.environ['CBERS_STAC_BUCKET'],
-                                       key=key)
-    print(key)
-    #print(event)
-    #print(context)
+                                       key=get_collection_s3_key(cid))
     retmsg = {
         'statusCode': '200',
         'body': json.dumps(collection, indent=2),
