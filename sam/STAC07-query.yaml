@@ -59,7 +59,8 @@ paths:
 #          content:
 #            application/json:
 #              schema:
-#                $ref: '#/components/schemas/req-classes'
+#                # See comment on change from req-classes below
+#                $ref: '#/components/schemas/reqclasses'
 #        default:
 #          description: An error occurred.
 #          content:
@@ -244,9 +245,9 @@ paths:
       parameters:
         - $ref: '#/components/parameters/bbox'
         - $ref: '#/components/parameters/time'
-#        - $ref: '#/components/parameters/plimit'
+        - $ref: '#/components/parameters/limit'
         - $ref: '#/components/parameters/page'
-#        - $ref: '#/components/parameters/ids'
+        - $ref: '#/components/parameters/ids'
         - $ref: '#/components/parameters/collections'
         - $ref: '#/components/parameters/query'
       responses:
@@ -303,15 +304,15 @@ paths:
             text/html:
               schema:
                 type: string
-#        default:
-#          description: An error occurred.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/exception'
-#            text/html:
-#              schema:
-#                type: string
+        default:
+          description: An error occurred.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/exception'
+            text/html:
+              schema:
+                type: string
       # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
       x-amazon-apigateway-integration:
         httpMethod: post
@@ -334,28 +335,28 @@ components:
       required: true
       schema:
         type: string
-#    limit:
-#      name: limit
-#      in: query
-#      description: |
-#        The optional limit parameter limits the number of items that are
-#        presented in the response document.
-#
-#        Only items are counted that are on the first level of the collection in
-#        the response document. Nested objects contained within the explicitly
-#        requested items shall not be counted.
-#
-#        * Minimum = 1
-#        * Maximum = 10000
-#        * Default = 10
-#      required: false
-#      schema:
-#        type: integer
-#        minimum: 1
-#        maximum: 10000
-#        default: 10
-#      style: form
-#      explode: false
+    limit:
+      name: limit
+      in: query
+      description: |
+        The optional limit parameter limits the number of items that are
+        presented in the response document.
+
+        Only items are counted that are on the first level of the collection in
+        the response document. Nested objects contained within the explicitly
+        requested items shall not be counted.
+
+        * Minimum = 1
+        * Maximum = 10000
+        * Default = 10
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 10000
+        default: 10
+      style: form
+      explode: false
     page:
       name: page
       in: query
@@ -372,22 +373,22 @@ components:
         default: 1
       style: form
       explode: false
-#    ids:
-#      name: ids
-#      in: query
-#      description: >
-#        The optional ids parameter returns a FeatureCollection of all matching
-#        ids.
-#
-#        If provided all other parameters that further restrict the number of
-#        search results (except `page` and `limit`) will be ignored.
-#      required: false
-#      schema:
-#        type: array
-#        minItems: 1
-#        items:
-#          type: string
-#      explode: false
+    ids:
+      name: ids
+      in: query
+      description: >
+        The optional ids parameter returns a FeatureCollection of all matching
+        ids.
+
+        If provided all other parameters that further restrict the number of
+        search results (except `page` and `limit`) will be ignored.
+      required: false
+      schema:
+        type: array
+        minItems: 1
+        items:
+          type: string
+      explode: false
     collections:
       name: collections
       in: query
@@ -501,20 +502,23 @@ components:
               rel: data
               type: application/json
               title: Metadata about the feature collections
-#    req-classes:
-#      type: object
-#      required:
-#        - conformsTo
-#      properties:
-#        conformsTo:
-#          type: array
-#          items:
-#            type: string
-#          example:
-#            - 'http://www.opengis.net/spec/wfs-1/3.0/req/core'
-#            - 'http://www.opengis.net/spec/wfs-1/3.0/req/oas30'
-#            - 'http://www.opengis.net/spec/wfs-1/3.0/req/html'
-#            - 'http://www.opengis.net/spec/wfs-1/3.0/req/geojson'
+    # Originally req-classes
+    # Error:
+    # Unable to create model for 'req-classes': Model name must be alphanumeric: req-classes 
+    reqclasses:
+      type: object
+      required:
+        - conformsTo
+      properties:
+        conformsTo:
+          type: array
+          items:
+            type: string
+          example:
+            - 'http://www.opengis.net/spec/wfs-1/3.0/req/core'
+            - 'http://www.opengis.net/spec/wfs-1/3.0/req/oas30'
+            - 'http://www.opengis.net/spec/wfs-1/3.0/req/html'
+            - 'http://www.opengis.net/spec/wfs-1/3.0/req/geojson'
     content:
       type: object
       required:
@@ -650,57 +654,57 @@ components:
                 type: string
                 format: url
                 example: 'http://www.big-building.com'
-#    extent:
-#      type: object
-#      properties:
-#        crs:
-#          description: >-
-#            Coordinate reference system of the coordinates in the spatial extent
-#            (property `spatial`). In the Core, only WGS84 longitude/latitude is
-#            supported. Extensions may support additional coordinate reference
-#            systems.
-#          type: string
-#          enum:
-#            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-#          default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
-#        spatial:
-#          description: >-
-#            West, south, east, north edges of the spatial extent. The minimum
-#            and maximum values apply to the coordinate reference system WGS84
-#            longitude/latitude that is supported in the Core. If, for example, a
-#            projected coordinate reference system is used, the minimum and
-#            maximum values need to be adjusted.
-#          type: array
-#          minItems: 4
-#          maxItems: 6
-#          items:
-#            type: number
-#          example:
-#            - -180
-#            - -90
-#            - 180
-#            - 90
-#        trs:
-#          description: >-
-#            Temporal reference system of the coordinates in the temporal extent
-#            (property `temporal`). In the Core, only the Gregorian calendar is
-#            supported. Extensions may support additional temporal reference
-#            systems.
-#          type: string
-#          enum:
-#            - 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
-#          default: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
-#        temporal:
-#          description: Begin and end times of the temporal extent.
-#          type: array
-#          minItems: 2
-#          maxItems: 2
-#          items:
-#            type: string
-#            format: dateTime
-#          example:
-#            - '2011-11-11T12:22:11Z'
-#            - '2012-11-24T12:32:43Z'
+    extent:
+      type: object
+      properties:
+        crs:
+          description: >-
+            Coordinate reference system of the coordinates in the spatial extent
+            (property `spatial`). In the Core, only WGS84 longitude/latitude is
+            supported. Extensions may support additional coordinate reference
+            systems.
+          type: string
+          enum:
+            - 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+          default: 'http://www.opengis.net/def/crs/OGC/1.3/CRS84'
+        spatial:
+          description: >-
+            West, south, east, north edges of the spatial extent. The minimum
+            and maximum values apply to the coordinate reference system WGS84
+            longitude/latitude that is supported in the Core. If, for example, a
+            projected coordinate reference system is used, the minimum and
+            maximum values need to be adjusted.
+          type: array
+          minItems: 4
+          maxItems: 6
+          items:
+            type: number
+          example:
+            - -180
+            - -90
+            - 180
+            - 90
+        trs:
+          description: >-
+            Temporal reference system of the coordinates in the temporal extent
+            (property `temporal`). In the Core, only the Gregorian calendar is
+            supported. Extensions may support additional temporal reference
+            systems.
+          type: string
+          enum:
+            - 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
+          default: 'http://www.opengis.net/def/uom/ISO-8601/0/Gregorian'
+        temporal:
+          description: Begin and end times of the temporal extent.
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            type: string
+            format: dateTime
+          example:
+            - '2011-11-11T12:22:11Z'
+            - '2012-11-24T12:32:43Z'
     exception:
       type: object
       required:
@@ -953,37 +957,37 @@ components:
       description: The GeoJSON type
       enum:
         - Feature
-#    itemAssets:
-#      type: object
-#      additionalProperties:
-#        type: object
-#        required:
-#          - href
-#        properties:
-#          href:
-#            type: string
-#            format: url
-#            description: Link to the asset object
-#            example: >-
-#              http://cool-sat.com/catalog/collections/cs/items/CS3-20160503_132130_04/thumb.png
-#          title:
-#            type: string
-#            description: Displayed title
-#            example: Thumbnail
-#          type:
-#            type: string
-#            description: Media type of the asset
-#            example: image/png
-#    itemProperties:
-#      type: object
-#      required:
-#        - datetime
-#      description: provides the core metatdata fields plus extensions
-#      properties:
-#        datetime:
-#          $ref: '#/components/schemas/time'
-#      additionalProperties:
-#        description: Any additional properties added in via extensions.
+    itemAssets:
+      type: object
+      additionalProperties:
+        type: object
+        required:
+          - href
+        properties:
+          href:
+            type: string
+            format: url
+            description: Link to the asset object
+            example: >-
+              http://cool-sat.com/catalog/collections/cs/items/CS3-20160503_132130_04/thumb.png
+          title:
+            type: string
+            description: Displayed title
+            example: Thumbnail
+          type:
+            type: string
+            description: Media type of the asset
+            example: image/png
+    itemProperties:
+      type: object
+      required:
+        - datetime
+      description: provides the core metatdata fields plus extensions
+      properties:
+        datetime:
+          $ref: '#/components/schemas/time'
+      additionalProperties:
+        description: Any additional properties added in via extensions.
     itemCollectionLinks:
       type: array
       description: >-
@@ -1064,8 +1068,9 @@ components:
               description: >-
                 Find items with a property that contains with the specified
                 string. A case-insensitive comparison must be performed.
-#            time:
-#              $ref: '#/components/schemas/time'
+            # Not implemented since this is already supported in core
+            # time:
+            #   $ref: '#/components/schemas/time'
 servers:
   - url: 'http://dev.cool-sat.com'
     description: Development server
