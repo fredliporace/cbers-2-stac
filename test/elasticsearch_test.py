@@ -12,7 +12,8 @@ from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
     process_query_extension, strip_stac_item, \
-    process_intersects_filter, process_collections_filter
+    process_intersects_filter, process_collections_filter, \
+    process_feature_filter
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -535,6 +536,54 @@ class ElasticsearchTest(unittest.TestCase):
         # Unknown collection, should return no items
         q_dsl = process_collections_filter(dsl_query=empty_query,
                                            collections=['NOCOLLECTIONS'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 0)
+
+    def test_feature_filter_search(self):
+        """test_feature_filter_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        # Sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+
+        # Single MUX item
+        q_dsl = process_feature_filter(dsl_query=empty_query,
+                                       feature_ids=['CBERS_4_MUX_20170528_090_084_L2'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        # Unknown collection, should return no items
+        q_dsl = process_feature_filter(dsl_query=empty_query,
+                                       feature_ids=['NOID'])
         res = q_dsl.execute()
         self.assertEqual(res['hits']['total'], 0)
 
