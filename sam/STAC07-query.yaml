@@ -19,31 +19,31 @@ x-amazon-apigateway-request-validators:
     validateRequestBody: true
     validateRequestParameters: true
 paths:
-#  /:
-#    get:
-#      summary: landing page of this API
-#      description: >-
-#        The landing page provides links to the API definition, the Conformance
-#        statements and the metadata about the feature data in this dataset.
-#      operationId: getLandingPage
-#      tags:
-#        - Capabilities
-#      responses:
-#        '200':
-#          description: links to the API capabilities
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/root'
-#            text/html:
-#              schema:
-#                type: string
-#      # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
-#      x-amazon-apigateway-integration:
-#        httpMethod: get
-#        type: aws_proxy
-#        uri:
-#          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${StacEndpointFunction.Arn}/invocations
+  /:
+    get:
+      summary: landing page of this API
+      description: >-
+        The landing page provides links to the API definition, the Conformance
+        statements and the metadata about the feature data in this dataset.
+      operationId: getLandingPage
+      tags:
+        - Capabilities
+      responses:
+        '200':
+          description: links to the API capabilities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/root'
+            text/html:
+              schema:
+                type: string
+      # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+      x-amazon-apigateway-integration:
+        httpMethod: post
+        type: aws_proxy
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LandingEndpointFunction.Arn}/invocations
 #  /conformance:
 #    get:
 #      summary: information about standards that this API conforms to

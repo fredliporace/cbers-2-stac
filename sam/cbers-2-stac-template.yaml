@@ -568,6 +568,30 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
+  LandingEndpointFunction:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      CodeUri: stac_endpoint
+      Handler: code.handler
+      Role: !GetAtt LambdaRole.Arn
+      Policies:
+      Description: >
+        stac API endpoint
+      Timeout: 55
+      Events:
+        # This information is not injected in the swagger template,
+        # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+        # If the lambda changes then the swagger file must be changed
+        StacEndpointApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref StacApi
+            Path: /
+            Method: ANY
+      DeadLetterQueue:
+        Type: 'SQS'
+        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+
   StacEndpointFunction:
     Type: 'AWS::Serverless::Function'
     Properties:
@@ -591,7 +615,7 @@ Resources:
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
-
+        
   # See https://github.com/awslabs/serverless-application-model/issues/59
   # This not seems to be needed aymore, keeping as reference just in case
   #StacEndpointPermission:
