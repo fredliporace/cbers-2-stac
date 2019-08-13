@@ -44,29 +44,35 @@ paths:
         type: aws_proxy
         uri:
           Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LandingEndpointFunction.Arn}/invocations
-#  /conformance:
-#    get:
-#      summary: information about standards that this API conforms to
-#      description: >-
-#        list all requirements classes specified in a standard (e.g., WFS 3.0
-#        Part 1: Core) that the server conforms to
-#      operationId: getRequirementsClasses
-#      tags:
-#        - Capabilities
-#      responses:
-#        '200':
-#          description: the URIs of all requirements classes supported by the server
-#          content:
-#            application/json:
-#              schema:
-#                # See comment on change from req-classes below
-#                $ref: '#/components/schemas/reqclasses'
-#        default:
-#          description: An error occurred.
-#          content:
-#            application/json:
-#              schema:
-#                $ref: '#/components/schemas/exception'
+  # /conformance:
+  #   get:
+  #     summary: information about standards that this API conforms to
+  #     description: >-
+  #       list all requirements classes specified in a standard (e.g., WFS 3.0
+  #       Part 1: Core) that the server conforms to
+  #     operationId: getRequirementsClasses
+  #     tags:
+  #       - Capabilities
+  #     responses:
+  #       '200':
+  #         description: the URIs of all requirements classes supported by the server
+  #         content:
+  #           application/json:
+  #             schema:
+  #               # See comment on change from req-classes below
+  #               $ref: '#/components/schemas/reqclasses'
+  #       default:
+  #         description: An error occurred.
+  #         content:
+  #           application/json:
+  #             schema:
+  #               $ref: '#/components/schemas/exception'
+  #     # See https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+  #     x-amazon-apigateway-integration:
+  #       httpMethod: post
+  #       type: aws_proxy
+  #       uri:
+  #         Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ConformanceEndpointFunction.Arn}/invocations
   /collections:
     get:
       summary: describe the feature collections in the dataset
