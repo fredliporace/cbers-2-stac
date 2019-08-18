@@ -25,7 +25,7 @@ def populate_queue_with_subdirs(bucket, prefix, queue):
     for dir_key in dirs['CommonPrefixes']:
         SQS_CLIENT.send_message(QueueUrl=queue, MessageBody=dir_key['Prefix'])
 
-def handler(event, context):
+def handler(event, context): # pylint: disable=unused-argument
     """Lambda entry point
     Event keys:
       prefix(string): Common prefix of S3 keys to be sent to queue

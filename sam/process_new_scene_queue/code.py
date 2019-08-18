@@ -188,7 +188,9 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
     further processing.
 
     Input:
-      msg(dict): message (quicklook) to be processed, key is 'key'.
+      msg(dict): message (quicklook) to be processed, quicklook s3 key is 'key'. If
+                 reconciling then there is also a 'reconcile' key. A message
+                 is sent to the reconcile topic only if 'reconcile' is not defined.
       buckets(dict): buckets for 'cog', 'stac' and 'metadata'
       sns_target_arn(string): SNS arn for new stac items topic
       catalog_update_queue(string): URL of queue that receives new STAC items
@@ -221,7 +223,9 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                                  metadata_keys['stac'])
 
     # Publish to SNS topic, if defined
-    if sns_target_arn:
+    #print(msg)
+    if sns_target_arn and not msg.get('reconcile'):
+        #print("Sending msg to topic")
         SNS_CLIENT.publish(TargetArn=sns_target_arn,
                            Message=json.dumps(stac_meta),
                            MessageAttributes=build_sns_topic_msg_attributes(stac_meta))
@@ -254,7 +258,7 @@ def catalog_update_request(table_name, stac_item_key):
         })
 
 
-def process_trigger(cbers_pds_bucket,
+def process_trigger(cbers_pds_bucket, # pylint: disable=too-many-arguments
                     cbers_stac_bucket,
                     cbers_meta_pds_bucket,
                     event,
@@ -282,12 +286,13 @@ def process_trigger(cbers_pds_bucket,
     for record in event['Records']:
         message = json.loads(json.loads(record['body'])['Message'])
         for rec in message['Records']:
-            process_message({'key': rec['s3']['object']['key']},
+            process_message({'key': rec['s3']['object']['key'],
+                             'reconcile': 1},
                             buckets, sns_target_arn, catalog_update_queue,
                             catalog_update_table)
 
 
-def process_queue(cbers_pds_bucket,
+def process_queue(cbers_pds_bucket, # pylint: disable=too-many-arguments
                   cbers_stac_bucket,
                   cbers_meta_pds_bucket,
                   queue,
@@ -320,6 +325,7 @@ def process_queue(cbers_pds_bucket,
     processed_messages = 0
     for msg in sqs_messages(queue):
 
+        msg['reconcile'] = 1
         process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                         catalog_update_table)
 
