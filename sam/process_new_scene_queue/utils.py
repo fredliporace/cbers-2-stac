@@ -19,18 +19,64 @@ STAC_DOC_TEMPLATE = {
     "links": []
 }
 
-def static_to_api_collection(collection: dict):
+def static_to_api_collection(collection: dict, event: dict):
     """
     Transform static collection objects to API collection by
     - removing all 'parent' and 'child' links
 
     :param collection dict: input static collection
+    :param event dict: API gateway lambda event struct
     :rtype: dict
     :return: API collection
     """
-    collection['links'] = [v for v in collection['links'] \
-                           if v['rel'] != 'child' and v['rel'] != 'parent']
+
+    parsed = parse_api_gateway_event(event)
+    #collection['links'] = [v for v in collection['links'] \
+    #                       if v['rel'] != 'child' and v['rel'] != 'parent']
+    collection['links'] = list()
+    collection['links'].append({'rel':'self',
+                                'href':'{phost}/{prefix}/collections/{cid}'.\
+                                format(phost=parsed['phost'],
+                                       prefix=parsed['prefix'],
+                                       cid=collection['id'])})
+    collection['links'].append({'rel':'parent',
+                                'href':parsed['spath']})
+    collection['links'].append({'rel':'root',
+                                'href':parsed['spath']})
+    collection['links'].append({'rel':'items',
+                                'href':'{phost}/{prefix}/collections/{cid}/items'.\
+                                format(phost=parsed['phost'],
+                                       prefix=parsed['prefix'],
+                                       cid=collection['id'])})
+
     return collection
+
+def parse_api_gateway_event(event: dict):
+    """
+    Extract fields from API gateway event and place them
+    in a dictionary
+
+    :param event dict: API gateway lambda event struct
+    :rtype: dict
+    :return: dict with extracted fields, for example
+             phost: https://stac.amskepler.com
+             ppath: https://stac.amskepler.com/v07/stac (access path)
+             ppath: https://stac.amskepler.com/v07/stac (fixed STAC root)
+             vpath: https://stac.amskepler.com/v07
+             prefix: v07
+    """
+
+    parsed = dict()
+    parsed['phost'] = '{protocol}://{host}'.format(protocol=event['headers']['X-Forwarded-Proto'],
+                                                   host=event['headers']['Host'])
+    parsed['ppath'] = '{phost}{path}'.format(phost=parsed['phost'],
+                                             path=event['path'])
+    parsed['prefix'] = event['path'].split('/')[1]
+    parsed['vpath'] = '{phost}/{prefix}'.format(phost=parsed['phost'],
+                                                prefix=parsed['prefix'])
+    parsed['spath'] = '{phost}/{prefix}/stac'.format(phost=parsed['phost'],
+                                                     prefix=parsed['prefix'])
+    return parsed
 
 def get_api_stac_root(event: dict):
     """
@@ -42,16 +88,12 @@ def get_api_stac_root(event: dict):
     """
 
     doc = copy.deepcopy(STAC_DOC_TEMPLATE)
-    phost = '{protocol}://{host}'.format(protocol=event['headers']['X-Forwarded-Proto'],
-                                         host=event['headers']['Host'])
-    ppath = '{phost}{path}'.format(phost=phost,
-                                   path=event['path'])
-    prefix = event['path'].split('/')[1]
-    doc['links'].append({"self":ppath})
+    parsed = parse_api_gateway_event(event)
+    doc['links'].append({"self":parsed['ppath']})
     for collection in COLLECTIONS:
         doc['links'].append({"child":'{phost}/{prefix}/collections/{collection}'.\
-                             format(phost=phost,
-                                    prefix=prefix,
+                             format(phost=parsed['phost'],
+                                    prefix=parsed['prefix'],
                                     collection=collection)})
     return doc
 

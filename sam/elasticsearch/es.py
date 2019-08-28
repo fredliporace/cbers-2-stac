@@ -766,9 +766,11 @@ def wfs3_collections_endpoint_handler(event, context):  # pylint: disable=unused
     cids = get_collection_ids()
     for cid in cids:
         collections['collections'].\
-            append(static_to_api_collection(stac_item_from_s3_key(bucket=\
+            append(static_to_api_collection(collection=\
+                                            stac_item_from_s3_key(bucket=\
                                                                   os.environ['CBERS_STAC_BUCKET'],
-                                                                  key=get_collection_s3_key(cid))))
+                                                                  key=get_collection_s3_key(cid)),
+                                            event=event))
     retmsg = {
         'statusCode': '200',
         'body': json.dumps(collections,
@@ -791,7 +793,8 @@ def wfs3_collectionid_endpoint_handler(event,
                                        key=get_collection_s3_key(cid))
     retmsg = {
         'statusCode': '200',
-        'body': json.dumps(static_to_api_collection(collection),
+        'body': json.dumps(static_to_api_collection(collection=collection,
+                                                    event=event),
                            indent=2),
         'headers': {
             'Content-Type': 'application/json',
