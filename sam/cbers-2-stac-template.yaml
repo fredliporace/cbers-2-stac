@@ -87,6 +87,8 @@ Resources:
   # SNS Topic start
   #################################################
 
+  # This is the public topic used to broadcast items
+  # not generated in a reconcile operation
   CBERSSTACItemTopic:
     Type: 'AWS::SNS::Topic'
 
@@ -130,6 +132,37 @@ Resources:
                   - lambda
       Topics:
         - !Ref CBERSSTACItemTopic
+
+  # This is the topic used for reconciling operations
+  ReconcileCBERSSTACItemTopic:
+    Type: 'AWS::SNS::Topic'
+  CBERSSTACItemTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2008-10-17'
+        Id: __default_policy_ID
+        Statement:
+          - Sid: CB_OWN_STATEMENT_ID
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - SNS:GetTopicAttributes
+              - SNS:SetTopicAttributes
+              - SNS:AddPermission
+              - SNS:RemovePermission
+              - SNS:DeleteTopic
+              - SNS:Subscribe
+              - SNS:ListSubscriptionsByTopic
+              - SNS:Publish
+              - SNS:Receive
+            Resource: !Ref ReconcileCBERSSTACItemTopic
+            Condition:
+              StringEquals:
+                AWS:SourceOwner: !Ref AWS::AccountId
+      Topics:
+        - !Ref ReconcileCBERSSTACItemTopic
 
   AlarmTopic:
     Type: AWS::SNS::Topic
@@ -339,6 +372,7 @@ Resources:
       # chaged, use 5-6 times the timeout value
       VisibilityTimeout: 180
 
+  # Subscription for updating with new STAC items
   InsertIntoElasticsearchSubscription:
     Type: 'AWS::SNS::Subscription'
     Properties:
@@ -346,20 +380,36 @@ Resources:
       Protocol: 'sqs'
       TopicArn: !Ref CBERSSTACItemTopic
 
+  # Subscription for updating with reconciling STAC items
+  InsertIntoElasticsearchReconcileSubscription:
+    Type: 'AWS::SNS::Subscription'
+    Properties:
+      Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
+      Protocol: 'sqs'
+      TopicArn: !Ref ReconcileCBERSSTACItemTopic
+
   InsertIntoElasticsearchQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
     Properties:
       PolicyDocument:
         Version: '2008-10-17'
         Statement:
-        - Effect: Allow
-          Principal:
-            AWS: '*'
-          Action: 'SQS:SendMessage'
-          Resource: !GetAtt InsertIntoElasticsearchQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: !Ref CBERSSTACItemTopic
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'SQS:SendMessage'
+            Resource: !GetAtt InsertIntoElasticsearchQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref CBERSSTACItemTopic
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action: 'SQS:SendMessage'
+            Resource: !GetAtt InsertIntoElasticsearchQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref ReconcileCBERSSTACItemTopic
       Queues:
         - !Ref InsertIntoElasticsearchQueue
 
@@ -440,6 +490,7 @@ Resources:
         Variables:
           SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
           CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
+          SNS_RECONCILE_TARGET_ARN: !Ref ReconcileCBERSSTACItemTopic
       DeadLetterQueue:
         Type: 'SQS'
         TargetArn: !GetAtt ProcessNewSceneQueueFunctionDLQ.Arn
