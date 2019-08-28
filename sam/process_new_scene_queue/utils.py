@@ -19,6 +19,19 @@ STAC_DOC_TEMPLATE = {
     "links": []
 }
 
+def static_to_api_collection(collection: dict):
+    """
+    Transform static collection objects to API collection by
+    - removing all 'parent' and 'child' links
+
+    :param collection dict: input static collection
+    :rtype: dict
+    :return: API collection
+    """
+    collection['links'] = [v for v in collection['links'] \
+                           if v['rel'] != 'child' and v['rel'] != 'parent']
+    return collection
+
 def get_api_stac_root(event: dict):
     """
     Return STAC api root document

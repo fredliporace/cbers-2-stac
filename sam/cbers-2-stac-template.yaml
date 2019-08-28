@@ -868,7 +868,7 @@ Resources:
         # https://docs.aws.amazon.com/elasticsearch-service/latest/developerguide/aes-limits.html
         # Using 10 GiB for testing
         #VolumeSize: 35
-        VolumeSize: 10
+        VolumeSize: 20
         VolumeType: gp2
       ElasticsearchClusterConfig:
         #DedicatedMasterCount: Integer

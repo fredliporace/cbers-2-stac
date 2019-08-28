@@ -188,11 +188,9 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
     further processing.
 
     Input:
-      msg(dict): message (quicklook) to be processed, quicklook s3 key is 'key'. If
-                 reconciling then there is also a 'reconcile' key. A message
-                 is sent to the reconcile topic only if 'reconcile' is not defined.
+      msg(dict): message (quicklook) to be processed, quicklook s3 key is 'key'.
       buckets(dict): buckets for 'cog', 'stac' and 'metadata'
-      sns_target_arn(string): SNS arn for new stac items topic
+      sns_target_arn(string): SNS arn for new stac items topic, None if reconciling
       catalog_update_queue(string): URL of queue that receives new STAC items
         for updating the catalog structure, None if not used.
       catalog_update_table: DynamoDB that hold the catalog update requests
@@ -222,10 +220,10 @@ def process_message(msg, buckets, sns_target_arn, catalog_update_queue,
         S3_CLIENT.upload_fileobj(data, buckets['stac'],
                                  metadata_keys['stac'])
 
-    # Publish to SNS topic, if defined
+    # Publish to SNS topic, if defined and not reconciling
     #print(msg)
-    if sns_target_arn and not msg.get('reconcile'):
-        #print("Sending msg to topic")
+    if sns_target_arn:
+        print("Sending msg to topic")
         SNS_CLIENT.publish(TargetArn=sns_target_arn,
                            Message=json.dumps(stac_meta),
                            MessageAttributes=build_sns_topic_msg_attributes(stac_meta))
@@ -286,9 +284,12 @@ def process_trigger(cbers_pds_bucket, # pylint: disable=too-many-arguments
     for record in event['Records']:
         message = json.loads(json.loads(record['body'])['Message'])
         for rec in message['Records']:
-            process_message({'key': rec['s3']['object']['key'],
-                             'reconcile': 1},
-                            buckets, sns_target_arn, catalog_update_queue,
+            if rec['s3']['object'].get('reconcile'):
+                eff_sns_target_arn = None
+            else:
+                eff_sns_target_arn = sns_target_arn
+            process_message({'key': rec['s3']['object']['key']},
+                            buckets, eff_sns_target_arn, catalog_update_queue,
                             catalog_update_table)
 
 
@@ -325,7 +326,6 @@ def process_queue(cbers_pds_bucket, # pylint: disable=too-many-arguments
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        msg['reconcile'] = 1
         process_message(msg, buckets, sns_target_arn, catalog_update_queue,
                         catalog_update_table)
 

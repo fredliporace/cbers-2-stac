@@ -8,7 +8,8 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
-from utils import get_collection_s3_key, get_collection_ids
+from utils import get_collection_s3_key, get_collection_ids, \
+    static_to_api_collection
 
 SQS_CLIENT = boto3.client('sqs')
 S3 = boto3.resource('s3')
@@ -646,7 +647,7 @@ def create_documents_handler(event,
     #create_document_in_index(es_client)
 
 def stac_search_endpoint_handler(event,
-                                 context):  # pylint: disable=unused-argument
+                                 context): # pylint: disable=unused-argument
     """
     Lambda entry point
     """
@@ -765,11 +766,13 @@ def wfs3_collections_endpoint_handler(event, context):  # pylint: disable=unused
     cids = get_collection_ids()
     for cid in cids:
         collections['collections'].\
-            append(stac_item_from_s3_key(bucket=os.environ['CBERS_STAC_BUCKET'],
-                                         key=get_collection_s3_key(cid)))
+            append(static_to_api_collection(stac_item_from_s3_key(bucket=\
+                                                                  os.environ['CBERS_STAC_BUCKET'],
+                                                                  key=get_collection_s3_key(cid))))
     retmsg = {
         'statusCode': '200',
-        'body': json.dumps(collections, indent=2),
+        'body': json.dumps(collections,
+                           indent=2),
         'headers': {
             'Content-Type': 'application/json',
         }
@@ -788,7 +791,8 @@ def wfs3_collectionid_endpoint_handler(event,
                                        key=get_collection_s3_key(cid))
     retmsg = {
         'statusCode': '200',
-        'body': json.dumps(collection, indent=2),
+        'body': json.dumps(static_to_api_collection(collection),
+                           indent=2),
         'headers': {
             'Content-Type': 'application/json',
         }
