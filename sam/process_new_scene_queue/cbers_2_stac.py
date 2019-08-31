@@ -31,7 +31,7 @@ def get_keys_from_cbers(cbers_metadata):
     Input:
     cbers_metadata(sting): CBERS metadata file location
     Output:
-    dict: Dictionary with stac relevant information
+    dict: Dictionary with stac information
     """
 
     nsp = {'x': 'http://www.gisplan.com.br/xmlsat'}
@@ -49,6 +49,8 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['mission'] = satellite.find('x:name', nsp).text
     metadata['number'] = satellite.find('x:number', nsp).text
     metadata['sensor'] = satellite.find('x:instrument', nsp).text
+    metadata['collection'] = metadata['mission'] + metadata['number'] + \
+                             metadata['sensor']
 
     # image node information
     image = root.find('x:image', nsp)
@@ -225,6 +227,9 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['bbox'] = (float(cbers['bb_ll_lon']), float(cbers['bb_ll_lat']),
                          float(cbers['bb_ur_lon']), float(cbers['bb_ur_lat']))
 
+    # Collection
+    stac_item['collection'] = cbers['collection']
+
     stac_item['properties'] = OrderedDict()
     datetime = cbers['acquisition_date'].replace(' ', 'T')
     datetime = re.sub(r'\.\d+', 'Z', datetime)
@@ -255,12 +260,13 @@ def build_stac_item_keys(cbers, buckets):
                                                 int(cbers['row'])) + \
                           'catalog.json'))
 
-    # links, collection
+    # link, collection
     stac_item['links'].\
-        append(build_link('collection',
-                          stac_prefix + 'collections/' + cbers['mission'] + \
-                          '_' + cbers['number'] + \
-                          '_' + cbers['sensor'] + '_collection.json'))
+        append(build_link(rel='collection',
+                          href=stac_prefix + \
+                          cbers['mission'] + \
+                          cbers['number'] + \
+                          '/' + cbers['sensor'] + '/collection.json'))
 
     # EO section
     stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])

@@ -12,7 +12,8 @@ from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
     process_query_extension, strip_stac_item, \
-    stac_item_from_s3_key
+    process_intersects_filter, process_collections_filter, \
+    process_feature_filter
 
 class ElasticsearchTest(unittest.TestCase):
     """ElasticsearchTest"""
@@ -249,8 +250,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'CBERS_4_AWFI_20170409_167_123_L4')
 
 
-    def test_stac_search(self):
-        """test_stac_search"""
+    def test_basic_search(self):
+        """test_basic_search"""
 
         # Create an empty index
         self.test_create_index()
@@ -309,14 +310,15 @@ class ElasticsearchTest(unittest.TestCase):
         self.assertEqual(res[0]['id'], 'CBERS_4_MUX_20170528_090_084_L2')
         #print(res[0].to_dict())
 
-        # Query extension
+        # Query extension (eq operator only)
         empty_query = stac_search(es_client=es_client)
         res = process_query_extension(dsl_query=empty_query,
                                       query_params={}).execute()
         self.assertEqual(res['hits']['total'], 2)
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:data_type":"L2"})
+                                        query_params={"cbers:data_type":
+                                                      {"eq":"L2"}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
@@ -324,7 +326,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'L2')
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:data_type":"L4"})
+                                        query_params={"cbers:data_type":
+                                                      {"eq":"L4"}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
@@ -332,7 +335,8 @@ class ElasticsearchTest(unittest.TestCase):
                          'L4')
 
         query = process_query_extension(dsl_query=empty_query,
-                                        query_params={"cbers:path":90})
+                                        query_params={"cbers:path":
+                                                      {"eq":90}})
         #print(json.dumps(query.to_dict(), indent=2))
         res = query.execute()
         self.assertEqual(res['hits']['total'], 1)
@@ -342,6 +346,376 @@ class ElasticsearchTest(unittest.TestCase):
         #print(res.to_dict())
         #for hit in res:
         #    print(hit.to_dict())
+
+    def test_query_extension_search(self): # pylint: disable=too-many-statements
+        """test_query_extension_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params={})
+
+        # Start with an empty query
+        self.assertDictEqual(q_dsl.to_dict()['query'],
+                             {'match_all': {}})
+
+        # eq operator
+        q_payload = {'eo:instrument': {'eq':'MUX'},
+                     'cbers:data_type': {'eq':'L2'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.assertDictEqual(q_dsl.to_dict()['query'],
+                             {'bool': {'must':
+                                       [{'match':
+                                         {'properties.eo:instrument':
+                                          'MUX'}},
+                                        {'match':
+                                         {'properties.cbers:data_type':
+                                          'L2'}}]}})
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+
+        # neq and eq operator
+        q_payload = {'eo:instrument': {'eq':'MUX'},
+                     'cbers:data_type': {'neq':'L4'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool': {'must_not':
+                                      [{'match':
+                                        {'properties.cbers:data_type':
+                                         'L4'}}],
+                                      'must':
+                                      [{'match':
+                                        {'properties.eo:instrument':
+                                         'MUX'}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+
+        # gt, gte, lt, lte operators
+        q_payload = {"cbers:path": {"gte":90, "lte":90}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        #print(q_dsl.to_dict()['query'])
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool': {'must':
+                                      [{'range':
+                                        {'properties.cbers:path':
+                                         {'gte': 90}}},
+                                       {'range':
+                                        {'properties.cbers:path':
+                                         {'lte': 90}}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:path'], 90)
+
+        q_payload = {"cbers:path": {"gt":90, "lt":90}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 0)
+
+        # startsWith operator
+        q_payload = {'cbers:data_type': {'startsWith':'L'},
+                     'eo:instrument': {'startsWith':'MU'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        self.\
+            assertDictEqual(q_dsl.to_dict()['query'],
+                            {'bool':
+                             {'must':
+                              [{'query_string':
+                                {'default_field': 'properties.cbers:data_type',
+                                 'query': 'L*'}},
+                               {'query_string':
+                                {'default_field': 'properties.eo:instrument',
+                                 'query': 'MU*'}}]}})
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+        # endsWith, contains operators
+        q_payload = {'cbers:data_type': {'endsWith':'2'},
+                     'eo:instrument': {'contains':'U'}}
+        q_dsl = process_query_extension(dsl_query=empty_query,
+                                        query_params=q_payload)
+        print(q_dsl.to_dict()['query'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['cbers:data_type'],
+                         'L2')
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+    def test_collection_filter_search(self):
+        """test_collection_filter_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        # Sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+
+        # Only items in MUX collection
+        q_dsl = process_collections_filter(dsl_query=empty_query,
+                                           collections=['CBERS4MUX'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+        # Only items in AWFI collection
+        q_dsl = process_collections_filter(dsl_query=empty_query,
+                                           collections=['CBERS4AWFI'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'AWFI')
+
+        # Unknown collection, should return no items
+        q_dsl = process_collections_filter(dsl_query=empty_query,
+                                           collections=['NOCOLLECTIONS'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 0)
+
+    def test_feature_filter_search(self):
+        """test_feature_filter_search"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        # Sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+
+        # Single MUX item
+        q_dsl = process_feature_filter(dsl_query=empty_query,
+                                       feature_ids=['CBERS_4_MUX_20170528_090_084_L2'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        # Unknown collection, should return no items
+        q_dsl = process_feature_filter(dsl_query=empty_query,
+                                       feature_ids=['NOID'])
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 0)
+
+    def test_process_intersects_filter(self):
+        """test_process_intersects_filter"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        empty_query = stac_search(es_client=es_client)
+        geometry = {
+            "type": "Feature",
+            "properties": {},
+            "geometry": {
+                "type": "Polygon",
+                "coordinates": [
+                    [
+                        [
+                            -180.,
+                            -90.
+                        ],
+                        [
+                            -180.,
+                            90.
+                        ],
+                        [
+                            180.,
+                            90.
+                        ],
+                        [
+                            180.,
+                            -90.
+                        ],
+                        [
+                            -180.,
+                            -90.
+                        ]
+                    ]
+                ]
+            }
+        }
+        q_dsl = process_intersects_filter(dsl_query=empty_query,
+                                          geometry=geometry)
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 2)
+
+        # Change the polygon to intersect with a single scene
+        geometry["geometry"]["coordinates"] = [[
+            [23, 13],
+            [25, 13],
+            [25, 15],
+            [23, 15],
+            [23, 13]]]
+        q_dsl = process_intersects_filter(dsl_query=empty_query,
+                                          geometry=geometry)
+        res = q_dsl.execute()
+        self.assertEqual(res['hits']['total'], 1)
+        self.assertEqual(res[0].to_dict()['properties']['eo:instrument'],
+                         'MUX')
+
+    def test_paging(self):
+        """test_paging"""
+
+        # Create an empty index
+        self.test_create_index()
+
+        es_client = es_connect('localhost', port=4571,
+                               use_ssl=False, verify_certs=False)
+        stac_items = list()
+        with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+        with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+                  'r') as fin:
+            stac_items.append(fin.read())
+
+        for stac_item in stac_items:
+            create_document_in_index(es_client=es_client,
+                                     stac_item=stac_item)
+
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_MUX_20170528_090_084_L2'))
+        self.assertTrue(es_client.exists(index='stac', doc_type='_doc',
+                                         id='CBERS_4_AWFI_20170409_167_123_L4'))
+
+        # All items are returned for empty query, sleeps for 2 seconds
+        # before searching to allow ES to index the documents.
+        # See
+        # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+        # for a possibly better solution
+        time.sleep(2)
+        res = stac_search(es_client=es_client, limit=1, page=1).execute()
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(res[0]['id'],
+                         'CBERS_4_AWFI_20170409_167_123_L4')
+
+        res = stac_search(es_client=es_client, limit=1, page=2).execute()
+        self.assertEqual(len(res), 1)
+        self.assertEqual(res['hits']['total'], 2)
+        self.assertEqual(res[0]['id'],
+                         'CBERS_4_MUX_20170528_090_084_L2')
+
+        # past last page
+        res = stac_search(es_client=es_client, limit=1, page=3).execute()
+        self.assertEqual(len(res), 0)
+        self.assertEqual(res['hits']['total'], 2)
 
 if __name__ == '__main__':
     unittest.main()

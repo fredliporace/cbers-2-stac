@@ -1,0 +1,101 @@
+{
+  "resource": "/stac",
+  "path": "/v07/stac",
+  "httpMethod": "GET",
+  "headers": {
+    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3",
+    "accept-encoding": "gzip, deflate, br",
+    "accept-language": "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7,fr;q=0.6,es;q=0.5",
+    "cookie": "__utmz=61613500.1551789761.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utma=61613500.1488301090.1551789761.1555597118.1556204364.5",
+    "Host": "stac.amskepler.com",
+    "sec-fetch-mode": "navigate",
+    "sec-fetch-site": "none",
+    "sec-fetch-user": "?1",
+    "upgrade-insecure-requests": "1",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36",
+    "X-Amzn-Trace-Id": "Root=1-5d50434a-713984f560de6a889ae8d644",
+    "X-Forwarded-For": "177.142.104.41",
+    "X-Forwarded-Port": "443",
+    "X-Forwarded-Proto": "https"
+  },
+  "multiValueHeaders": {
+    "accept": [
+      "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3"
+    ],
+    "accept-encoding": [
+      "gzip, deflate, br"
+    ],
+    "accept-language": [
+      "en-US,en;q=0.9,pt-BR;q=0.8,pt;q=0.7,fr;q=0.6,es;q=0.5"
+    ],
+    "cookie": [
+      "__utmz=61613500.1551789761.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utma=61613500.1488301090.1551789761.1555597118.1556204364.5"
+    ],
+    "Host": [
+      "stac.amskepler.com"
+    ],
+    "sec-fetch-mode": [
+      "navigate"
+    ],
+    "sec-fetch-site": [
+      "none"
+    ],
+    "sec-fetch-user": [
+      "?1"
+    ],
+    "upgrade-insecure-requests": [
+      "1"
+    ],
+    "User-Agent": [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36"
+    ],
+    "X-Amzn-Trace-Id": [
+      "Root=1-5d50434a-713984f560de6a889ae8d644"
+    ],
+    "X-Forwarded-For": [
+      "177.142.104.41"
+    ],
+    "X-Forwarded-Port": [
+      "443"
+    ],
+    "X-Forwarded-Proto": [
+      "https"
+    ]
+  },
+  "queryStringParameters": "",
+  "multiValueQueryStringParameters": "",
+  "pathParameters": "",
+  "stageVariables": "",
+  "requestContext": {
+    "resourceId": "kf0nmj",
+    "resourcePath": "/stac",
+    "httpMethod": "GET",
+    "extendedRequestId": "eQ9ztE0LoAMFfbA=",
+    "requestTime": "11/Aug/2019:16:33:14 +0000",
+    "path": "/v07/stac",
+    "accountId": "769537946825",
+    "protocol": "HTTP/1.1",
+    "stage": "prod",
+    "domainPrefix": "stac",
+    "requestTimeEpoch": 1565541194945,
+    "requestId": "b7907329-bc55-11e9-a2e5-edecebe8da19",
+    "identity": {
+      "cognitoIdentityPoolId": "",
+      "accountId": "",
+      "cognitoIdentityId": "",
+      "caller": "",
+      "sourceIp": "177.142.104.41",
+      "principalOrgId": "",
+      "accessKey": "",
+      "cognitoAuthenticationType": "",
+      "cognitoAuthenticationProvider": "",
+      "userArn": "",
+      "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/76.0.3809.100 Safari/537.36",
+      "user": ""
+    },
+    "domainName": "stac.amskepler.com",
+    "apiId": "wtodrztbod"
+  },
+  "body": "",
+  "isBase64Encoded": false
+}

@@ -1,0 +1,439 @@
+{
+  "stac_version": "0.7.0",
+  "id": "CBERS4MUX",
+  "description": "CBERS4 MUX camera catalog",
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/MUX/collection.json"
+    },
+    {
+      "rel": "root",
+      "href": "https://cbers-stac-0-7.s3.amazonaws.com/catalog.json"
+    },
+    {
+      "rel": "parent",
+      "href": "../catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "058/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "059/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "061/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "068/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "069/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "070/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "071/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "072/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "073/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "074/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "075/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "076/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "077/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "078/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "079/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "080/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "081/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "082/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "083/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "084/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "085/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "086/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "087/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "088/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "089/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "090/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "091/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "092/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "093/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "094/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "097/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "104/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "105/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "106/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "107/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "112/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "141/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "142/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "143/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "144/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "145/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "146/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "147/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "148/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "149/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "150/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "151/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "152/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "153/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "154/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "155/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "156/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "157/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "158/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "159/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "160/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "161/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "162/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "163/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "164/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "165/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "166/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "167/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "168/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "169/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "170/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "171/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "172/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "173/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "174/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "175/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "176/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "177/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "178/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "179/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "180/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "181/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "182/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "183/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "184/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "185/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "186/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "187/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "188/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "189/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "190/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "191/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "199/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "358/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "365/catalog.json"
+    }
+  ],
+  "license": "CC-BY-SA-3.0",
+  "providers": [
+    {
+      "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+      "roles": [
+        "producer"
+      ],
+      "url": "http://www.cbers.inpe.br"
+    },
+    {
+      "name": "AMS Kepler",
+      "roles": [
+        "processor"
+      ],
+      "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
+      "url": "https://github.com/fredliporace/cbers-on-aws"
+    },
+    {
+      "name": "Amazon Web Services",
+      "roles": [
+        "host"
+      ],
+      "url": "https://registry.opendata.aws/cbers/"
+    }
+  ],
+  "extent": {
+    "spatial": [
+      -180.0,
+      -83.0,
+      180.0,
+      83.0
+    ],
+    "temporal": [
+      "2014-12-08T00:00:00Z",
+      null
+    ]
+  },
+  "properties": {
+    "eo:gsd": 20.0,
+    "eo:platform": "CBERS-4",
+    "eo:instrument": "MUX",
+    "eo:bands": [
+      {
+        "name": "B5",
+        "common_name": "blue"
+      },
+      {
+        "name": "B6",
+        "common_name": "green"
+      },
+      {
+        "name": "B7",
+        "common_name": "red"
+      },
+      {
+        "name": "B8",
+        "common_name": "nir"
+      }
+    ]
+  }
+}

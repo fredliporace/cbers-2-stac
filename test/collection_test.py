@@ -13,7 +13,8 @@ class CollectionTest(unittest.TestCase):
     def test_collection_json_schema(self):
         """test_collection_json_schema"""
 
-        json_schema_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+        json_schema_path = os.path.join(os.path.dirname(os.path.\
+                                                        abspath(__file__)),
                                         'json_schema/')
         schema_path = os.path.join(json_schema_path,
                                    'collection.json')
@@ -29,12 +30,16 @@ class CollectionTest(unittest.TestCase):
         with open(collection_filename) as fp_in:
             with self.assertRaises(ValidationError) as context:
                 validate(json.load(fp_in), schema, resolver=resolver)
-            self.assertTrue("'stac_version' is a required property" in str(context.exception))
+            self.assertTrue("'stac_version' is a required property" \
+                            in str(context.exception))
 
-        # Checks MUX collection
-        collection_filename = 'stac_catalogs/collections/CBERS_4_MUX_collection.json'
-        with open(collection_filename) as fp_in:
-            validate(json.load(fp_in), schema, resolver=resolver)
+        # Checks all collections
+        collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
+        for collection in collections:
+            collection_filename = 'stac_catalogs/CBERS4/{col}/' \
+                                  'collection.json'.format(col=collection)
+            with open(collection_filename) as fp_in:
+                validate(json.load(fp_in), schema, resolver=resolver)
 
 if __name__ == '__main__':
     unittest.main()

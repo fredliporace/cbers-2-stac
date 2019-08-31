@@ -44,6 +44,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '27')
         self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4MUX')
 
         # AWFI
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123'\
@@ -54,6 +55,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-57')
         self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4AWFI')
 
         # PAN10
         meta = get_keys_from_cbers('test/CBERS_4_PAN10M_20190201_180_'\
@@ -64,6 +66,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-69')
         self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4PAN10M')
 
         # PAN5
         meta = get_keys_from_cbers('test/CBERS_4_PAN5M_20161009_219_050_'\
@@ -74,6 +77,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-93')
         self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4PAN5M')
 
         # PAN10, no gain attribute for each band
         meta = get_keys_from_cbers('test/CBERS_4_PAN10M_NOGAIN.xml')
@@ -191,8 +195,7 @@ class CERS2StacTest(unittest.TestCase):
             elif link['rel'] == 'collection':
                 self.assertEqual(link['href'],
                                  'https://cbers-stac.s3.amazonaws.com/'\
-                                 'collections/'
-                                 'CBERS_4_MUX_collection.json')
+                                 'CBERS4/MUX/collection.json')
             else:
                 self.fail('Unrecognized rel %s' % link['rel'])
 
@@ -253,7 +256,7 @@ class CERS2StacTest(unittest.TestCase):
             elif link['rel'] == 'collection':
                 self.assertEqual(link['href'],
                                  'https://cbers-stac.s3.amazonaws.com/'\
-                                 'collections/CBERS_4_PAN10M_collection.json')
+                                 'CBERS4/PAN10M/collection.json')
             else:
                 self.fail('Unrecognized rel %s' % link['rel'])
 
@@ -311,7 +314,7 @@ class CERS2StacTest(unittest.TestCase):
             elif link['rel'] == 'collection':
                 self.assertEqual(link['href'],
                                  'https://cbers-stac.s3.amazonaws.com/'\
-                                 'collections/CBERS_4_PAN5M_collection.json')
+                                 'CBERS4/PAN5M/collection.json')
             else:
                 self.fail('Unrecognized rel %s' % link['rel'])
 

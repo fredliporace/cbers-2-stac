@@ -1,8 +1,8 @@
 {
-  "stac_version": "0.6.0",
-  "id": "CBERS4/MUX",
-  "title": "CBERS 4 MUX Imagery",
-  "description": "CBERS 4 MUX Imagery",
+  "stac_version": "0.7.0",
+  "id": "CBERS4AWFI",
+  "title": "CBERS 4 AWFI Imagery",
+  "description": "CBERS 4 AWFI Imagery",
   "license": "CC-BY-SA-3.0",
   "providers": [
     {
@@ -37,28 +37,28 @@
   "links": [
     {
       "rel": "self",
-      "href": "https://s3.amazonaws.com/cbers-stac-0-6/collections/CBERS_4_MUX_collection.json"
+      "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/AWFI/collection.json"
     }
   ],
   "properties": {
-    "eo:gsd": 20.0,
+    "eo:gsd": 64.0,
     "eo:platform": "CBERS-4",
-    "eo:instrument": "MUX",
+    "eo:instrument": "AWFI",
     "eo:bands": [
       {
-        "name": "B5",
+        "name": "B13",
         "common_name": "blue"
       },
       {
-        "name": "B6",
+        "name": "B14",
         "common_name": "green"
       },
       {
-        "name": "B7",
+        "name": "B15",
         "common_name": "red"
       },
       {
-        "name": "B8",
+        "name": "B16",
         "common_name": "nir"
       }      
     ]

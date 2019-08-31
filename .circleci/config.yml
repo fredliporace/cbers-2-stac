@@ -52,7 +52,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            export PYTHONPATH=`pwd`:`pwd`/sam/process_new_scene_queue/:`pwd`/sam/elasticsearch/ && export AWS_DEFAULT_REGION='us-east-1' && nosetests
+            export PYTHONPATH=`pwd`:`pwd`/sam/process_new_scene_queue/:`pwd`/sam/update_catalog_tree/:`pwd`/sam/elasticsearch/ && export AWS_DEFAULT_REGION='us-east-1' && nosetests
 
       - store_artifacts:
           path: test-reports

@@ -23,7 +23,10 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
             if re.search(suffix, file['Key']):
                 #print(file['Key'])
                 message = dict()
-                message['Message'] = json.dumps({'Records':[{'s3':{'object':{'key':file['Key']}}}]})
+                message['Message'] = json.dumps({'Records':[{'s3':{
+                    'object':{
+                        'key':file['Key'],
+                        'reconcile':1}}}]})
                 SQS_CLIENT.send_message(QueueUrl=queue,
                                         MessageBody=json.dumps(message))
         if not files['IsTruncated']:

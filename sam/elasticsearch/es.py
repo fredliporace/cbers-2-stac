@@ -8,6 +8,9 @@ from elasticsearch.helpers import bulk
 from elasticsearch_dsl import Search, Q
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 
+from utils import get_collection_s3_key, get_collection_ids, \
+    static_to_api_collection
+
 SQS_CLIENT = boto3.client('sqs')
 S3 = boto3.resource('s3')
 ES_CLIENT = None
@@ -349,7 +352,7 @@ def create_document_in_index(es_client,
                          request_timeout=timeout)
 
 def stac_search(es_client, start_date: str = None, end_date: str = None,
-                bbox: list = None, limit: int = 10):
+                bbox: list = None, limit: int = 10, page: int = 1):
     """
     Search STAC items
 
@@ -358,7 +361,8 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     :param end_date str: ditto, same format as above
     :param bbox list: bounding box envelope, GeoJSON style
                       [[-180.0, -90.0], [180.0, 90.0]]
-    :param limit int: number of returned records
+    :param limit int: max number of returned records
+    :param page int: page number starting from 1
     :rtype: es.Search
     :return: built query
     """
@@ -409,6 +413,7 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
                                                  "coordinates" : bbox},
                                        "relation": "intersects"})
 
+    query = query.sort('_id')
     #query = query.query(Q("multi_match",
     #                      query="aa",
     #                      fields=['properties.provider']))
@@ -417,7 +422,62 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     #query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
 
     #print(json.dumps(query.to_dict(), indent=2))
-    return query[0:limit]
+    return query[(page - 1) * limit:page * limit]
+
+def process_intersects_filter(dsl_query, geometry: dict):
+    """
+    Extends received query to include intersect filter with provided
+    geometry
+
+    :param dsl_query: ES DSL object
+    :param geometry dict: geometry as GeoJSON
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    dsl_query = dsl_query.\
+                filter("geo_shape",
+                       geometry={"shape":
+                                 {"type":
+                                  geometry["geometry"]["type"],
+                                  "coordinates":
+                                  geometry["geometry"]["coordinates"]},
+                                 "relation": "intersects"})
+    return dsl_query
+
+def process_collections_filter(dsl_query, collections: list):
+    """
+    Extends received query to filter only items belonging to the
+    desired collection list
+
+    :param dsl_query: ES DSL object
+    :param collections list: string list of collections
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    for collection in collections:
+        dsl_query = dsl_query.\
+            query(Q("match",
+                    **{"collection":collection}))
+    return dsl_query
+
+def process_feature_filter(dsl_query, feature_ids: list):
+    """
+    Extends received query to filter only items with ids in
+    the list
+
+    :param dsl_query: ES DSL object
+    :param feature_ids list: list of features ids
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    for feature_id in feature_ids:
+        dsl_query = dsl_query.\
+            query(Q("match",
+                    **{"id":feature_id}))
+    return dsl_query
 
 def process_query_extension(dsl_query, query_params: dict):
     """
@@ -431,13 +491,98 @@ def process_query_extension(dsl_query, query_params: dict):
 
     # See for reference on how to extend to complete STAC query extension
     # https://stackoverflow.com/questions/43138089/elasticsearch-dsl-python-unpack-q-queries
+    # key is the property being queried
     for key in query_params:
-        assert not isinstance(query_params[key], dict), \
-            "Dicts not supported yet in queries"
-        dsl_query = dsl_query.query(Q("match",
-                                      **{"properties."+key:query_params[key]}))
+        assert isinstance(query_params[key], dict), \
+            "Query prop must be a dictionary"
+        for operator in query_params[key]:
+            if operator == 'eq':
+                dsl_query = dsl_query.\
+                            query(Q("match",
+                                    **{"properties."+key:query_params[key]\
+                                       [operator]}))
+            elif operator == 'neq':
+                dsl_query = dsl_query.\
+                            query(~Q("match", # pylint: disable=invalid-unary-operand-type
+                                     **{"properties."+key:query_params[key]\
+                                        [operator]}))
+            elif operator in ['gt', 'gte', 'lt', 'lte']:
+                dsl_query = dsl_query.\
+                            query(Q("range",
+                                    **{"properties."+key:{operator:\
+                                                          query_params[key]\
+                                                          [operator]}}))
+            elif operator == 'startsWith':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":query_params[key]\
+                                       [operator]+"*"}))
+            elif operator == 'endsWith':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":"*"+query_params[key]\
+                                       [operator]}))
+            elif operator == 'contains':
+                dsl_query = dsl_query.\
+                            query(Q("query_string",
+                                    **{"default_field":"properties."+key,
+                                       "query":"*"+query_params[key]\
+                                       [operator]+"*"}))
+            else:
+                raise RuntimeError("{op} is not a supported operator".\
+                                   format(op=operator))
+        #dsl_query = dsl_query.query(Q("match",
+        #                              **{"properties."+key:query_params[key]}))
 
     return dsl_query
+
+def query_from_event(es_client, event):
+    """
+    Build query from event
+
+    :param event: event from lambda integration
+    :return: DSL query
+    """
+
+    if event['httpMethod'] == 'GET':
+        document = dict()
+        qsp = event['queryStringParameters']
+        # @todo process query extension for GET
+        if qsp:
+            document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
+            document['time'] = qsp.get('time', None)
+            document['limit'] = int(qsp.get('limit', '10'))
+            document['page'] = int(qsp.get('page', '1'))
+        else:
+            document['bbox'] = parse_bbox('-180,-90,180,90')
+            document['time'] = None
+            document['limit'] = 10
+            document['page'] = 1
+    else: # POST
+        document = json.loads(event['body'])
+        # bbox is not mandatory
+        if document.get('bbox'):
+            document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
+                                [document['bbox'][2], document['bbox'][3]]]
+        else:
+            document['bbox'] = None
+        document['limit'] = int(document.get('limit', '10'))
+        document['page'] = int(document.get('page', '1'))
+        #print(document)
+
+    start, end = None, None
+    if document.get('time'):
+        start, end = parse_datetime(document['time'])
+
+    # Build basic query object
+    query = stac_search(es_client=es_client,
+                        start_date=start, end_date=end,
+                        bbox=document['bbox'],
+                        limit=document['limit'],
+                        page=document['page'])
+    return query
 
 def create_stac_index_handler(event, context): # pylint: disable=unused-argument
     """
@@ -502,48 +647,89 @@ def create_documents_handler(event,
     #create_document_in_index(es_client)
 
 def stac_search_endpoint_handler(event,
-                                 context):  # pylint: disable=unused-argument
+                                 context): # pylint: disable=unused-argument
     """
     Lambda entry point
     """
 
-    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                               aws_region=os.environ['AWS_REGION'],
-                               aws_service='es')
+    # @todo common code with WFS3 {collectionId/items} endpoint, unify
+
+    # Check for local development or production environment
+    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
+        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                                   aws_region=os.environ['AWS_REGION'],
+                                   aws_service='es')
+    else:
+        auth = None
+
+    #print(os.environ['ES_ENDPOINT'])
+    #print(os.environ['ES_PORT'])
+    #print(os.environ['ES_SSL'])
+    #print(auth)
     es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
                            port=int(os.environ['ES_PORT']),
+                           use_ssl=(auth is not None),
+                           verify_certs=(auth is not None),
                            http_auth=auth)
+    #print(es_client)
+    #print("Checking ES connecion")
+    #print(es_client.ping())
+    #print("Checking ES connecion end")
 
     #print(json.dumps(event, indent=2))
     if event['httpMethod'] == 'GET':
         document = dict()
         qsp = event['queryStringParameters']
+        # @todo process query extension for GET
         if qsp:
             document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
             document['time'] = qsp.get('time', None)
             document['limit'] = int(qsp.get('limit', '10'))
+            document['page'] = int(qsp.get('page', '1'))
         else:
             document['bbox'] = parse_bbox('-180,-90,180,90')
             document['time'] = None
             document['limit'] = 10
-    else:
+            document['page'] = 1
+    else: # POST
         document = json.loads(event['body'])
-        document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
-                            [document['bbox'][2], document['bbox'][3]]]
+        # bbox is not mandatory
+        if document.get('bbox'):
+            document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
+                                [document['bbox'][2], document['bbox'][3]]]
+        else:
+            document['bbox'] = None
         document['limit'] = int(document.get('limit', '10'))
+        document['page'] = int(document.get('page', '1'))
         #print(document)
 
     start, end = None, None
     if document.get('time'):
         start, end = parse_datetime(document['time'])
 
+    # Build basic query object
     query = stac_search(es_client=es_client,
                         start_date=start, end_date=end,
                         bbox=document['bbox'],
-                        limit=document['limit'])
+                        limit=document['limit'],
+                        page=document['page'])
+
+    # Process 'query' extension
     if document.get('query'):
         query = process_query_extension(dsl_query=query,
                                         query_params=document['query'])
+
+    # Process 'intersects' filter
+    if document.get('intersects'):
+        query = process_intersects_filter(dsl_query=query,
+                                          geometry=document['intersects'])
+
+    # Process 'collections' filter
+    if document.get('collections'):
+        query = process_collections_filter(dsl_query=query,
+                                           collections=document['collections'])
+
+    # Execute query
     res = query.execute()
     results = dict()
     results["type"] = "FeatureCollection"
@@ -567,4 +753,163 @@ def stac_search_endpoint_handler(event,
         }
     }
 
+    return retmsg
+
+def wfs3_collections_endpoint_handler(event, context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point serving WFS3 collections requests
+    """
+
+    collections = dict()
+    collections['collections'] = list()
+    collections['links'] = list()
+    cids = get_collection_ids()
+    for cid in cids:
+        collections['collections'].\
+            append(static_to_api_collection(collection=\
+                                            stac_item_from_s3_key(bucket=\
+                                                                  os.environ['CBERS_STAC_BUCKET'],
+                                                                  key=get_collection_s3_key(cid)),
+                                            event=event))
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(collections,
+                           indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
+
+    return retmsg
+
+def wfs3_collectionid_endpoint_handler(event,
+                                       context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point serving WFS3 collection/{collectionId} requests
+    """
+
+    cid = event['pathParameters']['collectionId']
+    collection = stac_item_from_s3_key(bucket=os.environ['CBERS_STAC_BUCKET'],
+                                       key=get_collection_s3_key(cid))
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(static_to_api_collection(collection=collection,
+                                                    event=event),
+                           indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
+
+    return retmsg
+
+def wfs3_collectionid_items_endpoint_handler(event,
+                                             context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point serving WFS3 collection/{collectionId}/items requests
+    """
+
+    # Check for local development or production environment
+    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
+        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                                   aws_region=os.environ['AWS_REGION'],
+                                   aws_service='es')
+    else:
+        auth = None
+
+    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
+                           port=int(os.environ['ES_PORT']),
+                           use_ssl=(auth is not None),
+                           verify_certs=(auth is not None),
+                           http_auth=auth)
+
+    cid = event['pathParameters']['collectionId']
+
+    # Build basic query object
+    query = query_from_event(es_client=es_client, event=event)
+
+    # Process 'collections' filter
+    query = process_collections_filter(dsl_query=query,
+                                       collections=[cid])
+
+    # Execute query
+    res = query.execute()
+    results = dict()
+    results["type"] = "FeatureCollection"
+    results["features"] = list()
+
+    for item in res:
+        item_dict = item.to_dict()
+        # If s3_key is present then we recover the original item from
+        # the STAC bucket
+        if 's3_key' in item_dict:
+            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
+                                                                'STAC_BUCKET'],
+                                              key=item_dict['s3_key'])
+        results["features"].append(item_dict)
+
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(results, indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
+    return retmsg
+
+def wfs3_collectionid_featureid_endpoint_handler(event,
+                                                 context):  # pylint: disable=unused-argument
+    """
+    Lambda entry point serving WFS3 collection/{collectionId}/items/{featureId} requests
+    """
+
+    # Check for local development or production environment
+    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
+        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
+                                   aws_region=os.environ['AWS_REGION'],
+                                   aws_service='es')
+    else:
+        auth = None
+
+    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
+                           port=int(os.environ['ES_PORT']),
+                           use_ssl=(auth is not None),
+                           verify_certs=(auth is not None),
+                           http_auth=auth)
+
+    cid = event['pathParameters']['collectionId']
+    fid = event['pathParameters']['featureId']
+
+    # Build basic query object
+    query = query_from_event(es_client=es_client, event=event)
+
+    # Process filters
+    query = process_collections_filter(dsl_query=query,
+                                       collections=[cid])
+    query = process_feature_filter(dsl_query=query,
+                                   feature_ids=[fid])
+
+    # Execute query
+    res = query.execute()
+    results = dict()
+    results["type"] = "FeatureCollection"
+    results["features"] = list()
+
+    for item in res:
+        item_dict = item.to_dict()
+        # If s3_key is present then we recover the original item from
+        # the STAC bucket
+        if 's3_key' in item_dict:
+            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
+                                                                'STAC_BUCKET'],
+                                              key=item_dict['s3_key'])
+        results["features"].append(item_dict)
+
+    retmsg = {
+        'statusCode': '200',
+        'body': json.dumps(results, indent=2),
+        'headers': {
+            'Content-Type': 'application/json',
+        }
+    }
     return retmsg

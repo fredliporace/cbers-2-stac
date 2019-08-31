@@ -36,6 +36,7 @@
     -53.027684,
     -16.36423
   ],
+  "collection": "CBERS4AWFI",
   "properties": {
     "datetime": "2017-04-09T14:09:23Z",
     "eo:sun_azimuth": 43.9164,
@@ -58,7 +59,7 @@
     },
     {
       "rel": "collection",
-      "href": "https://cbers-stac.s3.amazonaws.com/collections/CBERS_4_AWFI_collection.json"
+      "href": "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/collection.json"
     }
   ],
   "assets": {

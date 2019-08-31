@@ -1,6 +1,6 @@
 {
-  "stac_version": "0.6.0",
-  "id": "CBERS4/PAN5M",
+  "stac_version": "0.7.0",
+  "id": "CBERS4PAN5M",
   "title": "CBERS 4 PAN5M Imagery",
   "description": "CBERS 4 PAN5M Imagery",
   "license": "CC-BY-SA-3.0",
@@ -37,7 +37,7 @@
   "links": [
     {
       "rel": "self",
-      "href": "https://s3.amazonaws.com/cbers-stac-0-6/collections/CBERS_4_PAN5M_collection.json"
+      "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/PAN5M/collection.json"
     }
   ],
   "properties": {
