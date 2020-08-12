@@ -5,6 +5,11 @@ import unittest
 import json
 import difflib
 
+# This allows utils module to be imported when nosetests
+# is invoked within emacs
+import site
+site.addsitedir('sam/process_new_scene_queue')
+
 from jsonschema import validate, RefResolver
 from jsonschema.exceptions import ValidationError
 

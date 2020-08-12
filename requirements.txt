@@ -1,5 +1,4 @@
 nose
 boto3
 jsonschema==3.0.1
-localstack==0.8.10
-
+localstack==0.9.6

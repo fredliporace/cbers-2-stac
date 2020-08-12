@@ -8,6 +8,15 @@ import json
 from jsonschema import validate, RefResolver
 from dateutil.tz import tzutc
 
+# Region is required for testing
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
+# This allows utils module to be imported when nosetests
+# is invoked within emacs
+import site
+site.addsitedir('sam/process_new_scene_queue')
+site.addsitedir('sam/update_catalog_tree')
+
 from sam.update_catalog_tree.code import get_items_from_s3, \
     get_catalogs_from_s3, \
     get_catalog_info, base_stac_catalog, build_catalog_from_s3, \

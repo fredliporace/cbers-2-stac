@@ -23,3 +23,9 @@ A live version of the stack is deployed to AWS and serve its contents in:
   * ```arn:aws:s3:::cbers-stac-0-7``` S3 bucket with static STAC content, including its [root catalog](https://cbers-stac-0-7.s3.amazonaws.com/catalog.json).
   * WFS3 [endpoint](https://stac.amskepler.com/v07/).
   * STAC [endpoint](https://stac.amskepler.com/v07/stac/).
+
+## Development
+
+Developed and tested in CentOS8 with python 3.8.0
+
+JAVA is required to execute elasticsearch under localstack.

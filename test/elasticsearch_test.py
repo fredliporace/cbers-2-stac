@@ -5,9 +5,23 @@ import time
 import unittest
 import json
 from localstack.services import infra
+
+# This allows elasticsearch_dsl and util modules
+# to be imported when nosetests
+# is invoked within emacs
+import site
+site.addsitedir('sam/elasticsearch/')
+site.addsitedir('sam/process_new_scene_queue')
+
 from elasticsearch.helpers import BulkIndexError
 from elasticsearch import ConflictError
+
 #from localstack.utils.aws import aws_stack
+
+# Required by boto3
+if 'AWS_DEFAULT_REGION' not in os.environ:
+    os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
 from sam.elasticsearch.es import es_connect, create_stac_index, \
     create_document_in_index, bulk_create_document_in_index, \
     stac_search, parse_datetime, parse_bbox, \
@@ -20,6 +34,7 @@ class ElasticsearchTest(unittest.TestCase):
 
     def setUp(self):
         """localstack ES setup"""
+
         # We only try to start localstack ES if there is
         # no connection to the server.
         es_client = es_connect('localhost', port=4571,
@@ -80,7 +95,7 @@ class ElasticsearchTest(unittest.TestCase):
         # Parameters may be obtained from localstack, using
         # default parameters for now
         #es_url = aws_stack.get_local_service_url('elasticsearch')
-        #self.assertEqual(es_url, 'http://osboxes:4578')
+        #self.assertEqual(es_url, 'http://osboxes:4571')
         es_client = es_connect('localhost', port=4571,
                                use_ssl=False, verify_certs=False)
         # Wait up to 30 seconds approximately for ES service
