@@ -13,6 +13,8 @@ site.addsitedir('sam/process_new_scene_queue')
 from jsonschema import validate, RefResolver
 from jsonschema.exceptions import ValidationError
 
+from pystac.validation import validate_dict
+
 from sam.process_new_scene_queue.cbers_2_stac import get_keys_from_cbers, \
     build_stac_item_keys, \
     epsg_from_utm_zone, convert_inpe_to_stac
@@ -28,6 +30,20 @@ def diff_files(filename1, filename2):
     for line in diff:
         res += line # pylint: disable=consider-using-join
     return res
+
+# @todo change debug output to give more information when
+# the validation fails
+def validate_json(filename):
+    """
+    Validate STAC item using PySTAC
+    """
+    with open(filename) as fname:
+        jsd = json.load(fname)
+    validate_dict(jsd)
+
+json_schema_path = os.path.join(os.path.dirname(os.path.\
+                                                abspath(__file__)),
+                                'json_schema/item-spec/json-schema')
 
 class CERS2StacTest(unittest.TestCase):
     """CBERS2StacTest"""
@@ -127,11 +143,13 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['datetime'],
                          '2017-04-09T14:09:23Z')
 
-        # properties:eo
-        self.assertEqual(smeta['properties']['eo:sun_azimuth'], 43.9164)
-        self.assertEqual(smeta['properties']['eo:sun_elevation'], 53.4479)
-        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00828942)
-        self.assertEqual(smeta['properties']['eo:epsg'], 32757)
+        # properties:view
+        self.assertEqual(smeta['properties']['view:sun_azimuth'], 43.9164)
+        self.assertEqual(smeta['properties']['view:sun_elevation'], 53.4479)
+        self.assertEqual(smeta['properties']['view:off_nadir'], 0.00828942)
+
+        # properties:proj
+        self.assertEqual(smeta['properties']['proj:epsg'], 32757)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L4')
@@ -174,12 +192,13 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['datetime'],
                          '2017-05-28T09:01:17Z')
 
-        # properties:eo
-        self.assertEqual(smeta['properties']['eo:sun_azimuth'], 66.2923)
-        self.assertEqual(smeta['properties']['eo:sun_elevation'], 70.3079)
-        #self.assertEqual(smeta['properties']['eo:resolution'], 20.)
-        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.00744884)
-        self.assertEqual(smeta['properties']['eo:epsg'], 32627)
+        # properties:view
+        self.assertEqual(smeta['properties']['view:sun_azimuth'], 66.2923)
+        self.assertEqual(smeta['properties']['view:sun_elevation'], 70.3079)
+        self.assertEqual(smeta['properties']['view:off_nadir'], 0.00744884)
+
+        # properties:proj
+        self.assertEqual(smeta['properties']['proj:epsg'], 32627)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -236,11 +255,13 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['datetime'],
                          '2019-02-01T14:36:38Z')
 
-        # properties:eo
-        self.assertEqual(smeta['properties']['eo:sun_azimuth'], 87.5261)
-        self.assertEqual(smeta['properties']['eo:sun_elevation'], 57.0749)
-        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.0073997)
-        self.assertEqual(smeta['properties']['eo:epsg'], 32769)
+        # properties:view
+        self.assertEqual(smeta['properties']['view:sun_azimuth'], 87.5261)
+        self.assertEqual(smeta['properties']['view:sun_elevation'], 57.0749)
+        self.assertEqual(smeta['properties']['view:off_nadir'], 0.0073997)
+
+        # properties:proj
+        self.assertEqual(smeta['properties']['proj:epsg'], 32769)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -294,11 +315,13 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['datetime'],
                          '2016-10-09T17:14:38Z')
 
-        # properties:eo
-        self.assertEqual(smeta['properties']['eo:sun_azimuth'], 167.751)
-        self.assertEqual(smeta['properties']['eo:sun_elevation'], 38.3015)
-        self.assertEqual(smeta['properties']['eo:off_nadir'], -0.0050659)
-        self.assertEqual(smeta['properties']['eo:epsg'], 32793)
+        # properties:view
+        self.assertEqual(smeta['properties']['view:sun_azimuth'], 167.751)
+        self.assertEqual(smeta['properties']['view:sun_elevation'], 38.3015)
+        self.assertEqual(smeta['properties']['view:off_nadir'], 0.0050659)
+
+        # properties:proj
+        self.assertEqual(smeta['properties']['proj:epsg'], 32793)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -330,9 +353,6 @@ class CERS2StacTest(unittest.TestCase):
     def test_convert_inpe_to_stac(self):
         """test_convert_inpe_to_stac"""
 
-        json_schema_path = os.path.join(os.path.dirname(os.path.\
-                                                        abspath(__file__)),
-                                        'json_schema/')
         schema_path = os.path.join(json_schema_path,
                                    'item.json')
         resolver = RefResolver('file://' + json_schema_path + '/',
@@ -352,6 +372,7 @@ class CERS2StacTest(unittest.TestCase):
                              '_090_084_L2_BAND6.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        validate_json(output_filename)
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
@@ -366,6 +387,7 @@ class CERS2StacTest(unittest.TestCase):
                              '_167_123_L4_BAND14.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        validate_json(output_filename)
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
@@ -381,6 +403,7 @@ class CERS2StacTest(unittest.TestCase):
                              '20190201_180_125_L2_BAND2.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        validate_json(output_filename)
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
@@ -396,6 +419,7 @@ class CERS2StacTest(unittest.TestCase):
                              '20161009_219_050_L2_BAND1.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        validate_json(output_filename)
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
@@ -411,6 +435,7 @@ class CERS2StacTest(unittest.TestCase):
                              'NOGAIN.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
+        validate_json(output_filename)
         with open(output_filename) as fp_in:
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
@@ -418,13 +443,9 @@ class CERS2StacTest(unittest.TestCase):
         res = diff_files(ref_output_filename, output_filename)
         self.assertEqual(len(res), 0, res)
 
-
     def test_json_schema(self):
         """test_json_schema"""
 
-        json_schema_path = os.path.join(os.path.dirname(os.path.\
-                                                        abspath(__file__)),
-                                        'json_schema/')
         schema_path = os.path.join(json_schema_path,
                                    'item.json')
         resolver = RefResolver('file://' + json_schema_path + '/',
@@ -436,8 +457,8 @@ class CERS2StacTest(unittest.TestCase):
         with open(invalid_filename) as fp_in:
             with self.assertRaises(ValidationError) as context:
                 validate(json.load(fp_in), schema, resolver=resolver)
-            self.assertTrue("'links' is a required property" \
-                            in str(context.exception))
+                self.assertTrue("'links' is a required property" \
+                                in str(context.exception))
 
 if __name__ == '__main__':
     unittest.main()

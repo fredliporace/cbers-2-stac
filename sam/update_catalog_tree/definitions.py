@@ -2,7 +2,7 @@
 
 from collections import OrderedDict
 
-STAC_VERSION = "0.7.0"
+STAC_VERSION = "1.0.0-beta.2"
 
 BASE_CATALOG = OrderedDict({
     "stac_version": STAC_VERSION,
@@ -31,16 +31,17 @@ BASE_COLLECTION = OrderedDict({
         }
     ],
     "extent": {
-        "spatial": [
-            -180.0,
-            -83.0,
-            180.0,
-            83.0
-        ],
-        "temporal": [
-            "2014-12-08T00:00:00Z",
-            None
-        ]
+        "spatial": {
+            "bbox": [[
+                -180.0,
+                -83.0,
+                180.0,
+                83.0
+            ]],
+        },
+        "temporal": {
+            "interval": [["2014-12-08T00:00:00Z", None]]
+        }
     },
     "links": None,
     "properties": {

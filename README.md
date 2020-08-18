@@ -8,7 +8,7 @@ The mechanism to include new items into the archive as soon as they are ingested
 
 ## STAC version and extensions
 
-System supports STAC version 0.7.
+Supports STAC version 0.7.
 
 The following extensions/features are available:
 

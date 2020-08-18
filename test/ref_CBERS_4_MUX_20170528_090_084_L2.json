@@ -1,4 +1,10 @@
 {
+  "stac_version": "1.0.0-beta.2",
+  "stac_extensions": [
+    "projection",
+    "view",
+    "eo"
+  ],
   "id": "CBERS_4_MUX_20170528_090_084_L2",
   "type": "Feature",
   "geometry": {
@@ -39,11 +45,14 @@
   "collection": "CBERS4MUX",
   "properties": {
     "datetime": "2017-05-28T09:01:17Z",
-    "eo:sun_azimuth": 66.2923,
-    "eo:sun_elevation": 70.3079,
-    "eo:off_nadir": -0.00744884,
-    "eo:epsg": 32627,
-    "eo:instrument": "MUX",
+    "platform": "CBERS-4",
+    "instruments": [
+      "MUX"
+    ],
+    "view:sun_azimuth": 66.2923,
+    "view:sun_elevation": 70.3079,
+    "view:off_nadir": 0.00744884,
+    "proj:epsg": 32627,
     "cbers:data_type": "L2",
     "cbers:path": 90,
     "cbers:row": 84
@@ -74,30 +83,42 @@
     },
     "B5": {
       "href": "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084_L2_BAND5.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        0
+        {
+          "name": "B5",
+          "common_name": "blue"
+        }
       ]
     },
     "B6": {
       "href": "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084_L2_BAND6.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        1
+        {
+          "name": "B6",
+          "common_name": "green"
+        }
       ]
     },
     "B7": {
       "href": "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084_L2_BAND7.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        2
+        {
+          "name": "B7",
+          "common_name": "red"
+        }
       ]
     },
     "B8": {
       "href": "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084_L2_BAND8.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        3
+        {
+          "name": "B8",
+          "common_name": "nir"
+        }
       ]
     }
   }

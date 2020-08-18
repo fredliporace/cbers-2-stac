@@ -9,7 +9,7 @@ import json
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
 
-from utils import build_absolute_prefix
+from utils import build_absolute_prefix, CBERS_MISSIONS
 
 def epsg_from_utm_zone(zone):
     """
@@ -174,7 +174,7 @@ def build_link(rel, href):
     link['href'] = href
     return link
 
-def build_asset(href, title=None, asset_type=None, band_index=None):
+def build_asset(href, title=None, asset_type=None, band_id=None):
     """
     Build a asset entry
     """
@@ -184,8 +184,12 @@ def build_asset(href, title=None, asset_type=None, band_index=None):
         asset['title'] = title
     if asset_type:
         asset['type'] = asset_type
-    if band_index is not None:
-        asset['eo:bands'] = [band_index]
+    if band_id is not None:
+        eo_band = OrderedDict()
+        eo_band['name'] = band_id
+        eo_band['common_name'] = CBERS_MISSIONS['CBERS-4']['band']\
+            [band_id]['common_name']
+        asset['eo:bands'] = [eo_band]
     return asset
 
 def build_stac_item_keys(cbers, buckets):
@@ -199,6 +203,8 @@ def build_stac_item_keys(cbers, buckets):
 
     stac_item = OrderedDict()
 
+    stac_item['stac_version'] = "1.0.0-beta.2"
+    stac_item['stac_extensions'] = ["projection", "view", "eo"]
     stac_item['id'] = 'CBERS_%s_%s_%s_' \
                       '%03d_%03d_L%s' % (cbers['number'],
                                          cbers['sensor'],
@@ -235,6 +241,10 @@ def build_stac_item_keys(cbers, buckets):
     datetime = re.sub(r'\.\d+', 'Z', datetime)
     stac_item['properties']['datetime'] = datetime
 
+    # Common metadata
+    stac_item['properties']['platform'] = "{}-{}".format(cbers['mission'], cbers['number'])
+    stac_item['properties']['instruments'] = [cbers['sensor']]
+
     # Links
     meta_prefix = 'https://s3.amazonaws.com/%s/' % (buckets['metadata'])
     main_prefix = 's3://%s/' % (buckets['cog'])
@@ -269,16 +279,19 @@ def build_stac_item_keys(cbers, buckets):
                           '/' + cbers['sensor'] + '/collection.json'))
 
     # EO section
-    stac_item['properties']['eo:sun_azimuth'] = float(cbers['sun_azimuth'])
-    stac_item['properties']['eo:sun_elevation'] = float(cbers['sun_elevation'])
-    stac_item['properties']['eo:off_nadir'] = float(cbers['roll'])
+    # Missing fields (not available from CBERS metadata)
+    # eo:cloud_cover
+
+    # VIEW extension
+    stac_item['properties']['view:sun_azimuth'] = float(cbers['sun_azimuth'])
+    stac_item['properties']['view:sun_elevation'] = float(cbers['sun_elevation'])
+    stac_item['properties']['view:off_nadir'] = abs(float(cbers['roll']))
+
+    # PROJECTION extension
     assert cbers['projection_name'] == 'UTM', \
         'Unsupported projection ' + cbers['projection_name']
     stac_item['properties']\
-        ['eo:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
-    stac_item['properties']['eo:instrument'] = cbers['sensor']
-    # Missing fields (not available from CBERS metadata)
-    # eo:cloud_cover
+        ['proj:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
 
     # CBERS section
     stac_item['properties']['cbers:data_type'] = 'L' + cbers['processing_level']
@@ -308,9 +321,9 @@ def build_stac_item_keys(cbers, buckets):
             build_asset(main_prefix + \
                         cbers['download_url'] + '/' + \
                         stac_item['id'] + '_BAND' + band + '.tif',
-                        asset_type="image/vnd.stac.geotiff; "\
-                        "cloud-optimized=true",
-                        band_index=index)
+                        asset_type="image/tiff; application=geotiff; "\
+                        "profile=cloud-optimized",
+                        band_id=band_id)
     return stac_item
 
 def create_json_item(stac_item, filename):

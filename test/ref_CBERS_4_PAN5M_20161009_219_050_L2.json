@@ -1,4 +1,10 @@
 {
+  "stac_version": "1.0.0-beta.2",
+  "stac_extensions": [
+    "projection",
+    "view",
+    "eo"
+  ],
   "id": "CBERS_4_PAN5M_20161009_219_050_L2",
   "type": "Feature",
   "geometry": {
@@ -39,11 +45,14 @@
   "collection": "CBERS4PAN5M",
   "properties": {
     "datetime": "2016-10-09T17:14:38Z",
-    "eo:sun_azimuth": 167.751,
-    "eo:sun_elevation": 38.3015,
-    "eo:off_nadir": -0.0050659,
-    "eo:epsg": 32793,
-    "eo:instrument": "PAN5M",
+    "platform": "CBERS-4",
+    "instruments": [
+      "PAN5M"
+    ],
+    "view:sun_azimuth": 167.751,
+    "view:sun_elevation": 38.3015,
+    "view:off_nadir": 0.0050659,
+    "proj:epsg": 32793,
     "cbers:data_type": "L2",
     "cbers:path": 219,
     "cbers:row": 50
@@ -74,9 +83,12 @@
     },
     "B1": {
       "href": "s3://cbers-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        0
+        {
+          "name": "B1",
+          "common_name": "pan"
+        }
       ]
     }
   }

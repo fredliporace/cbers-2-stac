@@ -7,6 +7,18 @@ import json
 from jsonschema import validate, RefResolver
 from jsonschema.exceptions import ValidationError
 
+from pystac.validation import validate_dict
+
+# @todo change debug output to give more information when
+# the validation fails
+def validate_json(filename):
+    """
+    Validate STAC item using PySTAC
+    """
+    with open(filename) as fname:
+        jsd = json.load(fname)
+    validate_dict(jsd)
+
 class CollectionTest(unittest.TestCase):
     """CollectionTest"""
 
@@ -15,7 +27,7 @@ class CollectionTest(unittest.TestCase):
 
         json_schema_path = os.path.join(os.path.dirname(os.path.\
                                                         abspath(__file__)),
-                                        'json_schema/')
+                                        'json_schema/collection-spec/json-schema')
         schema_path = os.path.join(json_schema_path,
                                    'collection.json')
         resolver = RefResolver('file://' + json_schema_path + '/',
@@ -36,8 +48,10 @@ class CollectionTest(unittest.TestCase):
         # Checks all collections
         collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
         for collection in collections:
+            print(collection)
             collection_filename = 'stac_catalogs/CBERS4/{col}/' \
                                   'collection.json'.format(col=collection)
+            validate_json(collection_filename)
             with open(collection_filename) as fp_in:
                 validate(json.load(fp_in), schema, resolver=resolver)
 

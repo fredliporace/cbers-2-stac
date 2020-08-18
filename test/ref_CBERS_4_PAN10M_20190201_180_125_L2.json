@@ -1,4 +1,10 @@
 {
+  "stac_version": "1.0.0-beta.2",
+  "stac_extensions": [
+    "projection",
+    "view",
+    "eo"
+  ],
   "id": "CBERS_4_PAN10M_20190201_180_125_L2",
   "type": "Feature",
   "geometry": {
@@ -39,11 +45,14 @@
   "collection": "CBERS4PAN10M",
   "properties": {
     "datetime": "2019-02-01T14:36:38Z",
-    "eo:sun_azimuth": 87.5261,
-    "eo:sun_elevation": 57.0749,
-    "eo:off_nadir": -0.0073997,
-    "eo:epsg": 32769,
-    "eo:instrument": "PAN10M",
+    "platform": "CBERS-4",
+    "instruments": [
+      "PAN10M"
+    ],
+    "view:sun_azimuth": 87.5261,
+    "view:sun_elevation": 57.0749,
+    "view:off_nadir": 0.0073997,
+    "proj:epsg": 32769,
     "cbers:data_type": "L2",
     "cbers:path": 180,
     "cbers:row": 125
@@ -74,23 +83,32 @@
     },
     "B2": {
       "href": "s3://cbers-pds/CBERS4/PAN10M/180/125/CBERS_4_PAN10M_20190201_180_125_L2/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        0
+        {
+          "name": "B2",
+          "common_name": "green"
+        }
       ]
     },
     "B3": {
       "href": "s3://cbers-pds/CBERS4/PAN10M/180/125/CBERS_4_PAN10M_20190201_180_125_L2/CBERS_4_PAN10M_20190201_180_125_L2_BAND3.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        1
+        {
+          "name": "B3",
+          "common_name": "red"
+        }
       ]
     },
     "B4": {
       "href": "s3://cbers-pds/CBERS4/PAN10M/180/125/CBERS_4_PAN10M_20190201_180_125_L2/CBERS_4_PAN10M_20190201_180_125_L2_BAND4.tif",
-      "type": "image/vnd.stac.geotiff; cloud-optimized=true",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
-        2
+        {
+          "name": "B4",
+          "common_name": "nir"
+        }
       ]
     }
   }

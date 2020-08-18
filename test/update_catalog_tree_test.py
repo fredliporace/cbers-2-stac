@@ -35,7 +35,7 @@ class UpdateCatalogTreeTest(unittest.TestCase):
                      'sam/update_catalog_tree/utils.py')
         json_schema_path = os.path.join(os.path.\
                                         dirname(os.path.abspath(__file__)),
-                                        'json_schema/')
+                                        'json_schema/catalog-spec/json-schema')
         # Catalog schema validator
         schema_path = os.path.join(json_schema_path,
                                    'catalog.json')
@@ -45,6 +45,9 @@ class UpdateCatalogTreeTest(unittest.TestCase):
             cls.cat_schema_ = json.load(fp_schema)
 
         # Collection schema validator
+        json_schema_path = os.path.join(os.path.\
+                                        dirname(os.path.abspath(__file__)),
+                                        'json_schema/collection-spec/json-schema')
         schema_path = os.path.join(json_schema_path,
                                    'collection.json')
         cls.col_resolver_ = RefResolver('file://' + json_schema_path + '/',

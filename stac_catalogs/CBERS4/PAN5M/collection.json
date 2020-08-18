@@ -1,54 +1,74 @@
 {
-  "stac_version": "0.7.0",
-  "id": "CBERS4PAN5M",
-  "title": "CBERS 4 PAN5M Imagery",
-  "description": "CBERS 4 PAN5M Imagery",
-  "license": "CC-BY-SA-3.0",
-  "providers": [
-    {
-      "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
-      "roles": ["producer"],
-      "url": "http://www.cbers.inpe.br"
-    },
-    {
-      "name": "AMS Kepler",
-      "roles": ["processor"],
-      "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
-      "url": "https://github.com/fredliporace/cbers-on-aws"
-    },
-    {
-      "name": "Amazon Web Services",
-      "roles": ["host"],
-      "url": "https://registry.opendata.aws/cbers/"
-    }
-  ],
-  "extent": {
-    "spatial": [
-      -180.0,
-      -83.0,
-      180.0,
-      83.0
+    "stac_version": "1.0.0-beta.2",
+    "stac_extensions": [
+        "eo",
+        "item-assets"
     ],
-    "temporal": [
-      "2014-12-08T00:00:00Z",
-      null
-    ]
-  },
-  "links": [
-    {
-      "rel": "self",
-      "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/PAN5M/collection.json"
+    "id": "CBERS4PAN5M",
+    "title": "CBERS 4 PAN5M Imagery",
+    "description": "CBERS 4 PAN5M Imagery",
+    "license": "CC-BY-SA-3.0",
+    "providers": [
+        {
+            "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+            "roles": ["producer"],
+            "url": "http://www.cbers.inpe.br"
+        },
+        {
+            "name": "AMS Kepler",
+            "roles": ["processor"],
+            "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
+            "url": "https://github.com/fredliporace/cbers-on-aws"
+        },
+        {
+            "name": "Amazon Web Services",
+            "roles": ["host"],
+            "url": "https://registry.opendata.aws/cbers/"
+        }
+    ],
+    "extent": {
+        "spatial": {
+            "bbox": [[
+                -180.0,
+                -83.0,
+                180.0,
+                83.0
+            ]]
+        },
+        "temporal": {
+            "interval": [["2014-12-08T00:00:00Z", null]]
+        }
+    },
+    "links": [
+        {
+            "rel": "self",
+            "href": "https://cbers-stac-0-7.s3.amazonaws.com/CBERS4/PAN5M/collection.json"
+        }
+    ],
+    "properties": {
+        "gsd": 5.0,
+        "platform": "CBERS-4",
+        "instruments": [
+            "PAN5M"
+        ]
+    },
+    "item_assets": {
+        "thumbnail": {
+            "title": "Thumbnail",
+            "type": "image/jpeg"
+        },
+        "metadata": {
+            "title": "INPE original metadata",
+            "type": "text/xml"
+        },
+        "B1": {
+            "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+            "eo:bands": [
+                {
+                    "name": "B1",
+                    "common_name": "pan"
+                }
+            ]
+        }
     }
-  ],
-  "properties": {
-    "eo:gsd": 5.0,
-    "eo:platform": "CBERS-4",
-    "eo:instrument": "PAN5M",
-    "eo:bands": [
-      {
-        "name": "B1",
-        "common_name": "pan"
-      }      
-    ]
-  }
 }

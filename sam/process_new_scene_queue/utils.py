@@ -19,6 +19,51 @@ STAC_DOC_TEMPLATE = {
     "links": []
 }
 
+# CBERS general missions definitions
+CBERS_MISSIONS = {
+    "CBERS-4": {
+        "instruments": ["MUX", "AWFI", "PAN5M", "PAN10M"],
+        "band": {
+            "B1": {
+                "common_name": "pan"
+            },
+            "B2": {
+                "common_name": "green"
+            },
+            "B3": {
+                "common_name": "red"
+            },
+            "B4": {
+                "common_name": "nir"
+            },
+            "B5": {
+                "common_name": "blue"
+            },
+            "B6": {
+                "common_name": "green"
+            },
+            "B7": {
+                "common_name": "red"
+            },
+            "B8": {
+                "common_name": "nir"
+            },
+            "B13": {
+                "common_name": "blue"
+            },
+            "B14": {
+                "common_name": "green"
+            },
+            "B15": {
+                "common_name": "red"
+            },
+            "B16": {
+                "common_name": "nir"
+            }
+        }
+    }
+}
+
 def static_to_api_collection(collection: dict, event: dict):
     """
     Transform static collection objects to API collection by

@@ -1,5 +1,5 @@
 {
-  "stac_version": "0.7.0",
+  "stac_version": "1.0.0-beta.2",
   "id": "CBERS4",
   "description": "Catalogs of CBERS-4 mission's imagery on AWS",
 
