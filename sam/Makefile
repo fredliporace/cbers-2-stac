@@ -2,7 +2,7 @@
 # DEPLOY_BUCKET
 
 OPERATOR_EMAIL = liporace@amskepler.com
-VERSION = 0-7
+VERSION = 1-0
 APP = cbers-2-stac
 STACK_NAME = $(APP)-$(VERSION)
 STAC_BUCKET = cbers-stac-$(VERSION)
