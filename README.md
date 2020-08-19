@@ -26,6 +26,29 @@ A live version of the stack is deployed to AWS and serve its contents in:
 
 ## Development
 
+### Environment
+
 Developed and tested in CentOS8 with python 3.8.0
 
 JAVA is required to execute elasticsearch under localstack.
+
+### Deployment to AWS
+
+First you need to define two buckets:
+
+* STAC\_BUCKET, the bucket that will be populated with STAC files. This bucket currently needs to be named cbers-stac-VERSIONMAJOR-VERSIONMINOR, for instance, cbers-stac-1-0
+* DEPLOY\_BUCKET, the bucket that will be temporarily used for deployment files.
+
+Change the following parameters in ./sam/Makefile to reflect your environment:
+
+* OPERATOR_EMAIL: this e-mail will be used to notify problems in the stack execution
+
+Populate STAC\_BUCKET with the static STAC files by executing in the ./stac\_catalogs directory.
+```
+(export AWS_PROFILE=your_aws_profile && ./sync_to_aws.sh)
+```
+
+To deploy the stac execute in the ./sam directory:
+```
+(export AWS_PROFILE=your_aws_profile && export DEPLOY_BUCKET=deploy_bucket_created_above && make deploy)
+```
