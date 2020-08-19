@@ -12,7 +12,7 @@ COLLECTIONS = {
 
 # Base template for root documents
 STAC_DOC_TEMPLATE = {
-    "stac_version": "0.7.0",
+    "stac_version": None,
     "id": "CBERS",
     "description": "Catalogs of CBERS mission's imagery on AWS",
     "title": "CBERS 4 on AWS",

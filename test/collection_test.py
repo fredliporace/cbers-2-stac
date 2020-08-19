@@ -9,6 +9,15 @@ from jsonschema.exceptions import ValidationError
 
 from pystac.validation import validate_dict
 
+# Region is required for testing
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+
+import site
+site.addsitedir('sam/process_new_scene_queue')
+site.addsitedir('sam/update_catalog_tree')
+
+from sam.update_catalog_tree.code import base_stac_catalog
+
 # @todo change debug output to give more information when
 # the validation fails
 def validate_json(filename):
@@ -48,9 +57,11 @@ class CollectionTest(unittest.TestCase):
         # Checks all collections
         collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
         for collection in collections:
-            print(collection)
+            col_dict = base_stac_catalog('cbers-stac', 'CBERS', '4', collection)
             collection_filename = 'stac_catalogs/CBERS4/{col}/' \
                                   'collection.json'.format(col=collection)
+            with open(collection_filename, 'w') as out_filename:
+                json.dump(col_dict, out_filename, indent=2)
             validate_json(collection_filename)
             with open(collection_filename) as fp_in:
                 validate(json.load(fp_in), schema, resolver=resolver)

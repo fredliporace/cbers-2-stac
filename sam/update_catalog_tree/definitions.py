@@ -11,6 +11,10 @@ BASE_CATALOG = OrderedDict({
 })
 
 BASE_COLLECTION = OrderedDict({
+    "stac_extensions": [
+        "eo",
+        "item-assets"
+    ],
     "license": "CC-BY-SA-3.0",
     "providers": [
         {
@@ -45,88 +49,188 @@ BASE_COLLECTION = OrderedDict({
     },
     "links": None,
     "properties": {
-        "eo:gsd": None,
-        "eo:platform": None,
-        "eo:instrument": None,
-        "eo:bands": None
-    }
+        "gsd": None,
+        "platform": None,
+        "instruments": None,
+    },
+    "item_assets": None
 })
 
-CAMERA_PROPERTIES = {
+BASE_CAMERA = {
     "MUX":{
-        "eo:gsd": 20.0,
-        "eo:platform": "CBERS-4",
-        "eo:instrument": "MUX",
-        "eo:bands": [
-            {
-                "name": "B5",
-                "common_name": "blue"
+        "properties": {
+            "gsd": 20.0,
+            "platform": "CBERS-4",
+            "instruments": ["MUX"],
+        },
+        "item_assets":{
+            "thumbnail": {
+                "title": "Thumbnail",
+                "type": "image/jpeg"
             },
-            {
-                "name": "B6",
-                "common_name": "green"
+            "metadata": {
+                "title": "INPE original metadata",
+                "type": "text/xml"
             },
-            {
-                "name": "B7",
-                "common_name": "red"
+            "B5": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B5",
+                        "common_name": "blue"
+                    }
+                ]
             },
-            {
-                "name": "B8",
-                "common_name": "nir"
+            "B6": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B6",
+                        "common_name": "green"
+                    }
+                ]
+            },
+            "B7": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B7",
+                        "common_name": "red"
+                    }
+                ]
+            },
+            "B8": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B8",
+                        "common_name": "nir"
+                    }
+                ]
             }
-        ]
+        }
     },
     "AWFI":{
-        "eo:gsd": 64.0,
-        "eo:platform": "CBERS-4",
-        "eo:instrument": "AWFI",
-        "eo:bands": [
-            {
-                "name": "B13",
-                "common_name": "blue"
+        "properties": {
+            "gsd": 64.0,
+            "platform": "CBERS-4",
+            "instruments": ["AWFI"],
+        },
+        "item_assets":{
+            "thumbnail": {
+                "title": "Thumbnail",
+                "type": "image/jpeg"
             },
-            {
-                "name": "B14",
-                "common_name": "green"
+            "metadata": {
+                "title": "INPE original metadata",
+                "type": "text/xml"
             },
-            {
-                "name": "B15",
-                "common_name": "red"
+            "B13": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B13",
+                        "common_name": "blue"
+                    }
+                ]
             },
-            {
-                "name": "B16",
-                "common_name": "nir"
+            "B14": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B14",
+                        "common_name": "green"
+                    }
+                ]
+            },
+            "B15": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B15",
+                        "common_name": "red"
+                    }
+                ]
+            },
+            "B16": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B16",
+                        "common_name": "nir"
+                    }
+                ]
             }
-        ]
+        }
     },
     "PAN5M":{
-        "eo:gsd": 5.0,
-        "eo:platform": "CBERS-4",
-        "eo:instrument": "PAN5M",
-        "eo:bands": [
-            {
-                "name": "B1",
-                "common_name": "pan"
+        "properties": {
+            "gsd": 5.0,
+            "platform": "CBERS-4",
+            "instruments": ["PAN5M"],
+        },
+        "item_assets":{
+            "thumbnail": {
+                "title": "Thumbnail",
+                "type": "image/jpeg"
+            },
+            "metadata": {
+                "title": "INPE original metadata",
+                "type": "text/xml"
+            },
+            "B1": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B1",
+                        "common_name": "pan"
+                    }
+                ]
             }
-        ]
+        }
     },
     "PAN10M":{
-        "eo:gsd": 10.0,
-        "eo:platform": "CBERS-4",
-        "eo:instrument": "PAN10M",
-        "eo:bands": [
-            {
-                "name": "B2",
-                "common_name": "green"
+        "properties": {
+            "gsd": 10.0,
+            "platform": "CBERS-4",
+            "instruments": ["PAN10M"],
+        },
+        "item_assets":{
+            "thumbnail": {
+                "title": "Thumbnail",
+                "type": "image/jpeg"
             },
-            {
-                "name": "B3",
-                "common_name": "red"
+            "metadata": {
+                "title": "INPE original metadata",
+                "type": "text/xml"
             },
-            {
-                "name": "B4",
-                "common_name": "nir"
+            "B2": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B2",
+                        "common_name": "green"
+                    }
+                ]
+            },
+            "B3": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B3",
+                        "common_name": "red"
+                    }
+                ]
+            },
+            "B4": {
+                "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+                "eo:bands": [
+                    {
+                        "name": "B4",
+                        "common_name": "nir"
+                    }
+                ]
             }
-        ]
+        }
     }
 }
