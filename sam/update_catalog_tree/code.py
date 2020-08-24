@@ -10,8 +10,8 @@ from copy import deepcopy
 import boto3
 #from botocore.errorfactory import ClientError
 
-from utils import build_absolute_prefix
-from definitions import BASE_CATALOG, BASE_COLLECTION, BASE_CAMERA
+from utils import build_absolute_prefix, BASE_CATALOG, \
+    BASE_COLLECTION, BASE_CAMERA, CBERS_MISSIONS
 
 S3_CLIENT = boto3.client('s3')
 SQS_CLIENT = boto3.client('sqs')
@@ -159,10 +159,11 @@ def sqs_messages(queue):
         retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
         yield retd
 
-def get_base_collection(camera: str):
+def get_base_collection(sat_mission: str, camera: str):
     """
     Return the base collection for the camera.
 
+    :param sat_mission: "CBERS-4", for instance
     :param camera str: camera
     :rtype: dict
     :return: base collection
@@ -170,8 +171,10 @@ def get_base_collection(camera: str):
 
     collection = deepcopy(BASE_CATALOG)
     collection.update(BASE_COLLECTION)
-    collection['properties'] = BASE_CAMERA[camera]['properties']
-    collection['item_assets'] = BASE_CAMERA[camera]['item_assets']
+    collection['properties'] = BASE_CAMERA[sat_mission][camera]['properties']
+    collection['item_assets'] = BASE_CAMERA[sat_mission][camera]['item_assets']
+    collection['extent']['temporal']['interval'] = \
+        CBERS_MISSIONS[sat_mission]['interval']
 
     return collection
 
@@ -185,7 +188,13 @@ def base_stac_catalog(bucket, satellite,
 
     if in_collection:
         json_filename = 'collection.json'
-        stac_catalog = get_base_collection(camera)
+        # Deal with satellite including or not mission
+        if mission:
+            sat_mission = "{}{}".format(satellite, mission)
+        else:
+            sat_mission = satellite
+        stac_catalog = get_base_collection(sat_mission,
+                                           camera)
     else:
         json_filename = 'catalog.json'
         stac_catalog = BASE_CATALOG

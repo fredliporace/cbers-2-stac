@@ -2,11 +2,12 @@
   "stac_version": "1.0.0-beta.2",
   "id": "CBERS",
   "description": "Catalogs of CBERS mission's imagery on AWS",
-  "title": "CBERS 4 on AWS",
+  "title": "CBERS 4/4A on AWS",
 
   "links": [
     { "rel": "self", "href": "https://cbers-stac-1-0.s3.amazonaws.com/catalog.json" },
     { "rel": "root", "href": "https://cbers-stac-1-0.s3.amazonaws.com/catalog.json"},
-    { "rel": "child", "href": "CBERS4/catalog.json" }
+    { "rel": "child", "href": "CBERS4/catalog.json" },
+    { "rel": "child", "href": "CBERS4A/catalog.json" }
   ]
 }

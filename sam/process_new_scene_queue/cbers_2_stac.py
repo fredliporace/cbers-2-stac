@@ -147,21 +147,9 @@ def get_keys_from_cbers(cbers_metadata):
                                               basename(cbers_metadata)))
     metadata['sat_sensor'] = 'CBERS%s/%s' % (metadata['number'],
                                              metadata['sensor'])
+    metadata['sat_number'] = "{}-{}".format(metadata['mission'],
+                                            metadata['number'])
     metadata['meta_file'] = os.path.basename(cbers_metadata)
-
-    #for band in range(reference_band, reference_band + number_of_bands):
-    #    key = 'band_%d_download_url' % (band)
-    #    metadata[key] = metadata['download_url'] + '/' + \
-    #                    'CBERS_%s_%s_%s_%03d_%03d_L%s_BAND%d.tif' % (metadata['number'],
-    #                                                                 metadata['sensor'],
-    #                                                                 ymd,
-    #                                                                 int(metadata['path']),
-    #                                                                 int(metadata['row']),
-    #                                                                 metadata['processing_level'],
-    #                                                                 band)
-
-    # processing related fields
-    # metadata['metadata_processing_date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     return metadata
 
@@ -174,7 +162,8 @@ def build_link(rel, href):
     link['href'] = href
     return link
 
-def build_asset(href, title=None, asset_type=None, band_id=None):
+def build_asset(href, sat_number, title=None, asset_type=None, band_id=None,
+                properties=None):
     """
     Build a asset entry
     """
@@ -184,10 +173,13 @@ def build_asset(href, title=None, asset_type=None, band_id=None):
         asset['title'] = title
     if asset_type:
         asset['type'] = asset_type
+    if properties:
+        for key in properties:
+            asset[key] = properties[key]
     if band_id is not None:
         eo_band = OrderedDict()
         eo_band['name'] = band_id
-        eo_band['common_name'] = CBERS_MISSIONS['CBERS-4']['band']\
+        eo_band['common_name'] = CBERS_MISSIONS[sat_number]['band']\
             [band_id]['common_name']
         asset['eo:bands'] = [eo_band]
     return asset
@@ -242,7 +234,7 @@ def build_stac_item_keys(cbers, buckets):
     stac_item['properties']['datetime'] = datetime
 
     # Common metadata
-    stac_item['properties']['platform'] = "{}-{}".format(cbers['mission'], cbers['number'])
+    stac_item['properties']['platform'] = cbers['sat_number']
     stac_item['properties']['instruments'] = [cbers['sensor']]
 
     # Links
@@ -304,26 +296,40 @@ def build_stac_item_keys(cbers, buckets):
         ['thumbnail'] = build_asset(meta_prefix + \
                                     cbers['download_url'] + \
                                     '/' + \
-                                    cbers['no_level_id'] + \
-                                    '.jpg',
-                                    asset_type="image/jpeg")
+                                    cbers['no_level_id'] + '.' + \
+                                    CBERS_MISSIONS[cbers['sat_number']]\
+                                    ["quicklook"]["extension"],
+                                    cbers['sat_number'],
+                                    asset_type="image/" + CBERS_MISSIONS[cbers['sat_number']]\
+                                    ["quicklook"]["type"])
 
     stac_item['assets']\
         ['metadata'] = build_asset(main_prefix + \
                                    cbers['download_url'] + \
                                    '/' + \
                                    cbers['meta_file'],
+                                   cbers['sat_number'],
                                    asset_type="text/xml",
                                    title="INPE original metadata")
     for index, band in enumerate(cbers['bands']):
         band_id = "B" + band
+        gsd = CBERS_MISSIONS[cbers['sat_number']]\
+            ["band"][band_id].get("gsd")
+        if gsd:
+            properties = {
+                "gsd": gsd
+            }
+        else:
+            properties = None
         stac_item['assets'][band_id] = \
             build_asset(main_prefix + \
                         cbers['download_url'] + '/' + \
                         stac_item['id'] + '_BAND' + band + '.tif',
+                        cbers['sat_number'],
                         asset_type="image/tiff; application=geotiff; "\
                         "profile=cloud-optimized",
-                        band_id=band_id)
+                        band_id=band_id,
+                        properties=properties)
     return stac_item
 
 def create_json_item(stac_item, filename):

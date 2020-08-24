@@ -51,7 +51,7 @@ def handler(event, context): # pylint: disable=unused-argument
         populate_queue_with_quicklooks(bucket=os.\
                                        environ['CBERS_PDS_BUCKET'],
                                        prefix=response['Messages'][0]['Body'],
-                                       suffix='.jpg',
+                                       suffix=r'\.(jpg|png)',
                                        queue=os.environ['NEW_SCENES_QUEUE'])
         #r_params.append(json.loads(response['Messages'][0]['Body']))
         #print(json.dumps(response, indent=2))
@@ -64,5 +64,5 @@ def handler(event, context): # pylint: disable=unused-argument
             populate_queue_with_quicklooks(bucket=os.\
                                            environ['CBERS_PDS_BUCKET'],
                                            prefix=record['body'],
-                                           suffix='.jpg',
+                                           suffix=r'\.(jpg|png)',
                                            queue=os.environ['NEW_SCENES_QUEUE'])

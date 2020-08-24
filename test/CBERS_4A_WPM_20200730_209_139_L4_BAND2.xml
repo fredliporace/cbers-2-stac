@@ -1,0 +1,577 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<prdf xmlns="http://www.gisplan.com.br/xmlsat" generator="G2T" generatorVersion="0.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.gisplan.com.br/xmlsat /sge/install/x86_64/etc/../etc/schemas/prdf.xsd">
+
+  <satellite>
+    <name>CBERS</name>
+    <number>4A</number>
+    <instrument channel="1">WPM</instrument>
+  </satellite>
+
+  <software>G2T</software>
+
+  <version>0.0.0</version>
+
+  <revolutionNumber>0</revolutionNumber>
+
+  <imageMode>VIEW</imageMode>
+
+  <availableBands>
+    <band>0</band>
+    <band>1</band>
+    <band>2</band>
+    <band>3</band>
+    <band>4</band>
+  </availableBands>
+
+  <orientationAngle>
+    <degree>8</degree>
+    <minute>30</minute>
+    <second>15</second>
+    <millisecond>645</millisecond>
+  </orientationAngle>
+
+  <sunIncidenceAngle>
+    <degree>45</degree>
+    <minute>47</minute>
+    <second>19</second>
+    <millisecond>498</millisecond>
+  </sunIncidenceAngle>
+
+  <viewing>
+    <begin>2020-07-30T13:51:17.286</begin>
+    <center>2020-07-30T13:51:24.147</center>
+    <end>2020-07-30T13:51:31.009</end>
+  </viewing>
+
+  <reception>
+    <begin>2020-07-30T13:51:17.286</begin>
+    <center>2020-07-30T13:51:24.147</center>
+    <end>2020-07-30T13:51:31.009</end>
+  </reception>
+
+  <image>
+    <receivingStation>Unknown location</receivingStation>
+    <processingStation>Sao Jose dos Campos</processingStation>
+    <processingTime>2020-07-31T04:49:26.041520</processingTime>
+    <level>4</level>
+    <columns>14198</columns>
+    <lines>14584</lines>
+    <verticalPixelSize>8.000000</verticalPixelSize>
+    <horizontalPixelSize>8.000000</horizontalPixelSize>
+    <orbitDirection>Descending</orbitDirection>
+    <timeStamp>
+      <begin>2020-07-30T13:51:17.286563</begin>
+      <center>2020-07-30T13:51:24.147711</center>
+      <end>2020-07-30T13:51:31.009148</end>
+    </timeStamp>
+    <path>209</path>
+    <row>139</row>
+    <shiftFromNominal>0</shiftFromNominal>
+    <shiftFromNominalInSeconds>0</shiftFromNominalInSeconds>
+    <shiftFromNominalInPercent>0</shiftFromNominalInPercent>
+    <sunPosition>
+      <elevation>44.3304</elevation>
+      <sunAzimuth>32.9789</sunAzimuth>
+    </sunPosition>
+    <focalDistance>2.22121e+06</focalDistance>
+    <boresightMatrix>
+      <value col="0" row="0">0.999995</value>
+      <value col="1" row="0">-0.000852</value>
+      <value col="2" row="0">0.002924</value>
+      <value col="0" row="1">0.000851</value>
+      <value col="1" row="1">1.000000</value>
+      <value col="2" row="1">0.000344</value>
+      <value col="0" row="2">-0.002925</value>
+      <value col="1" row="2">-0.000342</value>
+      <value col="2" row="2">0.999996</value>
+    </boresightMatrix>
+    <ephemerisMode>PACDB_GPS</ephemerisMode>
+    <gain>
+      <band cal="2" name="0">0x7F</band>
+      <band cal="1" name="1">0x61</band>
+      <band cal="1" name="2">0x61</band>
+      <band cal="2" name="3">0x7F</band>
+      <band cal="4" name="4">0xAC</band>
+    </gain>
+    <stages>
+      <band cal="3" name="0">0x13</band>
+      <band cal="3" name="1">0x23</band>
+      <band cal="3" name="2">0x33</band>
+      <band cal="2" name="3">0x42</band>
+      <band cal="2" name="4">0x52</band>
+    </stages>
+    <boundingBox>
+      <UL>
+        <line>2.000000</line>
+        <column>0.000000</column>
+        <latitude>-20.117457</latitude>
+        <longitude>-51.679465</longitude>
+        <northing>7775376</northing>
+        <easting>428976</easting>
+      </UL>
+      <UR>
+        <line>2.000000</line>
+        <column>5284.000000</column>
+        <latitude>-20.118295</latitude>
+        <longitude>-50.592796</longitude>
+        <northing>7775376</northing>
+        <easting>542564</easting>
+      </UR>
+      <LR>
+        <line>11982.000000</line>
+        <column>5284.000000</column>
+        <latitude>-21.172519</latitude>
+        <longitude>-50.589980</longitude>
+        <northing>7658704</northing>
+        <easting>542564</easting>
+      </LR>
+      <LL>
+        <line>11982.000000</line>
+        <column>0.000000</column>
+        <latitude>-21.171632</latitude>
+        <longitude>-51.684164</longitude>
+        <northing>7658704</northing>
+        <easting>428976</easting>
+      </LL>
+      <CT>
+        <line>5992.000000</line>
+        <column>2642.000000</column>
+        <latitude>-20.645853</latitude>
+        <longitude>-51.136601</longitude>
+        <northing>7717040</northing>
+        <easting>485770</easting>
+      </CT>
+    </boundingBox>
+    <imageData>
+      <UL>
+        <line>2.000000</line>
+        <column>0.000000</column>
+        <latitude>-20.142304</latitude>
+        <longitude>-51.487835</longitude>
+        <northing>7772696</northing>
+        <easting>449015</easting>
+      </UL>
+      <UR>
+        <line>2.000000</line>
+        <column>5284.000000</column>
+        <latitude>-20.322157</latitude>
+        <longitude>-50.597995</longitude>
+        <northing>7752817</northing>
+        <easting>541966</easting>
+      </UR>
+      <LR>
+        <line>11982.000000</line>
+        <column>5284.000000</column>
+        <latitude>-21.163409</latitude>
+        <longitude>-50.786227</longitude>
+        <northing>7659752</northing>
+        <easting>522193</easting>
+      </LR>
+      <LL>
+        <line>11982.000000</line>
+        <column>0.000000</column>
+        <latitude>-20.982801</latitude>
+        <longitude>-51.681231</longitude>
+        <northing>7679605</northing>
+        <easting>429191</easting>
+      </LL>
+      <CT>
+        <line>5992.000000</line>
+        <column>2642.000000</column>
+        <latitude>-20.562552</latitude>
+        <longitude>-51.042915</longitude>
+        <northing>7726264</northing>
+        <easting>495527</easting>
+      </CT>
+    </imageData>
+    <attitudes>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:15</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:16</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:17</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:18</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:19</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:20</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:21</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:22</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:23</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:24</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:25</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:26</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:27</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:28</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:29</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:30</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:31</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:32</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:33</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+      <attitude description="PACDB_AOCC">
+        <time>2020-07-30T13:51:34</time>
+        <roll>-0.000453806</roll>
+        <pitch>-0.000726111</pitch>
+        <yaw>3.56271</yaw>
+        <deltaRoll>9.25926e-06</deltaRoll>
+        <deltaPitch>7.40741e-06</deltaPitch>
+        <deltaYaw>-0.00139583</deltaYaw>
+      </attitude>
+    </attitudes>
+    <ephemerides>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:15</time>
+        <x>4145582.800000</x>
+        <y>-5119944.700000</y>
+        <z>-2390563.700000</z>
+        <vx>-2833.310000</vx>
+        <vy>971.850000</vy>
+        <vz>-7013.570000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:16</time>
+        <x>4142747.197162</x>
+        <y>-5118969.699022</y>
+        <z>-2397575.907011</z>
+        <vx>-2837.950005</vx>
+        <vy>978.160006</vy>
+        <vz>-7010.789997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:17</time>
+        <x>4139906.897157</x>
+        <y>-5117988.399016</y>
+        <z>-2404585.307008</z>
+        <vx>-2842.580005</vx>
+        <vy>984.480006</vy>
+        <vz>-7007.999997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:18</time>
+        <x>4137062.000000</x>
+        <y>-5117000.800000</y>
+        <z>-2411591.900000</z>
+        <vx>-2847.210000</vx>
+        <vy>990.800000</vy>
+        <vz>-7005.200000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:19</time>
+        <x>4134212.497148</x>
+        <y>-5116006.799003</y>
+        <z>-2418595.707002</z>
+        <vx>-2851.840005</vx>
+        <vy>997.120006</vy>
+        <vz>-7002.389997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:20</time>
+        <x>4131358.400000</x>
+        <y>-5115006.500000</y>
+        <z>-2425596.700000</z>
+        <vx>-2856.460000</vx>
+        <vy>1003.430000</vy>
+        <vz>-6999.580000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:21</time>
+        <x>4128499.600000</x>
+        <y>-5113999.900000</y>
+        <z>-2432594.900000</z>
+        <vx>-2861.070000</vx>
+        <vy>1009.750000</vy>
+        <vz>-6996.760000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:22</time>
+        <x>4125636.200000</x>
+        <y>-5112987.000000</y>
+        <z>-2439590.200000</z>
+        <vx>-2865.680000</vx>
+        <vy>1016.060000</vy>
+        <vz>-6993.930000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:23</time>
+        <x>4122768.197130</x>
+        <y>-5111967.798978</y>
+        <z>-2446582.706991</z>
+        <vx>-2870.290005</vx>
+        <vy>1022.380006</vy>
+        <vz>-6991.089997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:24</time>
+        <x>4119895.600000</x>
+        <y>-5110942.300000</y>
+        <z>-2453572.400000</z>
+        <vx>-2874.900000</vx>
+        <vy>1028.690000</vy>
+        <vz>-6988.240000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:25</time>
+        <x>4117018.400000</x>
+        <y>-5109910.400000</y>
+        <z>-2460559.200000</z>
+        <vx>-2879.500000</vx>
+        <vy>1035.000000</vy>
+        <vz>-6985.390000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:26</time>
+        <x>4114136.597116</x>
+        <y>-5108872.298959</y>
+        <z>-2467543.106982</z>
+        <vx>-2884.090005</vx>
+        <vy>1041.320006</vy>
+        <vz>-6982.519997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:27</time>
+        <x>4111250.200000</x>
+        <y>-5107827.800000</y>
+        <z>-2474524.200000</z>
+        <vx>-2888.680000</vx>
+        <vy>1047.630000</vy>
+        <vz>-6979.650000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:28</time>
+        <x>4108359.300000</x>
+        <y>-5106777.000000</y>
+        <z>-2481502.500000</z>
+        <vx>-2893.270000</vx>
+        <vy>1053.940000</vy>
+        <vz>-6976.780000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:29</time>
+        <x>4105463.700000</x>
+        <y>-5105719.900000</y>
+        <z>-2488477.800000</z>
+        <vx>-2897.850000</vx>
+        <vy>1060.250000</vy>
+        <vz>-6973.890000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:30</time>
+        <x>4102563.597098</x>
+        <y>-5104656.498933</y>
+        <z>-2495450.206971</z>
+        <vx>-2902.430005</vx>
+        <vy>1066.560006</vy>
+        <vz>-6970.989997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:31</time>
+        <x>4099658.900000</x>
+        <y>-5103586.800000</y>
+        <z>-2502419.800000</z>
+        <vx>-2907.000000</vx>
+        <vy>1072.870000</vy>
+        <vz>-6968.090000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:32</time>
+        <x>4096749.600000</x>
+        <y>-5102510.800000</y>
+        <z>-2509386.400000</z>
+        <vx>-2911.570000</vx>
+        <vy>1079.180000</vy>
+        <vz>-6965.180000</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:33</time>
+        <x>4093835.697084</x>
+        <y>-5101428.398915</y>
+        <z>-2516350.106962</z>
+        <vx>-2916.140005</vx>
+        <vy>1085.490006</vy>
+        <vz>-6962.259997</vz>
+      </ephemeris>
+      <ephemeris description="PACDB_GPS">
+        <time>2020-07-30T13:51:34</time>
+        <x>4090917.297079</x>
+        <y>-5100339.798908</y>
+        <z>-2523310.906959</z>
+        <vx>-2920.700005</vx>
+        <vy>1091.800006</vy>
+        <vz>-6959.329997</vz>
+      </ephemeris>
+    </ephemerides>
+    <interpolation>BC</interpolation>
+    <datumName>WGS84</datumName>
+    <semiMajorAxis>6378137.000000</semiMajorAxis>
+    <flattening>0.003353</flattening>
+    <xShiftToWGS84>0.000000</xShiftToWGS84>
+    <yShiftToWGS84>0.000000</yShiftToWGS84>
+    <zShiftToWGS84>0.000000</zShiftToWGS84>
+    <projectionName>UTM</projectionName>
+    <originLongitude>-51</originLongitude>
+    <originLatitude>0</originLatitude>
+    <scaleFactor>0.999600</scaleFactor>
+    <falseEasting>500000.000000</falseEasting>
+    <falseNorthing>10000000.000000</falseNorthing>
+    <loadedCalibration>/sge/install/x86_64/etc/../var/technical_database/CBERS-4A/WPM/20191220010000000.cal</loadedCalibration>
+    <loadedCpf>/sge/GRALHA/CBERS4A/2020_07/CBERS_4A_WPM_RAW_2020_07_30.13_45_00_ETC2/opt/CBERS_4A_WPM_20200730_209_139.h5_0.cpf</loadedCpf>
+    <band2>/sge/TIFF/CBERS4A/2020_07/CBERS_4A_WPM_RAW_2020_07_30.13_45_00_ETC2/209_139_0/4_BC_UTM_WGS84/CBERS_4A_WPM_20200730_209_139_L4_BAND2.tif</band2>
+    <syncLoss>
+      <band name="0" pixels="2347800064" pixels_frame_losses="0" pixels_partial_losses="0">0.00</band>
+      <band name="1" pixels="589239808" pixels_frame_losses="0" pixels_partial_losses="0">0.00</band>
+      <band name="2" pixels="589239808" pixels_frame_losses="0" pixels_partial_losses="0">0.00</band>
+      <band name="3" pixels="589239808" pixels_frame_losses="0" pixels_partial_losses="0">0.00</band>
+      <band name="4" pixels="589239808" pixels_frame_losses="0" pixels_partial_losses="0">0.00</band>
+    </syncLoss>
+    <timeCodeSource>START_TIME</timeCodeSource>
+  </image>
+
+</prdf>

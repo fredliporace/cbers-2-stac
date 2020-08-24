@@ -10,7 +10,9 @@ import boto3
 from cbers_2_stac import convert_inpe_to_stac
 
 # CBERS metadata
+# @todo check if quicklook_pixel_size is being used
 CMETA = {
+    # Same for CBERS4 and CBERS4A
     'MUX': {
         'reference': 5,
         'num_bands': 4,
@@ -46,6 +48,24 @@ CMETA = {
         'green': 4,
         'blue': 2,
         'meta_band': 4
+    },
+    'WFI': {
+        'reference': 13,
+        'num_bands': 4,
+        'quicklook_pixel_size': 640,
+        'red': 15,
+        'green': 14,
+        'blue': 13,
+        'meta_band': 14
+    },
+    'WPM': {
+        'reference': 1,
+        'num_bands': 5,
+        'quicklook_pixel_size': 640,
+        'red': 3,
+        'green': 2,
+        'blue': 1,
+        'meta_band': 2
     }
 }
 
@@ -201,7 +221,7 @@ def process_message(msg, buckets, sns_target_arn,
     metadata_keys = get_s3_keys(msg['key'])
 
     assert metadata_keys['quicklook_keys']\
-        ['camera'] in ('MUX', 'AWFI', 'PAN10M', 'PAN5M'), \
+        ['camera'] in ('MUX', 'AWFI', 'PAN10M', 'PAN5M', 'WPM', 'WFI'), \
         "Unrecognized key: " + metadata_keys['quicklook_keys']['camera']
 
     local_inpe_metadata = '/tmp/' + \

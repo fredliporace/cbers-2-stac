@@ -1,6 +1,11 @@
-"""utils.py"""
+"""
+utils.py
+Definitions for base item, catalog and collections
+"""
 
 import copy
+
+from collections import OrderedDict
 
 # Collections are currently hard-coded here, this is not
 # an issue for CBERS on AWS since this does not frequently change
@@ -8,20 +13,39 @@ COLLECTIONS = {
     "CBERS4MUX":"CBERS4/MUX/collection.json",
     "CBERS4AWFI":"CBERS4/AWFI/collection.json",
     "CBERS4PAN10M":"CBERS4/PAN10M/collection.json",
-    "CBERS4PAN5M":"CBERS4/PAN5M/collection.json"}
+    "CBERS4PAN5M":"CBERS4/PAN5M/collection.json",
+    "CBERS4AMUX":"CBERS4A/MUX/collection.json",
+    "CBERS4A-WFI":"CBERS4A/WFI/collection.json",
+    "CBERS4AWPM":"CBERS4A/WPM/collection.json"
+}
+
+STAC_VERSION = "1.0.0-beta.2"
+
+BASE_CATALOG = OrderedDict({
+    "stac_version": STAC_VERSION,
+    "id": None,
+    "description": None,
+})
 
 # Base template for root documents
 STAC_DOC_TEMPLATE = {
     "stac_version": None,
     "id": "CBERS",
-    "description": "Catalogs of CBERS mission's imagery on AWS",
-    "title": "CBERS 4 on AWS",
+    "description": "Catalogs of CBERS 4 & 4A mission's imagery on AWS",
+    "title": "CBERS 4 & CBERS 4A on AWS",
     "links": []
 }
+
+COG_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
 # CBERS general missions definitions
 CBERS_MISSIONS = {
     "CBERS-4": {
+        "interval": [["2014-12-08T00:00:00Z", None]],
+        "quicklook":{
+            "extension": "jpg",
+            "type": "jpeg"
+        },
         "instruments": ["MUX", "AWFI", "PAN5M", "PAN10M"],
         "band": {
             "B1": {
@@ -59,6 +83,463 @@ CBERS_MISSIONS = {
             },
             "B16": {
                 "common_name": "nir"
+            }
+        }
+    },
+    "CBERS-4A": {
+        "interval": [["2019-12-20T00:00:00Z", None]],
+        "quicklook":{
+            "extension": "png",
+            "type": "png"
+        },
+        "instruments": ["WPM", "MUX", "WFI"],
+        "band": {
+            "B0": {
+                "common_name": "pan",
+            },
+            "B1": {
+                # gsd is only defined for values greater than
+                # what is defined at collection level
+                "common_name": "blue",
+                "gsd": 8
+            },
+            "B2": {
+                "common_name": "green",
+                "gsd": 8
+            },
+            "B3": {
+                "common_name": "red",
+                "gsd": 8
+            },
+            "B4": {
+                "common_name": "nir",
+                "gsd": 8
+            },
+            "B5": {
+                "common_name": "blue"
+            },
+            "B6": {
+                "common_name": "green"
+            },
+            "B7": {
+                "common_name": "red"
+            },
+            "B8": {
+                "common_name": "nir"
+            },
+            "B13": {
+                "common_name": "blue"
+            },
+            "B14": {
+                "common_name": "green"
+            },
+            "B15": {
+                "common_name": "red"
+            },
+            "B16": {
+                "common_name": "nir"
+            }
+        }
+    }
+}
+
+# Ugh...using this while there are acess as both CBERS-4
+# and CBERS4, refactor and unify keys
+CBERS_MISSIONS['CBERS4'] = CBERS_MISSIONS['CBERS-4']
+CBERS_MISSIONS['CBERS4A'] = CBERS_MISSIONS['CBERS-4A']
+
+BASE_COLLECTION = OrderedDict({
+    "stac_extensions": [
+        "eo",
+        "item-assets"
+    ],
+    "license": "CC-BY-SA-3.0",
+    "providers": [
+        {
+            "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+            "roles": ["producer"],
+            "url": "http://www.cbers.inpe.br"
+        },
+        {
+            "name": "AMS Kepler",
+            "roles": ["processor"],
+            "description": "Convert INPE's original TIFF to COG and copy to Amazon Web Services",
+            "url": "https://github.com/fredliporace/cbers-on-aws"
+        },
+        {
+            "name": "Amazon Web Services",
+            "roles": ["host"],
+            "url": "https://registry.opendata.aws/cbers/"
+        }
+    ],
+    "extent": {
+        "spatial": {
+            "bbox": [[
+                -180.0,
+                -83.0,
+                180.0,
+                83.0
+            ]],
+        },
+        "temporal": {
+            "interval": None
+        }
+    },
+    "links": None,
+    "properties": {
+        "gsd": None,
+        "platform": None,
+        "instruments": None,
+    },
+    "item_assets": None
+})
+
+BASE_CAMERA = {
+    "CBERS4":{
+        "MUX":{
+            "properties": {
+                "gsd": 20.0,
+                "platform": "CBERS-4",
+                "instruments": ["MUX"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/jpeg"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B5": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B5",
+                            "common_name": "blue"
+                        }
+                    ]
+                },
+                "B6": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B6",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B7": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B7",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B8": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B8",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
+            }
+        },
+        "AWFI":{
+            "properties": {
+                "gsd": 64.0,
+                "platform": "CBERS-4",
+                "instruments": ["AWFI"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/jpeg"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B13": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B13",
+                            "common_name": "blue"
+                        }
+                    ]
+                },
+                "B14": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B14",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B15": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B15",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B16": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B16",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
+            }
+        },
+        "PAN5M":{
+            "properties": {
+                "gsd": 5.0,
+                "platform": "CBERS-4",
+                "instruments": ["PAN5M"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/jpeg"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B1": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B1",
+                            "common_name": "pan"
+                        }
+                    ]
+                }
+            }
+        },
+        "PAN10M":{
+            "properties": {
+                "gsd": 10.0,
+                "platform": "CBERS-4",
+                "instruments": ["PAN10M"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/jpeg"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B2": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B2",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B3": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B3",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B4": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B4",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
+            }
+        }
+    },
+    "CBERS4A":{
+        "MUX":{
+            "properties": {
+                "gsd": 16.5,
+                "platform": "CBERS-4A",
+                "instruments": ["MUX"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/png"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B5": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B5",
+                            "common_name": "blue"
+                        }
+                    ]
+                },
+                "B6": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B6",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B7": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B7",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B8": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B8",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
+            }
+        },
+        "WFI":{
+            "properties": {
+                "gsd": 55.0,
+                "platform": "CBERS-4A",
+                "instruments": ["WFI"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/png"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B13": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B13",
+                            "common_name": "blue"
+                        }
+                    ]
+                },
+                "B14": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B14",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B15": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B15",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B16": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B16",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
+            }
+        },
+        "WPM":{
+            "properties": {
+                "gsd": 2.0,
+                "platform": "CBERS-4A",
+                "instruments": ["WPM"],
+            },
+            "item_assets":{
+                "thumbnail": {
+                    "title": "Thumbnail",
+                    "type": "image/png"
+                },
+                "metadata": {
+                    "title": "INPE original metadata",
+                    "type": "text/xml"
+                },
+                "B0": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B0",
+                            "common_name": "pan"
+                        }
+                    ]
+                },
+                "B1": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B1",
+                            "common_name": "blue"
+                        }
+                    ]
+                },
+                "B2": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B2",
+                            "common_name": "green"
+                        }
+                    ]
+                },
+                "B3": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B3",
+                            "common_name": "red"
+                        }
+                    ]
+                },
+                "B4": {
+                    "type": COG_TYPE,
+                    "eo:bands": [
+                        {
+                            "name": "B4",
+                            "common_name": "nir"
+                        }
+                    ]
+                }
             }
         }
     }

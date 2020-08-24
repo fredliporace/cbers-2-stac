@@ -53,7 +53,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(epsg_from_utm_zone(-23), 32723)
         self.assertEqual(epsg_from_utm_zone(23), 32623)
 
-    def test_get_keys_from_cbers(self):
+    def test_get_keys_from_cbers4(self):
         """test_get_keys_from_cbers"""
 
         # MUX
@@ -106,6 +106,31 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['mission'], 'CBERS')
         self.assertEqual(meta['number'], '4')
         self.assertEqual(meta['projection_name'], 'UTM')
+
+    def test_get_keys_from_cbers4a(self):
+        """test_get_keys_from_cbers4a"""
+
+        # MUX
+        meta = get_keys_from_cbers('test/CBERS_4A_MUX_20200808_201_137_'
+                                   'L4_BAND6.xml')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4A')
+        self.assertEqual(meta['sensor'], 'MUX')
+        self.assertEqual(meta['projection_name'], 'UTM')
+        self.assertEqual(meta['origin_longitude'], '-45')
+        self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4AMUX')
+
+        # WPM
+        meta = get_keys_from_cbers('test/CBERS_4A_WPM_20200730_209_139_'
+                                   'L4_BAND2.xml')
+        self.assertEqual(meta['sensor'], 'WPM')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4A')
+        self.assertEqual(meta['projection_name'], 'UTM')
+        self.assertEqual(meta['origin_longitude'], '-51')
+        self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4AWPM')
 
     def test_build_awfi_stac_item_keys(self):
         """test_awfi_build_stac_item_keys"""
@@ -365,7 +390,7 @@ class CERS2StacTest(unittest.TestCase):
             'cog':'cbers-pds',
             'stac':'cbers-stac'}
 
-        # MUX
+        # MUX, CB4
         output_filename = 'test/CBERS_4_MUX_20170528_090_084_L2.json'
         ref_output_filename = 'test/ref_CBERS_4_MUX_20170528_090_084_L2.json'
         convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_MUX_20170528'
@@ -380,7 +405,7 @@ class CERS2StacTest(unittest.TestCase):
         res = diff_files(ref_output_filename, output_filename)
         self.assertEqual(len(res), 0, res)
 
-        # AWFI
+        # AWFI, CB4
         output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
         ref_output_filename = 'test/ref_CBERS_4_AWFI_20170409_167_123_L4.json'
         convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_AWFI_20170409'
@@ -395,7 +420,7 @@ class CERS2StacTest(unittest.TestCase):
         res = diff_files(ref_output_filename, output_filename)
         self.assertEqual(len(res), 0, res)
 
-        # PAN10M
+        # PAN10M, CB4
         output_filename = 'test/CBERS_4_PAN10M_20190201_180_125_L2.json'
         ref_output_filename = output_filename.replace('test/CBERS',
                                                       'test/ref_CBERS')
@@ -411,7 +436,7 @@ class CERS2StacTest(unittest.TestCase):
         res = diff_files(ref_output_filename, output_filename)
         self.assertEqual(len(res), 0, res)
 
-        # PAN5M
+        # PAN5M, CB4
         output_filename = 'test/CBERS_4_PAN5M_20161009_219_050_L2.json'
         ref_output_filename = output_filename.replace('test/CBERS',
                                                       'test/ref_CBERS')
@@ -427,12 +452,42 @@ class CERS2StacTest(unittest.TestCase):
         res = diff_files(ref_output_filename, output_filename)
         self.assertEqual(len(res), 0, res)
 
-        # PAN10M, no gain
+        # PAN10M CB4, no gain
         output_filename = 'test/CBERS_4_PAN10M_NOGAIN.json'
         ref_output_filename = output_filename.replace('test/CBERS',
                                                       'test/ref_CBERS')
         convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_PAN10M_'
                              'NOGAIN.xml',
+                             stac_metadata_filename=output_filename,
+                             buckets=buckets)
+        validate_json(output_filename)
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema,
+                                      resolver=resolver),
+                             None)
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
+
+        # MUX, CB4A
+        output_filename = 'test/CBERS_4A_MUX_20200808_201_137_L4.json'
+        ref_output_filename = 'test/ref_CBERS_4A_MUX_20200808_201_137_L4.json'
+        convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4A_MUX_'
+                             '20200808_201_137_L4_BAND6.xml',
+                             stac_metadata_filename=output_filename,
+                             buckets=buckets)
+        validate_json(output_filename)
+        with open(output_filename) as fp_in:
+            self.assertEqual(validate(json.load(fp_in), schema,
+                                      resolver=resolver),
+                             None)
+        res = diff_files(ref_output_filename, output_filename)
+        self.assertEqual(len(res), 0, res)
+
+        # WPM, CB4A
+        output_filename = 'test/CBERS_4A_WPM_20200730_209_139_L4.json'
+        ref_output_filename = 'test/ref_CBERS_4A_WPM_20200730_209_139_L4.json'
+        convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4A_WPM_'
+                             '20200730_209_139_L4_BAND2.xml',
                              stac_metadata_filename=output_filename,
                              buckets=buckets)
         validate_json(output_filename)

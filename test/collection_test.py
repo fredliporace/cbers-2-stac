@@ -54,11 +54,23 @@ class CollectionTest(unittest.TestCase):
             self.assertTrue("'stac_version' is a required property" \
                             in str(context.exception))
 
-        # Checks all collections
+        # Checks all CBERS-4 collections
         collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
         for collection in collections:
             col_dict = base_stac_catalog('cbers-stac', 'CBERS', '4', collection)
             collection_filename = 'stac_catalogs/CBERS4/{col}/' \
+                                  'collection.json'.format(col=collection)
+            with open(collection_filename, 'w') as out_filename:
+                json.dump(col_dict, out_filename, indent=2)
+            validate_json(collection_filename)
+            with open(collection_filename) as fp_in:
+                validate(json.load(fp_in), schema, resolver=resolver)
+
+        # Checks all CBERS-4A collections
+        collections = ['MUX', 'WFI', 'WPM']
+        for collection in collections:
+            col_dict = base_stac_catalog('cbers-stac', 'CBERS', '4A', collection)
+            collection_filename = 'stac_catalogs/CBERS4A/{col}/' \
                                   'collection.json'.format(col=collection)
             with open(collection_filename, 'w') as out_filename:
                 json.dump(col_dict, out_filename, indent=2)

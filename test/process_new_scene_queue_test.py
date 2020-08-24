@@ -1,7 +1,15 @@
 """process_new_scene_test"""
 
+import os
 import unittest
-import json
+
+# This allows utils module to be imported when nosetests
+# is invoked within emacs
+import site
+site.addsitedir('sam/process_new_scene_queue')
+
+# Region is required for testing
+os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
 
 from sam.process_new_scene_queue.code import parse_quicklook_key, \
     get_s3_keys, process_queue, convert_inpe_to_stac, \
@@ -23,6 +31,16 @@ class ProcessNewSceneTest(unittest.TestCase):
         self.assertEqual(keys['scene_id'], 'CBERS_4_AWFI_20170515_155_135_L2')
         self.assertEqual(keys['collection'], 'CBERS4AWFI')
 
+        keys = parse_quicklook_key('CBERS4A/WPM/209/139/'
+                                   'CBERS_4A_WPM_20200730_209_139_L4/'
+                                   'CBERS_4A_WPM_20200730_209_139.png')
+        self.assertEqual(keys['satellite'], 'CBERS4A')
+        self.assertEqual(keys['camera'], 'WPM')
+        self.assertEqual(keys['path'], '209')
+        self.assertEqual(keys['row'], '139')
+        self.assertEqual(keys['scene_id'], 'CBERS_4A_WPM_20200730_209_139_L4')
+        self.assertEqual(keys['collection'], 'CBERS4AWPM')
+
     def get_s3_keys_test(self):
         """get_s3_keys_test"""
 
@@ -35,6 +53,16 @@ class ProcessNewSceneTest(unittest.TestCase):
                          'CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/'
                          'CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml')
         self.assertEqual(s3_keys['quicklook_keys']['camera'], 'AWFI')
+
+        s3_keys = get_s3_keys('CBERS4A/WPM/209/139/'
+                              'CBERS_4A_WPM_20200730_209_139_L4/'
+                              'CBERS_4A_WPM_20200730_209_139.png')
+        self.assertEqual(s3_keys['stac'],
+                         'CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4.json')
+        self.assertEqual(s3_keys['inpe_metadata'],
+                         'CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/'
+                         'CBERS_4A_WPM_20200730_209_139_L4_BAND2.xml')
+        self.assertEqual(s3_keys['quicklook_keys']['camera'], 'WPM')
 
     def build_sns_topic_msg_attr_test(self):
         """build_sns_topic_msg_attributes_test"""

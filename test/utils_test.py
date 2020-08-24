@@ -14,7 +14,7 @@ class UtilsTest(unittest.TestCase):
         """test_collection_utils"""
 
         collections = get_collection_ids()
-        self.assertEqual(len(collections), 4)
+        self.assertEqual(len(collections), 7)
 
         mux_prefix = get_collection_s3_key('CBERS4MUX')
         self.assertEqual(mux_prefix, 'CBERS4/MUX/collection.json')
@@ -35,7 +35,7 @@ class UtilsTest(unittest.TestCase):
 
         # Check correct number on second call
         sroot = get_api_stac_root(event=event)
-        self.assertEqual(len(sroot['links']), 5)
+        self.assertEqual(len(sroot['links']), 8)
 
     def test_parse_api_gateway_event(self):
         """test_parse_api_gateway_event"""
