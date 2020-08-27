@@ -6,8 +6,10 @@ import sys
 import re
 import os
 import json
+import statistics
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+import utm
 
 from utils import build_absolute_prefix, CBERS_MISSIONS
 
@@ -41,11 +43,25 @@ def get_keys_from_cbers(cbers_metadata):
     #assert match
     #ymd = match.group('ymd')
 
-    tree = ET.parse(cbers_metadata)
-    root = tree.getroot()
+    #import nose.tools; nose.tools.set_trace()
 
-    # satellite node information
+    tree = ET.parse(cbers_metadata)
+    original_root = tree.getroot()
+
+    # satellite node information, checking for CBERS-04A WFI
+    # special case
+    left_root = original_root.find('x:leftCamera', nsp)
+    rigth_root = None
+    if left_root:
+        right_root = original_root.find('x:rightCamera', nsp)
+        # We use the left camera for fields that are not camera
+        # specific or are not used for STAC fields computation
+        root = left_root
+    else:
+        root = original_root
+
     satellite = root.find('x:satellite', nsp)
+
     metadata['mission'] = satellite.find('x:name', nsp).text
     metadata['number'] = satellite.find('x:number', nsp).text
     metadata['sensor'] = satellite.find('x:instrument', nsp).text
@@ -82,6 +98,10 @@ def get_keys_from_cbers(cbers_metadata):
                                         nsp).find('x:latitude', nsp).text
     metadata['ll_lon'] = imagedata.find('x:LL',
                                         nsp).find('x:longitude', nsp).text
+    metadata['ct_lat'] = imagedata.find('x:CT',
+                                        nsp).find('x:latitude', nsp).text
+    metadata['ct_lon'] = imagedata.find('x:CT',
+                                        nsp).find('x:longitude', nsp).text
 
     boundingbox = image.find('x:boundingBox', nsp)
     metadata['bb_ul_lat'] = boundingbox.find('x:UL',
@@ -104,6 +124,69 @@ def get_keys_from_cbers(cbers_metadata):
     sun_position = image.find('x:sunPosition', nsp)
     metadata['sun_elevation'] = sun_position.find('x:elevation', nsp).text
     metadata['sun_azimuth'] = sun_position.find('x:sunAzimuth', nsp).text
+
+    if left_root:
+        # Update fields for CB04A WFI special case
+        lidata = left_root.find('x:image', nsp).find('x:imageData', nsp)
+        ridata = right_root.find('x:image', nsp).find('x:imageData', nsp)
+        metadata['ur_lat'] = ridata.find('x:UR',
+                                         nsp).find('x:latitude', nsp).text
+        metadata['ur_lon'] = ridata.find('x:UR',
+                                         nsp).find('x:longitude', nsp).text
+        metadata['lr_lat'] = ridata.find('x:LR',
+                                         nsp).find('x:latitude', nsp).text
+        metadata['lr_lon'] = ridata.find('x:LR',
+                                         nsp).find('x:longitude', nsp).text
+        metadata['ct_lat'] = \
+            str(statistics.mean([float(lidata.find('x:CT',
+                                                   nsp).find('x:latitude',
+                                                             nsp).text),
+                                 float(ridata.find('x:CT',
+                                                   nsp).find('x:latitude',
+                                                             nsp).text)]))
+        metadata['ct_lon'] = \
+            str(statistics.mean([float(lidata.find('x:CT',
+                                                   nsp).find('x:longitude',
+                                                             nsp).text),
+                                 float(ridata.find('x:CT',
+                                                   nsp).find('x:longitude',
+                                                             nsp).text)]))
+
+        spleft = left_root.find('x:image', nsp).find('x:sunPosition', nsp)
+        spright = right_root.find('x:image', nsp).find('x:sunPosition', nsp)
+
+        metadata['sun_elevation'] = \
+            str(statistics.mean([float(spleft.find('x:elevation', nsp).text),
+                                 float(spright.find('x:elevation', nsp).text)]))
+
+        metadata['sun_azimuth'] = \
+            str(statistics.mean([float(spleft.find('x:sunAzimuth', nsp).text),
+                                 float(spright.find('x:sunAzimuth', nsp).text)]))
+
+        bbleft = left_root.find('x:image', nsp).find('x:boundingBox', nsp)
+        bbright = right_root.find('x:image', nsp).find('x:boundingBox', nsp)
+
+        metadata['bb_ll_lat'] = \
+            str(min(float(bbleft.find('x:LL',
+                                      nsp).find('x:latitude', nsp).text),
+                    float(bbright.find('x:LL',
+                                       nsp).find('x:latitude', nsp).text)))
+        metadata['bb_ll_lon'] = \
+            str(min(float(bbleft.find('x:LL',
+                                      nsp).find('x:longitude', nsp).text),
+                    float(bbright.find('x:LL',
+                                       nsp).find('x:longitude', nsp).text)))
+
+        metadata['bb_ur_lat'] = \
+            str(max(float(bbleft.find('x:UR',
+                                      nsp).find('x:latitude', nsp).text),
+                    float(bbright.find('x:UR',
+                                       nsp).find('x:latitude', nsp).text)))
+        metadata['bb_ur_lon'] = \
+            str(max(float(bbleft.find('x:UR',
+                                      nsp).find('x:longitude', nsp).text),
+                    float(bbright.find('x:UR',
+                                       nsp).find('x:longitude', nsp).text)))
 
     # attitude node information
     attitudes = image.find('x:attitudes', nsp)
@@ -129,7 +212,8 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['no_level_id'] = 'CBERS_%s_%s_%s_' \
                               '%03d_%03d' % (metadata['number'],
                                              metadata['sensor'],
-                                             metadata['acquisition_day'].replace('-', ''),
+                                             metadata['acquisition_day'].\
+                                             replace('-', ''),
                                              int(metadata['path']),
                                              int(metadata['row']))
 
@@ -282,8 +366,12 @@ def build_stac_item_keys(cbers, buckets):
     # PROJECTION extension
     assert cbers['projection_name'] == 'UTM', \
         'Unsupported projection ' + cbers['projection_name']
+    utm_zone = int(utm.from_latlon(float(cbers['ct_lat']),
+                                   float(cbers['ct_lon']))[2])
+    if float(cbers['ct_lat']) < 0.:
+        utm_zone *= -1
     stac_item['properties']\
-        ['proj:epsg'] = int(epsg_from_utm_zone(int(cbers['origin_longitude'])))
+        ['proj:epsg'] = int(epsg_from_utm_zone(utm_zone))
 
     # CBERS section
     stac_item['properties']['cbers:data_type'] = 'L' + cbers['processing_level']
@@ -300,7 +388,8 @@ def build_stac_item_keys(cbers, buckets):
                                     CBERS_MISSIONS[cbers['sat_number']]\
                                     ["quicklook"]["extension"],
                                     cbers['sat_number'],
-                                    asset_type="image/" + CBERS_MISSIONS[cbers['sat_number']]\
+                                    asset_type="image/" + \
+                                    CBERS_MISSIONS[cbers['sat_number']]\
                                     ["quicklook"]["type"])
 
     stac_item['assets']\

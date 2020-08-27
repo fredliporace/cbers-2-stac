@@ -65,6 +65,8 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '27')
         self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['ct_lat'], '14.423188')
+        self.assertEqual(meta['ct_lon'], '24.257145')
         self.assertEqual(meta['collection'], 'CBERS4MUX')
 
         # AWFI
@@ -132,6 +134,27 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['origin_latitude'], '0')
         self.assertEqual(meta['collection'], 'CBERS4AWPM')
 
+        # WFI
+        meta = get_keys_from_cbers('test/CBERS_4A_WFI_20200801_221_156_'
+                                   'L4_BAND13.xml')
+        self.assertEqual(meta['sensor'], 'WFI')
+        self.assertEqual(meta['mission'], 'CBERS')
+        self.assertEqual(meta['number'], '4A')
+        self.assertEqual(meta['projection_name'], 'UTM')
+        self.assertEqual(meta['origin_longitude'], '-63')
+        self.assertEqual(meta['origin_latitude'], '0')
+        self.assertEqual(meta['collection'], 'CBERS4AWFI')
+        self.assertEqual(meta['ur_lat'], '-31.394870')
+        self.assertEqual(meta['ur_lon'], '-59.238522')
+        self.assertEqual(meta['lr_lat'], '-38.025663')
+        self.assertEqual(meta['lr_lon'], '-60.669294')
+        self.assertEqual(meta['ct_lat'], '-33.625192')
+        self.assertEqual(meta['ct_lon'], '-62.969105')
+        self.assertEqual(meta['bb_ll_lat'], '-38.033425')
+        self.assertEqual(meta['bb_ll_lon'], '-68.887467')
+        self.assertEqual(meta['bb_ur_lat'], '-29.919749')
+        self.assertEqual(meta['bb_ur_lon'], '-59.245969')
+
     def test_build_awfi_stac_item_keys(self):
         """test_awfi_build_stac_item_keys"""
 
@@ -174,7 +197,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['view:off_nadir'], 0.00828942)
 
         # properties:proj
-        self.assertEqual(smeta['properties']['proj:epsg'], 32757)
+        self.assertEqual(smeta['properties']['proj:epsg'], 32721)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L4')
@@ -223,7 +246,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['view:off_nadir'], 0.00744884)
 
         # properties:proj
-        self.assertEqual(smeta['properties']['proj:epsg'], 32627)
+        self.assertEqual(smeta['properties']['proj:epsg'], 32635)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -286,7 +309,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['view:off_nadir'], 0.0073997)
 
         # properties:proj
-        self.assertEqual(smeta['properties']['proj:epsg'], 32769)
+        self.assertEqual(smeta['properties']['proj:epsg'], 32719)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -346,7 +369,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(smeta['properties']['view:off_nadir'], 0.0050659)
 
         # properties:proj
-        self.assertEqual(smeta['properties']['proj:epsg'], 32793)
+        self.assertEqual(smeta['properties']['proj:epsg'], 32615)
 
         # properties:cbers
         self.assertEqual(smeta['properties']['cbers:data_type'], 'L2')
@@ -374,6 +397,48 @@ class CERS2StacTest(unittest.TestCase):
         # assets
         # 1 band, 1 metadata, 1 thumbnail
         self.assertEqual(len(smeta['assets']), 3)
+
+    def test_build_wfi_stac_item_keys(self):
+        """test_wfi_build_stac_item_keys"""
+
+        meta = get_keys_from_cbers('test/CBERS_4A_WFI_20200801_221_156_'
+                                   'L4_BAND13.xml')
+        buckets = {
+            'metadata':'cbers-meta-pds',
+            'cog':'cbers-pds',
+            'stac':'cbers-stac'}
+        smeta = build_stac_item_keys(meta, buckets)
+
+        # id
+        self.assertEqual(smeta['id'], 'CBERS_4A_WFI_20200801_221_156_L4')
+
+        # bbox
+        self.assertEqual(len(smeta['bbox']), 4)
+        self.assertEqual(smeta['bbox'][1], -38.033425)
+        self.assertEqual(smeta['bbox'][0], -68.887467)
+        self.assertEqual(smeta['bbox'][3], -29.919749)
+        self.assertEqual(smeta['bbox'][2], -59.245969)
+
+        # geometry is built like other cameras, correct computation
+        # is checked in test_get_keys_from_cbers4a
+
+        # properties
+        self.assertEqual(smeta['properties']['datetime'],
+                         '2020-08-01T14:32:45Z')
+
+        # properties:view
+        self.assertEqual(smeta['properties']['view:sun_elevation'], 32.8436)
+        self.assertEqual(smeta['properties']['view:sun_azimuth'],
+                         29.477449999999997)
+        self.assertEqual(smeta['properties']['view:off_nadir'], 0.000431506)
+
+        # properties:proj
+        self.assertEqual(smeta['properties']['proj:epsg'], 32720)
+
+        # properties:cbers
+        self.assertEqual(smeta['properties']['cbers:data_type'], 'L4')
+        self.assertEqual(smeta['properties']['cbers:path'], 221)
+        self.assertEqual(smeta['properties']['cbers:row'], 156)
 
     def test_convert_inpe_to_stac(self):
         """test_convert_inpe_to_stac"""

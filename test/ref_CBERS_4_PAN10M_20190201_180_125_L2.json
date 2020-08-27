@@ -52,7 +52,7 @@
     "view:sun_azimuth": 87.5261,
     "view:sun_elevation": 57.0749,
     "view:off_nadir": 0.0073997,
-    "proj:epsg": 32769,
+    "proj:epsg": 32719,
     "cbers:data_type": "L2",
     "cbers:path": 180,
     "cbers:row": 125
