@@ -1,0 +1,14 @@
+../../../bin/utm-converter,sha256=P9r2roy6SYi92lYPFw5m7FQH4g28qrJGIQopk1Uw_JE,1465
+utm-0.6.0.dist-info/INSTALLER,sha256=zuuue4knoyJ-UwPPXg8fezS7VCrXJQrAP7zeNuwvFQg,4
+utm-0.6.0.dist-info/LICENSE,sha256=5XDDI8s-5p0VkQK3FGDvVvTX9eyaqZT-03aREYTIbcw,1100
+utm-0.6.0.dist-info/METADATA,sha256=x4TXYZjXxt1vqfFTRv2-AS9ehvblTY5v72Skw-HSCJo,663
+utm-0.6.0.dist-info/RECORD,,
+utm-0.6.0.dist-info/REQUESTED,sha256=47DEQpj8HBSa-_TImW-5JCeuQeRkm5NMpJWZG3hSuFU,0
+utm-0.6.0.dist-info/WHEEL,sha256=EVRjI69F5qVjm_YgqcTXPnTAv3BfSUr0WVAHuSP3Xoo,92
+utm-0.6.0.dist-info/top_level.txt,sha256=ObQk19LdT9trFdD0-hgw8r4SpKwlGrSSA23gA2cCXo0,4
+utm/__init__.py,sha256=5uuZL5PSTDyMQL3nmhFPrkp3mqr9knBOBCRouDBfkcs,154
+utm/__pycache__/__init__.cpython-38.pyc,,
+utm/__pycache__/conversion.cpython-38.pyc,,
+utm/__pycache__/error.cpython-38.pyc,,
+utm/conversion.py,sha256=zDSln3KF0XHsQHbws5pvfddD2u04ems710htwjJj2oY,9901
+utm/error.py,sha256=JH2guWSGjYCdln2IQXQt9Fg_tWTmw2n_2hTeuUEdfP4,44
