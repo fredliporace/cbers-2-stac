@@ -42,7 +42,7 @@
     -70.76202,
     -21.746077
   ],
-  "collection": "CBERS4PAN10M",
+  "collection": "CBERS4-PAN10M",
   "properties": {
     "datetime": "2019-02-01T14:36:38Z",
     "platform": "CBERS-4",

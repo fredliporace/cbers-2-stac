@@ -67,7 +67,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['origin_latitude'], '0')
         self.assertEqual(meta['ct_lat'], '14.423188')
         self.assertEqual(meta['ct_lon'], '24.257145')
-        self.assertEqual(meta['collection'], 'CBERS4MUX')
+        self.assertEqual(meta['collection'], 'CBERS4-MUX')
 
         # AWFI
         meta = get_keys_from_cbers('test/CBERS_4_AWFI_20170409_167_123'\
@@ -78,7 +78,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-57')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4AWFI')
+        self.assertEqual(meta['collection'], 'CBERS4-AWFI')
 
         # PAN10
         meta = get_keys_from_cbers('test/CBERS_4_PAN10M_20190201_180_'\
@@ -89,7 +89,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-69')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4PAN10M')
+        self.assertEqual(meta['collection'], 'CBERS4-PAN10M')
 
         # PAN5
         meta = get_keys_from_cbers('test/CBERS_4_PAN5M_20161009_219_050_'\
@@ -100,7 +100,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-93')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4PAN5M')
+        self.assertEqual(meta['collection'], 'CBERS4-PAN5M')
 
         # PAN10, no gain attribute for each band
         meta = get_keys_from_cbers('test/CBERS_4_PAN10M_NOGAIN.xml')
@@ -121,7 +121,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-45')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4AMUX')
+        self.assertEqual(meta['collection'], 'CBERS4A-MUX')
 
         # WPM
         meta = get_keys_from_cbers('test/CBERS_4A_WPM_20200730_209_139_'
@@ -132,7 +132,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-51')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4AWPM')
+        self.assertEqual(meta['collection'], 'CBERS4A-WPM')
 
         # WFI
         meta = get_keys_from_cbers('test/CBERS_4A_WFI_20200801_221_156_'
@@ -143,7 +143,7 @@ class CERS2StacTest(unittest.TestCase):
         self.assertEqual(meta['projection_name'], 'UTM')
         self.assertEqual(meta['origin_longitude'], '-63')
         self.assertEqual(meta['origin_latitude'], '0')
-        self.assertEqual(meta['collection'], 'CBERS4AWFI')
+        self.assertEqual(meta['collection'], 'CBERS4A-WFI')
         self.assertEqual(meta['ur_lat'], '-31.394870')
         self.assertEqual(meta['ur_lon'], '-59.238522')
         self.assertEqual(meta['lr_lat'], '-38.025663')
@@ -467,8 +467,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4mux = diff_files(ref_output_filename, output_filename)
 
         # AWFI, CB4
         output_filename = 'test/CBERS_4_AWFI_20170409_167_123_L4.json'
@@ -482,8 +481,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4awfi = diff_files(ref_output_filename, output_filename)
 
         # PAN10M, CB4
         output_filename = 'test/CBERS_4_PAN10M_20190201_180_125_L2.json'
@@ -498,8 +496,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4pan10 = diff_files(ref_output_filename, output_filename)
 
         # PAN5M, CB4
         output_filename = 'test/CBERS_4_PAN5M_20161009_219_050_L2.json'
@@ -514,8 +511,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4pan5 = diff_files(ref_output_filename, output_filename)
 
         # PAN10M CB4, no gain
         output_filename = 'test/CBERS_4_PAN10M_NOGAIN.json'
@@ -530,8 +526,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4pan10ng = diff_files(ref_output_filename, output_filename)
 
         # MUX, CB4A
         output_filename = 'test/CBERS_4A_MUX_20200808_201_137_L4.json'
@@ -545,8 +540,7 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4amux = diff_files(ref_output_filename, output_filename)
 
         # WPM, CB4A
         output_filename = 'test/CBERS_4A_WPM_20200730_209_139_L4.json'
@@ -560,8 +554,17 @@ class CERS2StacTest(unittest.TestCase):
             self.assertEqual(validate(json.load(fp_in), schema,
                                       resolver=resolver),
                              None)
-        res = diff_files(ref_output_filename, output_filename)
-        self.assertEqual(len(res), 0, res)
+        rescb4awpm = diff_files(ref_output_filename, output_filename)
+
+        # Check all diffs here to make bulk update for reference jsons
+        # easier. Check the diff_update_reference.sh script
+        self.assertEqual(len(rescb4mux), 0, rescb4mux)
+        self.assertEqual(len(rescb4awfi), 0, rescb4awfi)
+        self.assertEqual(len(rescb4pan10), 0, rescb4pan10)
+        self.assertEqual(len(rescb4pan5), 0, rescb4pan5)
+        self.assertEqual(len(rescb4pan10ng), 0, rescb4pan10ng)
+        self.assertEqual(len(rescb4amux), 0, rescb4amux)
+        self.assertEqual(len(rescb4awpm), 0, rescb4awpm)
 
     def test_json_schema(self):
         """test_json_schema"""

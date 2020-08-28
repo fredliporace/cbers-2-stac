@@ -10,13 +10,13 @@ from collections import OrderedDict
 # Collections are currently hard-coded here, this is not
 # an issue for CBERS on AWS since this does not frequently change
 COLLECTIONS = {
-    "CBERS4MUX":"CBERS4/MUX/collection.json",
-    "CBERS4AWFI":"CBERS4/AWFI/collection.json",
-    "CBERS4PAN10M":"CBERS4/PAN10M/collection.json",
-    "CBERS4PAN5M":"CBERS4/PAN5M/collection.json",
-    "CBERS4AMUX":"CBERS4A/MUX/collection.json",
+    "CBERS4-MUX":"CBERS4/MUX/collection.json",
+    "CBERS4-AWFI":"CBERS4/AWFI/collection.json",
+    "CBERS4-PAN10M":"CBERS4/PAN10M/collection.json",
+    "CBERS4-PAN5M":"CBERS4/PAN5M/collection.json",
+    "CBERS4A-MUX":"CBERS4A/MUX/collection.json",
     "CBERS4A-WFI":"CBERS4A/WFI/collection.json",
-    "CBERS4AWPM":"CBERS4A/WPM/collection.json"
+    "CBERS4A-WPM":"CBERS4A/WPM/collection.json"
 }
 
 STAC_VERSION = "1.0.0-beta.2"
@@ -544,6 +544,15 @@ BASE_CAMERA = {
         }
     }
 }
+
+def build_collection_name(satellite: str, camera: str, mission: str = None):
+    """
+    Centralized method to build collection names. If mission is absent
+    then we assume that it is already concatenated with satellite
+    """
+    if not mission:
+        return "{}-{}".format(satellite, camera)
+    return "{}{}-{}".format(satellite, mission, camera)
 
 def static_to_api_collection(collection: dict, event: dict):
     """

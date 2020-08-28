@@ -535,7 +535,7 @@ class ElasticsearchTest(unittest.TestCase):
 
         # Only items in MUX collection
         q_dsl = process_collections_filter(dsl_query=empty_query,
-                                           collections=['CBERS4MUX'])
+                                           collections=['CBERS4-MUX'])
         res = q_dsl.execute()
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0].to_dict()['properties']['instruments'][0],
@@ -543,7 +543,7 @@ class ElasticsearchTest(unittest.TestCase):
 
         # Only items in AWFI collection
         q_dsl = process_collections_filter(dsl_query=empty_query,
-                                           collections=['CBERS4AWFI'])
+                                           collections=['CBERS4-AWFI'])
         res = q_dsl.execute()
         self.assertEqual(res['hits']['total'], 1)
         self.assertEqual(res[0].to_dict()['properties']['instruments'][0],

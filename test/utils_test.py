@@ -5,10 +5,22 @@ import unittest
 
 from sam.process_new_scene_queue.utils import get_collection_ids, \
     get_collection_s3_key, get_api_stac_root, \
-    static_to_api_collection, parse_api_gateway_event
+    static_to_api_collection, parse_api_gateway_event, \
+    build_collection_name
 
 class UtilsTest(unittest.TestCase):
     """UtilsTest"""
+
+    def test_build_collection_name(self):
+        """test_build_collection_name"""
+
+        collection = build_collection_name(satellite='CBERS', mission='4A',
+                                           camera='WFI')
+        self.assertEqual(collection, 'CBERS4A-WFI')
+
+        collection = build_collection_name(satellite='CBERS4',
+                                           camera='AWFI')
+        self.assertEqual(collection, 'CBERS4-AWFI')
 
     def test_collection_utils(self):
         """test_collection_utils"""
@@ -16,7 +28,7 @@ class UtilsTest(unittest.TestCase):
         collections = get_collection_ids()
         self.assertEqual(len(collections), 7)
 
-        mux_prefix = get_collection_s3_key('CBERS4MUX')
+        mux_prefix = get_collection_s3_key('CBERS4-MUX')
         self.assertEqual(mux_prefix, 'CBERS4/MUX/collection.json')
 
     def test_get_api_stac_root(self):
@@ -29,9 +41,9 @@ class UtilsTest(unittest.TestCase):
         self.assertEqual(sroot['links'][0]['self'],
                          'https://stac.amskepler.com/v07/stac')
         self.assertEqual(sroot['links'][1]['child'],
-                         'https://stac.amskepler.com/v07/collections/CBERS4MUX')
+                         'https://stac.amskepler.com/v07/collections/CBERS4-MUX')
         self.assertEqual(sroot['links'][4]['child'],
-                         'https://stac.amskepler.com/v07/collections/CBERS4PAN5M')
+                         'https://stac.amskepler.com/v07/collections/CBERS4-PAN5M')
 
         # Check correct number on second call
         sroot = get_api_stac_root(event=event)
@@ -64,7 +76,7 @@ class UtilsTest(unittest.TestCase):
         for link in api_collection['links']:
             if link['rel'] == 'self':
                 self.assertEqual(link['href'],
-                                 'https://stac.amskepler.com/v07/collections/CBERS4MUX')
+                                 'https://stac.amskepler.com/v07/collections/CBERS4-MUX')
             elif link['rel'] == 'parent':
                 self.assertEqual(link['href'],
                                  'https://stac.amskepler.com/v07/stac')
@@ -73,7 +85,7 @@ class UtilsTest(unittest.TestCase):
                                  'https://stac.amskepler.com/v07/stac')
             elif link['rel'] == 'items':
                 self.assertEqual(link['href'],
-                                 'https://stac.amskepler.com/v07/collections/CBERS4MUX/items')
+                                 'https://stac.amskepler.com/v07/collections/CBERS4-MUX/items')
 
 
 if __name__ == '__main__':

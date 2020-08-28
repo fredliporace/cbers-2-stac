@@ -239,6 +239,9 @@ def create_stac_index(es_client, mapping_name: str = "whole",
                     "type": "geo_shape",
                     "tree": "quadtree"
                 },
+                "collection": {
+                    "type": "keyword"
+                },
                 "assets": {
                 	"enabled": false
                 },
@@ -262,6 +265,9 @@ def create_stac_index(es_client, mapping_name: str = "whole",
                 "geometry": {
                     "type": "geo_shape",
                     "tree": "quadtree"
+                },
+                "collection": {
+                    "type": "keyword"
                 },
                 "assets": {
                     "enabled": false

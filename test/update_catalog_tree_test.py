@@ -238,7 +238,7 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         catalog = base_stac_catalog('cbers-stac', 'CBERS', '4', 'AWFI')
         self.assertEqual(catalog['stac_version'], STAC_VERSION)
         validate_dict(catalog)
-        self.assertEqual(catalog['id'], 'CBERS4AWFI')
+        self.assertEqual(catalog['id'], 'CBERS4-AWFI')
         self.assertEqual(catalog['description'],
                          'CBERS4 AWFI camera catalog')
         self.assertEqual(catalog['links'][0]['rel'], 'self')
@@ -260,7 +260,7 @@ class UpdateCatalogTreeTest(unittest.TestCase):
         catalog = base_stac_catalog('cbers-stac', 'CBERS4', None, 'AWFI')
         self.assertEqual(catalog['stac_version'], STAC_VERSION)
         validate_dict(catalog)
-        self.assertEqual(catalog['id'], 'CBERS4AWFI')
+        self.assertEqual(catalog['id'], 'CBERS4-AWFI')
         self.assertEqual(catalog['description'],
                          'CBERS4 AWFI camera catalog')
         self.assertEqual(catalog['links'][0]['rel'], 'self')

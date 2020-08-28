@@ -42,7 +42,7 @@
     -91.815646,
     45.141575
   ],
-  "collection": "CBERS4PAN5M",
+  "collection": "CBERS4-PAN5M",
   "properties": {
     "datetime": "2016-10-09T17:14:38Z",
     "platform": "CBERS-4",

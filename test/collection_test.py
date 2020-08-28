@@ -58,6 +58,7 @@ class CollectionTest(unittest.TestCase):
         collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
         for collection in collections:
             col_dict = base_stac_catalog('cbers-stac', 'CBERS', '4', collection)
+            self.assertEqual(col_dict['id'], 'CBERS4-' + collection)
             collection_filename = 'stac_catalogs/CBERS4/{col}/' \
                                   'collection.json'.format(col=collection)
             with open(collection_filename, 'w') as out_filename:
@@ -70,6 +71,7 @@ class CollectionTest(unittest.TestCase):
         collections = ['MUX', 'WFI', 'WPM']
         for collection in collections:
             col_dict = base_stac_catalog('cbers-stac', 'CBERS', '4A', collection)
+            self.assertEqual(col_dict['id'], 'CBERS4A-' + collection)
             collection_filename = 'stac_catalogs/CBERS4A/{col}/' \
                                   'collection.json'.format(col=collection)
             with open(collection_filename, 'w') as out_filename:

@@ -10,7 +10,8 @@ from copy import deepcopy
 import boto3
 #from botocore.errorfactory import ClientError
 
-from utils import build_absolute_prefix, BASE_CATALOG, \
+from utils import build_absolute_prefix, build_collection_name, \
+    BASE_CATALOG, \
     BASE_COLLECTION, BASE_CAMERA, CBERS_MISSIONS
 
 S3_CLIENT = boto3.client('s3')
@@ -235,10 +236,13 @@ def base_stac_catalog(bucket, satellite,
     # @todo currently must support two cases: satellite concatenated
     # or not with mission. Clean up.
     if in_collection:
-        if mission:
-            stac_catalog['id'] = satellite + mission + camera
-        else:
-            stac_catalog['id'] = satellite + camera
+        stac_catalog['id'] = build_collection_name(satellite=satellite,
+                                                   mission=mission,
+                                                   camera=camera)
+        # if mission:
+        #     stac_catalog['id'] = satellite + mission + camera
+        # else:
+        #     stac_catalog['id'] = satellite + camera
     else:
         stac_catalog['id'] = name
     stac_catalog['description'] = description

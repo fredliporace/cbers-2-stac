@@ -11,7 +11,8 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 import utm
 
-from utils import build_absolute_prefix, CBERS_MISSIONS
+from utils import build_absolute_prefix, build_collection_name, \
+    CBERS_MISSIONS
 
 def epsg_from_utm_zone(zone):
     """
@@ -65,8 +66,9 @@ def get_keys_from_cbers(cbers_metadata):
     metadata['mission'] = satellite.find('x:name', nsp).text
     metadata['number'] = satellite.find('x:number', nsp).text
     metadata['sensor'] = satellite.find('x:instrument', nsp).text
-    metadata['collection'] = metadata['mission'] + metadata['number'] + \
-                             metadata['sensor']
+    metadata['collection'] = build_collection_name(satellite=metadata['mission'],
+                                                   mission=metadata['number'],
+                                                   camera=metadata['sensor'])
 
     # image node information
     image = root.find('x:image', nsp)

@@ -13,12 +13,14 @@ PROJECT_TAG = $(APP)-$(VERSION)
 validate:
 	aws cloudformation validate-template --template-body file://$(SAM_TEMPLATE)
 
-package: update_catalog_tree/utils.py elasticsearch/utils.py stac_endpoint/utils.py elasticsearch/utils.py
+package: utils
 	aws cloudformation package --template-file $(SAM_TEMPLATE) --s3-bucket ${DEPLOY_BUCKET} --output-template $(SAM_PACKAGED)
 
 # @todo Use lambda layers for common modules, currently copying utils
 # module to the lambda that use it. An alternative is to use symbolic links,
 # currently not supported by SAM.
+utils: update_catalog_tree/utils.py elasticsearch/utils.py stac_endpoint/utils.py
+
 update_catalog_tree/utils.py: process_new_scene_queue/utils.py
 	cp $? $@
 
