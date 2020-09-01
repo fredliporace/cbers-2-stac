@@ -624,6 +624,7 @@ def get_api_stac_root(event: dict):
 
     doc = copy.deepcopy(STAC_DOC_TEMPLATE)
     parsed = parse_api_gateway_event(event)
+    doc['stac_version'] = STAC_VERSION
     doc['links'].append({"self":parsed['ppath']})
     for collection in COLLECTIONS:
         doc['links'].append({"child":'{phost}/{prefix}/collections/{collection}'.\
