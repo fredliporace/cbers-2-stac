@@ -150,7 +150,6 @@ CBERS_MISSIONS['CBERS4A'] = CBERS_MISSIONS['CBERS-4A']
 
 BASE_COLLECTION = OrderedDict({
     "stac_extensions": [
-        "eo",
         "item-assets"
     ],
     "license": "CC-BY-SA-3.0",
