@@ -52,3 +52,5 @@ To deploy the stac execute in the ./sam directory:
 ```
 (export AWS_PROFILE=your_aws_profile && export DEPLOY_BUCKET=deploy_bucket_created_above && make deploy)
 ```
+
+After the first deployment it is required to create the Elasticseach index by executing the CreateElasticIndexFunction lambda with an empty payload input.
