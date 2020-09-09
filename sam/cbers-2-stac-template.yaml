@@ -849,9 +849,9 @@ Resources:
   GenerateCatalogLevels:
     Type: 'AWS::Events::Rule'
     Properties:
-      Description: 'Generate catalog levels to be updated every hour'
+      Description: 'Generate catalog levels to be updated every 30 minutes'
       State: 'ENABLED'
-      ScheduleExpression: 'cron(00 */1 * * ? *)'
+      ScheduleExpression: 'cron(*/30 * * * ? *)'
       Targets:
       - Arn: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
         Id: "GCLTBU"
@@ -874,6 +874,8 @@ Resources:
 
   # Holds all STAC item keys generated since last
   # catalog files upate procedure
+  # This table is also defined for testing, the definitions
+  # must be the same
   CatalogUpdateTable:
     Type: AWS::DynamoDB::Table
     Properties:

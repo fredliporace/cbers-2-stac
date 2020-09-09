@@ -16,7 +16,7 @@ jobs:
       - image: localstack/localstack:0.9.6
         environment:
           DEBUG: 1
-          SERVICES: es
+          SERVICES: es,sqs,dynamodb,s3
           DATA_DIR: /tmp/localstack/data
 
     working_directory: ~/repo

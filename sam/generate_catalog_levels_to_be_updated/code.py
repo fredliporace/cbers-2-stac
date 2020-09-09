@@ -25,7 +25,7 @@ class GenerateCatalogLevelsToBeUpdated():
     """
 
     def __init__(self, input_table, output_table, queue, limit=1000,
-                 iterations=100):
+                 iterations=100, sqs_client=None, db_client=None):
         """
         Ctor.
         input_table(string): DynamoDB table with STAC items
@@ -39,6 +39,12 @@ class GenerateCatalogLevelsToBeUpdated():
         self._queue = queue
         self._limit = limit
         self._iterations = iterations
+        # Using ctors clients for local testing only
+        global DB_CLIENT, SQS_CLIENT
+        if sqs_client:
+            SQS_CLIENT = sqs_client
+        if db_client:
+            DB_CLIENT = db_client
 
     @property
     def items(self):
@@ -83,25 +89,42 @@ class GenerateCatalogLevelsToBeUpdated():
             self.__parse_items(response['Items'])
             iterations += 1
         #print(self._levels_to_be_updated)
-        #print(self._items)
+        print('Number of stacitems: {}'.format(len(self._items)))
+        print('Number of levels to be updated: {}'.format(len(self._levels_to_be_updated)))
+        print('Start sending SQS messages')
         # Update catalog level table and send prefix to catalog update queue
+        entries = list()
         for level in self._levels_to_be_updated:
 
+            # This is only executed if the table is defined, currently
+            # not used
             if self._output_table:
                 response = DB_CLIENT.put_item(
                     TableName=self._output_table,
                     Item={
                         'catalog_level': {"S": level}})
 
-            SQS_CLIENT.send_message(QueueUrl=self._queue,
-                                    MessageBody=level)
+            entries.append({'Id':str(len(entries)),
+                            'MessageBody':level})
+            # SQS_CLIENT.send_message(QueueUrl=self._queue,
+            #                         MessageBody=level)
+            if len(entries) == 10:
+                SQS_CLIENT.send_message_batch(QueueUrl=self._queue,
+                                              Entries=entries)
+                entries.clear()
+        if entries:
+            SQS_CLIENT.send_message_batch(QueueUrl=self._queue,
+                                          Entries=entries)
+            entries.clear()
 
         # Remove processed items
+        print('Start deleting stacitems')
         for item in self._items:
             response = DB_CLIENT.delete_item(
                 TableName=self._input_table,
                 Key={
                     'stacitem': {"S": item['stacitem']['S']}})
+        print('Finished')
 
 def handler(event, context):
     """Lambda entry point
@@ -112,5 +135,5 @@ def handler(event, context):
                                            output_table=\
                                            os.environ.get('CATALOG_LEVELS_UPDATE_TABLE'),
                                            queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'],
-                                           iterations=4)
+                                           iterations=16)
     gcl.process()

@@ -32,6 +32,11 @@ Developed and tested in CentOS8 with python 3.8.0
 
 JAVA is required to execute elasticsearch under localstack.
 
+To start local AWS infrastructure required for tests run
+```
+(export DEBUG=1 && export SERVICES=es,sqs,dynamodb,s3 && export DATA_DIR=/tmp/localstack/data && calstack start
+```
+
 ### Deployment to AWS
 
 First you need to define two buckets:
@@ -48,7 +53,7 @@ Populate STAC\_BUCKET with the static STAC files by executing in the ./stac\_cat
 (export AWS_PROFILE=your_aws_profile && ./sync_to_aws.sh)
 ```
 
-To deploy the stac execute in the ./sam directory:
+To deploy the stack execute in the ./sam directory:
 ```
 (export AWS_PROFILE=your_aws_profile && export DEPLOY_BUCKET=deploy_bucket_created_above && make deploy)
 ```
