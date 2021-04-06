@@ -59,3 +59,21 @@ To deploy the stack execute in the ./sam directory:
 ```
 
 After the first deployment it is required to create the Elasticseach index by executing the CreateElasticIndexFunction lambda with an empty payload input.
+
+# Development
+
+*Install*
+
+```bash
+$ git clone git@github.com:fredliporace/cbers-2-stac.git
+$ cd cbers-2-stac
+$ pip install -e .[dev]
+```
+
+*Git hooks*
+
+This repo is set to use `pre-commit` to run *isort*, *pylint*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
+
+```bash
+$ pre-commit install
+```
