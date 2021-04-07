@@ -8,10 +8,16 @@ from jsonschema import RefResolver, validate
 from jsonschema.exceptions import ValidationError
 from pystac.validation import validate_dict
 
-from sam.update_catalog_tree.code import base_stac_catalog
-
 # Region is required for testing
 os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+# This import is here because the environment must be
+# set before importing. This may be changed by
+# using getters within base_stac_catalog
+from sam.update_catalog_tree.code import (  # pylint: disable=wrong-import-position
+    base_stac_catalog,
+)
+
 
 # @todo change debug output to give more information when
 # the validation fails

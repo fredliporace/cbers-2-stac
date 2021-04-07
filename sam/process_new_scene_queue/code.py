@@ -1,78 +1,79 @@
 """process_new_scene_queue"""
 
+import datetime
+import json
 import os
 import re
-import json
-import datetime
 
 import boto3
 
-from cbers_2_stac import convert_inpe_to_stac
+from sam.process_new_scene_queue.cbers_2_stac import convert_inpe_to_stac
 
 # CBERS metadata
 # @todo check if quicklook_pixel_size is being used
 CMETA = {
     # Same for CBERS4 and CBERS4A
-    'MUX': {
-        'reference': 5,
-        'num_bands': 4,
-        'quicklook_pixel_size': 200,
-        'red': 7,
-        'green': 6,
-        'blue': 5,
-        'meta_band': 6
+    "MUX": {
+        "reference": 5,
+        "num_bands": 4,
+        "quicklook_pixel_size": 200,
+        "red": 7,
+        "green": 6,
+        "blue": 5,
+        "meta_band": 6,
     },
-    'AWFI': {
-        'reference': 13,
-        'num_bands': 4,
-        'quicklook_pixel_size': 640,
-        'red': 15,
-        'green': 14,
-        'blue': 13,
-        'meta_band': 14
+    "AWFI": {
+        "reference": 13,
+        "num_bands": 4,
+        "quicklook_pixel_size": 640,
+        "red": 15,
+        "green": 14,
+        "blue": 13,
+        "meta_band": 14,
     },
-    'PAN5M': {
-        'reference': 1,
-        'num_bands': 1,
-        'quicklook_pixel_size': 50,
-        'red': 1,
-        'green': 1,
-        'blue': 1,
-        'meta_band': 1
+    "PAN5M": {
+        "reference": 1,
+        "num_bands": 1,
+        "quicklook_pixel_size": 50,
+        "red": 1,
+        "green": 1,
+        "blue": 1,
+        "meta_band": 1,
     },
-    'PAN10M': {
-        'reference': 2,
-        'num_bands': 3,
-        'quicklook_pixel_size': 100,
-        'red': 3,
-        'green': 4,
-        'blue': 2,
-        'meta_band': 4
+    "PAN10M": {
+        "reference": 2,
+        "num_bands": 3,
+        "quicklook_pixel_size": 100,
+        "red": 3,
+        "green": 4,
+        "blue": 2,
+        "meta_band": 4,
     },
-    'WFI': {
-        'reference': 13,
-        'num_bands': 4,
-        'quicklook_pixel_size': 640,
-        'red': 15,
-        'green': 14,
-        'blue': 13,
-        'meta_band': 14
+    "WFI": {
+        "reference": 13,
+        "num_bands": 4,
+        "quicklook_pixel_size": 640,
+        "red": 15,
+        "green": 14,
+        "blue": 13,
+        "meta_band": 14,
     },
-    'WPM': {
-        'reference': 1,
-        'num_bands': 5,
-        'quicklook_pixel_size': 640,
-        'red': 3,
-        'green': 2,
-        'blue': 1,
-        'meta_band': 2
-    }
+    "WPM": {
+        "reference": 1,
+        "num_bands": 5,
+        "quicklook_pixel_size": 640,
+        "red": 3,
+        "green": 2,
+        "blue": 1,
+        "meta_band": 2,
+    },
 }
 
-S3_CLIENT = boto3.client('s3')
-SQS_CLIENT = boto3.client('sqs')
-SNS_CLIENT = boto3.client('sns')
-DB_CLIENT = boto3.client('dynamodb')
+S3_CLIENT = boto3.client("s3")
+SQS_CLIENT = boto3.client("sqs")
+SNS_CLIENT = boto3.client("sns")
+DB_CLIENT = boto3.client("dynamodb")
+
 
 def parse_quicklook_key(key):
     """
@@ -94,17 +95,19 @@ def parse_quicklook_key(key):
     # Example input
     # CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/CBERS_4_AWFI_20170515_155_135.jpg
 
-    match = re.search(r'(?P<satellite>\w+)/(?P<camera>\w+)/'
-                      r'(?P<path>\d{3})/(?P<row>\d{3})/(?P<scene_id>\w+)/',
-                      key)
+    match = re.search(
+        r"(?P<satellite>\w+)/(?P<camera>\w+)/"
+        r"(?P<path>\d{3})/(?P<row>\d{3})/(?P<scene_id>\w+)/",
+        key,
+    )
     assert match, "Could not match " + key
     return {
-        'satellite': match.group('satellite'),
-        'camera': match.group('camera'),
-        'path': match.group('path'),
-        'row': match.group('row'),
-        'scene_id': match.group('scene_id'),
-        'collection': match.group('satellite') + match.group('camera')
+        "satellite": match.group("satellite"),
+        "camera": match.group("camera"),
+        "path": match.group("path"),
+        "row": match.group("row"),
+        "scene_id": match.group("scene_id"),
+        "collection": match.group("satellite") + match.group("camera"),
     }
 
 
@@ -125,20 +128,26 @@ def get_s3_keys(quicklook_key):
     """
 
     qdict = parse_quicklook_key(quicklook_key)
-    stac_key = "%s/%s/%s/%s/%s.json" % (qdict['satellite'], qdict['camera'],
-                                        qdict['path'], qdict['row'],
-                                        qdict['scene_id'])
-    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (qdict['satellite'],
-                                                          qdict['camera'],
-                                                          qdict['path'],
-                                                          qdict['row'],
-                                                          qdict['scene_id'],
-                                                          qdict['scene_id'],
-                                                          CMETA[qdict['camera']]['meta_band'])
+    stac_key = "%s/%s/%s/%s/%s.json" % (
+        qdict["satellite"],
+        qdict["camera"],
+        qdict["path"],
+        qdict["row"],
+        qdict["scene_id"],
+    )
+    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (
+        qdict["satellite"],
+        qdict["camera"],
+        qdict["path"],
+        qdict["row"],
+        qdict["scene_id"],
+        qdict["scene_id"],
+        CMETA[qdict["camera"]]["meta_band"],
+    )
     return {
-        'stac':stac_key,
-        'inpe_metadata':inpe_metadata_key,
-        'quicklook_keys':qdict
+        "stac": stac_key,
+        "inpe_metadata": inpe_metadata_key,
+        "quicklook_keys": qdict,
     }
 
 
@@ -156,53 +165,41 @@ def sqs_messages(queue):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(
-            QueueUrl=queue)
-        if 'Messages' not in response:
+        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        if "Messages" not in response:
             break
-        msg = json.loads(response['Messages'][0]['Body'])
-        records = json.loads(msg['Message'])
+        msg = json.loads(response["Messages"][0]["Body"])
+        records = json.loads(msg["Message"])
         retd = dict()
-        retd['key'] = records['Records'][0]['s3']['object']['key']
-        retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
+        retd["key"] = records["Records"][0]["s3"]["object"]["key"]
+        retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
 
 
 def build_sns_topic_msg_attributes(stac_item):
     """Builds SNS message attributed from stac_item dictionary"""
     message_attr = {
-        'properties.datetime': {
-            'DataType': 'String',
-            'StringValue': stac_item['properties']['datetime']
+        "properties.datetime": {
+            "DataType": "String",
+            "StringValue": stac_item["properties"]["datetime"],
         },
-        'bbox.ll_lon': {
-            'DataType': 'Number',
-            'StringValue': str(stac_item['bbox'][0])
+        "bbox.ll_lon": {"DataType": "Number", "StringValue": str(stac_item["bbox"][0])},
+        "bbox.ll_lat": {"DataType": "Number", "StringValue": str(stac_item["bbox"][1])},
+        "bbox.ur_lon": {"DataType": "Number", "StringValue": str(stac_item["bbox"][2])},
+        "bbox.ur_lat": {"DataType": "Number", "StringValue": str(stac_item["bbox"][3])},
+        "links.self.href": {
+            "DataType": "String",
+            "StringValue": (
+                item["href"] for item in stac_item["links"] if item["rel"] == "self"
+            ).__next__(),
         },
-        'bbox.ll_lat': {
-            'DataType': 'Number',
-            'StringValue': str(stac_item['bbox'][1])
-        },
-        'bbox.ur_lon': {
-            'DataType': 'Number',
-            'StringValue': str(stac_item['bbox'][2])
-        },
-        'bbox.ur_lat': {
-            'DataType': 'Number',
-            'StringValue': str(stac_item['bbox'][3])
-        },
-        'links.self.href': {
-            'DataType': 'String',
-            'StringValue': (item['href'] for item in stac_item['links'] \
-                            if item['rel'] == 'self').__next__()
-        }
     }
     return message_attr
 
 
-def process_message(msg, buckets, sns_target_arn,
-                    catalog_update_queue,
-                    catalog_update_table):
+def process_message(
+    msg, buckets, sns_target_arn, catalog_update_queue, catalog_update_table
+):
     """
     Process a single message. Generate STAC item, send STAC item to SNS topic,
     write key into DynamoDB table and, optionally, send key to queue for
@@ -217,43 +214,54 @@ def process_message(msg, buckets, sns_target_arn,
       catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
-    print(msg['key'])
-    metadata_keys = get_s3_keys(msg['key'])
+    print(msg["key"])
+    metadata_keys = get_s3_keys(msg["key"])
 
-    assert metadata_keys['quicklook_keys']\
-        ['camera'] in ('MUX', 'AWFI', 'PAN10M', 'PAN5M', 'WPM', 'WFI'), \
-        "Unrecognized key: " + metadata_keys['quicklook_keys']['camera']
+    assert metadata_keys["quicklook_keys"]["camera"] in (
+        "MUX",
+        "AWFI",
+        "PAN10M",
+        "PAN5M",
+        "WPM",
+        "WFI",
+    ), ("Unrecognized key: " + metadata_keys["quicklook_keys"]["camera"])
 
-    local_inpe_metadata = '/tmp/' + \
-        metadata_keys['inpe_metadata'].split('/')[-1]
-    local_stac_item = '/tmp/' + \
-        metadata_keys['stac'].split('/')[-1]
+    local_inpe_metadata = "/tmp/" + metadata_keys["inpe_metadata"].split("/")[-1]
+    local_stac_item = "/tmp/" + metadata_keys["stac"].split("/")[-1]
     # Download INPE metadata and generate STAC item file
-    with open(local_inpe_metadata, 'wb') as data:
-        S3_CLIENT.download_fileobj(buckets['cog'],
-                                   metadata_keys['inpe_metadata'], data,
-                                   ExtraArgs={'RequestPayer': 'requester'})
-    stac_meta = convert_inpe_to_stac(inpe_metadata_filename=local_inpe_metadata,
-                                     stac_metadata_filename=local_stac_item,
-                                     buckets=buckets)
+    with open(local_inpe_metadata, "wb") as data:
+        S3_CLIENT.download_fileobj(
+            buckets["cog"],
+            metadata_keys["inpe_metadata"],
+            data,
+            ExtraArgs={"RequestPayer": "requester"},
+        )
+    stac_meta = convert_inpe_to_stac(
+        inpe_metadata_filename=local_inpe_metadata,
+        stac_metadata_filename=local_stac_item,
+        buckets=buckets,
+    )
     # Upload STAC item file
-    with open(local_stac_item, 'rb') as data:
-        S3_CLIENT.upload_fileobj(data, buckets['stac'],
-                                 metadata_keys['stac'])
+    with open(local_stac_item, "rb") as data:
+        S3_CLIENT.upload_fileobj(data, buckets["stac"], metadata_keys["stac"])
 
     # Publish to SNS topic
-    SNS_CLIENT.publish(TargetArn=sns_target_arn,
-                       Message=json.dumps(stac_meta),
-                       MessageAttributes=build_sns_topic_msg_attributes(stac_meta))
+    SNS_CLIENT.publish(
+        TargetArn=sns_target_arn,
+        Message=json.dumps(stac_meta),
+        MessageAttributes=build_sns_topic_msg_attributes(stac_meta),
+    )
 
     # Send message to update catalog tree queue
     if catalog_update_queue:
-        SQS_CLIENT.send_message(QueueUrl=catalog_update_queue,
-                                MessageBody=metadata_keys['stac'])
+        SQS_CLIENT.send_message(
+            QueueUrl=catalog_update_queue, MessageBody=metadata_keys["stac"]
+        )
 
     # Request catalog update
-    catalog_update_request(table_name=catalog_update_table,
-                           stac_item_key=metadata_keys['stac'])
+    catalog_update_request(
+        table_name=catalog_update_table, stac_item_key=metadata_keys["stac"]
+    )
 
 
 def catalog_update_request(table_name, stac_item_key):
@@ -269,19 +277,22 @@ def catalog_update_request(table_name, stac_item_key):
     DB_CLIENT.put_item(
         TableName=table_name,
         Item={
-            'stacitem': {'S': stac_item_key},
-            'datetime': {'S': str(datetime.datetime.now())}
-        })
+            "stacitem": {"S": stac_item_key},
+            "datetime": {"S": str(datetime.datetime.now())},
+        },
+    )
 
 
-def process_trigger(cbers_pds_bucket, # pylint: disable=too-many-arguments
-                    cbers_stac_bucket,
-                    cbers_meta_pds_bucket,
-                    event,
-                    sns_target_arn,
-                    sns_reconcile_target_arn,
-                    catalog_update_queue,
-                    catalog_update_table):
+def process_trigger(  # pylint: disable=too-many-arguments
+    cbers_pds_bucket,
+    cbers_stac_bucket,
+    cbers_meta_pds_bucket,
+    event,
+    sns_target_arn,
+    sns_reconcile_target_arn,
+    catalog_update_queue,
+    catalog_update_table,
+):
     """
     Read quicklook queue and create STAC items if necessary.
 
@@ -298,30 +309,38 @@ def process_trigger(cbers_pds_bucket, # pylint: disable=too-many-arguments
       catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
-    buckets = {'cog': cbers_pds_bucket,
-               'stac': cbers_stac_bucket,
-               'metadata': cbers_meta_pds_bucket}
-    for record in event['Records']:
-        message = json.loads(json.loads(record['body'])['Message'])
-        for rec in message['Records']:
-            if rec['s3']['object'].get('reconcile'):
+    buckets = {
+        "cog": cbers_pds_bucket,
+        "stac": cbers_stac_bucket,
+        "metadata": cbers_meta_pds_bucket,
+    }
+    for record in event["Records"]:
+        message = json.loads(json.loads(record["body"])["Message"])
+        for rec in message["Records"]:
+            if rec["s3"]["object"].get("reconcile"):
                 eff_sns_target_arn = sns_reconcile_target_arn
             else:
                 eff_sns_target_arn = sns_target_arn
-            process_message({'key': rec['s3']['object']['key']},
-                            buckets, eff_sns_target_arn, catalog_update_queue,
-                            catalog_update_table)
+            process_message(
+                {"key": rec["s3"]["object"]["key"]},
+                buckets,
+                eff_sns_target_arn,
+                catalog_update_queue,
+                catalog_update_table,
+            )
 
 
-def process_queue(cbers_pds_bucket, # pylint: disable=too-many-arguments
-                  cbers_stac_bucket,
-                  cbers_meta_pds_bucket,
-                  queue,
-                  message_batch_size,
-                  sns_reconcile_target_arn,
-                  catalog_update_queue,
-                  catalog_update_table,
-                  delete_processed_messages=False):
+def process_queue(  # pylint: disable=too-many-arguments
+    cbers_pds_bucket,
+    cbers_stac_bucket,
+    cbers_meta_pds_bucket,
+    queue,
+    message_batch_size,
+    sns_reconcile_target_arn,
+    catalog_update_queue,
+    catalog_update_table,
+    delete_processed_messages=False,
+):
     """
     Read quicklook queue and create STAC items if necessary.
 
@@ -340,21 +359,26 @@ def process_queue(cbers_pds_bucket, # pylint: disable=too-many-arguments
                                  after processing
     """
 
-    buckets = {'cog': cbers_pds_bucket,
-               'stac': cbers_stac_bucket,
-               'metadata': cbers_meta_pds_bucket}
+    buckets = {
+        "cog": cbers_pds_bucket,
+        "stac": cbers_stac_bucket,
+        "metadata": cbers_meta_pds_bucket,
+    }
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        process_message(msg, buckets, sns_reconcile_target_arn,
-                        catalog_update_queue,
-                        catalog_update_table)
+        process_message(
+            msg,
+            buckets,
+            sns_reconcile_target_arn,
+            catalog_update_queue,
+            catalog_update_table,
+        )
 
         # Remove message from queue
         if delete_processed_messages:
             SQS_CLIENT.delete_message(
-                QueueUrl=queue,
-                ReceiptHandle=msg['ReceiptHandle']
+                QueueUrl=queue, ReceiptHandle=msg["ReceiptHandle"]
             )
 
         processed_messages += 1
@@ -362,31 +386,35 @@ def process_queue(cbers_pds_bucket, # pylint: disable=too-many-arguments
             break
 
 
-def handler(event, context): # pylint: disable=unused-argument
+def handler(event, context):  # pylint: disable=unused-argument
     """Lambda entry point for actively consuming messages from queue.
     Event keys:
     """
 
-    if 'queue' in event:
+    if "queue" in event:
         # Lambda is being invoked to read messages directly from queue
         # In that mode SNS events are always sent to the internal
         # reconcile topic
-        process_queue(cbers_pds_bucket=os.environ['CBERS_PDS_BUCKET'],
-                      cbers_stac_bucket=os.environ['CBERS_STAC_BUCKET'],
-                      cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
-                      queue=event['queue'],
-                      message_batch_size=int(os.environ['MESSAGE_BATCH_SIZE']),
-                      sns_reconcile_target_arn=os.environ['SNS_RECONCILE_TARGET_ARN'],
-                      catalog_update_queue=os.environ.get('CATALOG_UPDATE_QUEUE'),
-                      catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'],
-                      delete_processed_messages=int(os.environ['DELETE_MESSAGES']) == 1)
+        process_queue(
+            cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
+            cbers_stac_bucket=os.environ["CBERS_STAC_BUCKET"],
+            cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
+            queue=event["queue"],
+            message_batch_size=int(os.environ["MESSAGE_BATCH_SIZE"]),
+            sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],
+            catalog_update_queue=os.environ.get("CATALOG_UPDATE_QUEUE"),
+            catalog_update_table=os.environ["CATALOG_UPDATE_TABLE"],
+            delete_processed_messages=int(os.environ["DELETE_MESSAGES"]) == 1,
+        )
     else:
         # Lambda is being invoked as trigger to SQS
-        process_trigger(cbers_pds_bucket=os.environ['CBERS_PDS_BUCKET'],
-                        cbers_stac_bucket=os.environ['CBERS_STAC_BUCKET'],
-                        cbers_meta_pds_bucket=os.environ['CBERS_META_PDS_BUCKET'],
-                        event=event,
-                        sns_target_arn=os.environ['SNS_TARGET_ARN'],
-                        sns_reconcile_target_arn=os.environ['SNS_RECONCILE_TARGET_ARN'],
-                        catalog_update_queue=os.environ.get('CATALOG_UPDATE_QUEUE'),
-                        catalog_update_table=os.environ['CATALOG_UPDATE_TABLE'])
+        process_trigger(
+            cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
+            cbers_stac_bucket=os.environ["CBERS_STAC_BUCKET"],
+            cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
+            event=event,
+            sns_target_arn=os.environ["SNS_TARGET_ARN"],
+            sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],
+            catalog_update_queue=os.environ.get("CATALOG_UPDATE_QUEUE"),
+            catalog_update_table=os.environ["CATALOG_UPDATE_TABLE"],
+        )

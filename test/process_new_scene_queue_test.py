@@ -1,98 +1,108 @@
 """process_new_scene_test"""
 
 import os
-import unittest
-
-# This allows utils module to be imported when nosetests
-# is invoked within emacs
-import site
-site.addsitedir('sam/process_new_scene_queue')
 
 # Region is required for testing
-os.environ['AWS_DEFAULT_REGION'] = 'us-east-1'
+os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
-from sam.process_new_scene_queue.code import parse_quicklook_key, \
-    get_s3_keys, process_queue, convert_inpe_to_stac, \
-    build_sns_topic_msg_attributes
+# This import is here because the environment must be
+# set before importing. This may be changed by
+# using getters within sam.process_new_scene_queue.code
+from sam.process_new_scene_queue.code import (  # pylint: disable=wrong-import-position
+    build_sns_topic_msg_attributes,
+    convert_inpe_to_stac,
+    get_s3_keys,
+    parse_quicklook_key,
+)
 
-class ProcessNewSceneTest(unittest.TestCase):
-    """ProcessNewSceneTest"""
 
-    def parse_quicklook_key_test(self):
-        """parse_quicklook_key_test"""
+def test_parse_quicklook_key():
+    """parse_quicklook_key_test"""
 
-        keys = parse_quicklook_key('CBERS4/AWFI/155/135/'
-                                   'CBERS_4_AWFI_20170515_155_135_L2/'
-                                   'CBERS_4_AWFI_20170515_155_135.jpg')
-        self.assertEqual(keys['satellite'], 'CBERS4')
-        self.assertEqual(keys['camera'], 'AWFI')
-        self.assertEqual(keys['path'], '155')
-        self.assertEqual(keys['row'], '135')
-        self.assertEqual(keys['scene_id'], 'CBERS_4_AWFI_20170515_155_135_L2')
-        self.assertEqual(keys['collection'], 'CBERS4AWFI')
+    keys = parse_quicklook_key(
+        "CBERS4/AWFI/155/135/"
+        "CBERS_4_AWFI_20170515_155_135_L2/"
+        "CBERS_4_AWFI_20170515_155_135.jpg"
+    )
+    assert keys["satellite"] == "CBERS4"
+    assert keys["camera"] == "AWFI"
+    assert keys["path"] == "155"
+    assert keys["row"] == "135"
+    assert keys["scene_id"] == "CBERS_4_AWFI_20170515_155_135_L2"
+    assert keys["collection"] == "CBERS4AWFI"
 
-        keys = parse_quicklook_key('CBERS4A/WPM/209/139/'
-                                   'CBERS_4A_WPM_20200730_209_139_L4/'
-                                   'CBERS_4A_WPM_20200730_209_139.png')
-        self.assertEqual(keys['satellite'], 'CBERS4A')
-        self.assertEqual(keys['camera'], 'WPM')
-        self.assertEqual(keys['path'], '209')
-        self.assertEqual(keys['row'], '139')
-        self.assertEqual(keys['scene_id'], 'CBERS_4A_WPM_20200730_209_139_L4')
-        self.assertEqual(keys['collection'], 'CBERS4AWPM')
+    keys = parse_quicklook_key(
+        "CBERS4A/WPM/209/139/"
+        "CBERS_4A_WPM_20200730_209_139_L4/"
+        "CBERS_4A_WPM_20200730_209_139.png"
+    )
+    assert keys["satellite"] == "CBERS4A"
+    assert keys["camera"] == "WPM"
+    assert keys["path"] == "209"
+    assert keys["row"] == "139"
+    assert keys["scene_id"] == "CBERS_4A_WPM_20200730_209_139_L4"
+    assert keys["collection"] == "CBERS4AWPM"
 
-    def get_s3_keys_test(self):
-        """get_s3_keys_test"""
 
-        s3_keys = get_s3_keys('CBERS4/AWFI/155/135/'
-                              'CBERS_4_AWFI_20170515_155_135_L2/'
-                              'CBERS_4_AWFI_20170515_155_135.jpg')
-        self.assertEqual(s3_keys['stac'],
-                         'CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2.json')
-        self.assertEqual(s3_keys['inpe_metadata'],
-                         'CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/'
-                         'CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml')
-        self.assertEqual(s3_keys['quicklook_keys']['camera'], 'AWFI')
+def test_get_s3_keys():
+    """get_s3_keys_test"""
 
-        s3_keys = get_s3_keys('CBERS4A/WPM/209/139/'
-                              'CBERS_4A_WPM_20200730_209_139_L4/'
-                              'CBERS_4A_WPM_20200730_209_139.png')
-        self.assertEqual(s3_keys['stac'],
-                         'CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4.json')
-        self.assertEqual(s3_keys['inpe_metadata'],
-                         'CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/'
-                         'CBERS_4A_WPM_20200730_209_139_L4_BAND2.xml')
-        self.assertEqual(s3_keys['quicklook_keys']['camera'], 'WPM')
+    s3_keys = get_s3_keys(
+        "CBERS4/AWFI/155/135/"
+        "CBERS_4_AWFI_20170515_155_135_L2/"
+        "CBERS_4_AWFI_20170515_155_135.jpg"
+    )
+    assert (
+        s3_keys["stac"] == "CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2.json"
+    )
+    assert (
+        s3_keys["inpe_metadata"]
+        == "CBERS4/AWFI/155/135/CBERS_4_AWFI_20170515_155_135_L2/"
+        "CBERS_4_AWFI_20170515_155_135_L2_BAND14.xml"
+    )
+    assert s3_keys["quicklook_keys"]["camera"] == "AWFI"
 
-    def build_sns_topic_msg_attr_test(self):
-        """build_sns_topic_msg_attributes_test"""
+    s3_keys = get_s3_keys(
+        "CBERS4A/WPM/209/139/"
+        "CBERS_4A_WPM_20200730_209_139_L4/"
+        "CBERS_4A_WPM_20200730_209_139.png"
+    )
+    assert (
+        s3_keys["stac"] == "CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4.json"
+    )
+    assert (
+        s3_keys["inpe_metadata"]
+        == "CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/"
+        "CBERS_4A_WPM_20200730_209_139_L4_BAND2.xml"
+    )
+    assert s3_keys["quicklook_keys"]["camera"] == "WPM"
 
-        buckets = {
-            'metadata':'cbers-meta-pds',
-            'cog':'cbers-pds',
-            'stac':'cbers-stac'}
 
-        stac_meta = convert_inpe_to_stac(inpe_metadata_filename='test/CBERS_4_MUX_20170528' \
-                                         '_090_084_L2_BAND6.xml',
-                                         stac_metadata_filename=None,
-                                         buckets=buckets)
-        msg_attr = build_sns_topic_msg_attributes(stac_meta)
-        self.assertEqual(msg_attr['links.self.href'],
-                         {'DataType':'String',
-                          'StringValue':'https://cbers-stac.s3.amazonaws.com/CBERS4/' \
-                          'MUX/090/084/CBERS_4_MUX_20170528_090_084_L2.json'})
+def test_sns_topic_msg_attr_test():
+    """build_sns_topic_msg_attributes_test"""
 
-    @unittest.skip("Require AWS credentials and environment")
-    def process_queue_test(self):
-        """process_queue_test"""
+    buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
 
-        process_queue(cbers_pds_bucket='cbers-pds',
-                      cbers_stac_bucket='cbers-stac',
-                      cbers_meta_pds_bucket='cbers-meta-pds',
-                      queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
-                      'NewAWFIQuicklookMonitor',
-                      message_batch_size=1,
-                      sns_target_arn=None)
+    stac_meta = convert_inpe_to_stac(
+        inpe_metadata_filename="test/CBERS_4_MUX_20170528" "_090_084_L2_BAND6.xml",
+        stac_metadata_filename=None,
+        buckets=buckets,
+    )
+    msg_attr = build_sns_topic_msg_attributes(stac_meta)
+    assert msg_attr["links.self.href"] == {
+        "DataType": "String",
+        "StringValue": "https://cbers-stac.s3.amazonaws.com/CBERS4/"
+        "MUX/090/084/CBERS_4_MUX_20170528_090_084_L2.json",
+    }
 
-if __name__ == '__main__':
-    unittest.main()
+
+# @pytest.mark.skip("Require AWS credentials and environment")
+# def process_queue_test():
+#     """process_queue_test"""
+#     process_queue(cbers_pds_bucket='cbers-pds',
+#                   cbers_stac_bucket='cbers-stac',
+#                   cbers_meta_pds_bucket='cbers-meta-pds',
+#                   queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
+#                   'NewAWFIQuicklookMonitor',
+#                   message_batch_size=1,
+#                   sns_target_arn=None)
