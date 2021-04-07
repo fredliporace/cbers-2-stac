@@ -1,21 +1,29 @@
 """update_catalog_tree"""
 
+import json
 import os
 import re
-from operator import itemgetter
 from collections import OrderedDict
-import json
 from copy import deepcopy
+from operator import itemgetter
 
 import boto3
-#from botocore.errorfactory import ClientError
 
-from utils import build_absolute_prefix, build_collection_name, \
-    BASE_CATALOG, \
-    BASE_COLLECTION, BASE_CAMERA, CBERS_MISSIONS
+from sam.layers.common.utils import (
+    BASE_CAMERA,
+    BASE_CATALOG,
+    BASE_COLLECTION,
+    CBERS_MISSIONS,
+    build_absolute_prefix,
+    build_collection_name,
+)
 
-S3_CLIENT = boto3.client('s3')
-SQS_CLIENT = boto3.client('sqs')
+# from botocore.errorfactory import ClientError
+
+
+S3_CLIENT = boto3.client("s3")
+SQS_CLIENT = boto3.client("sqs")
+
 
 def write_catalog_to_s3(bucket, prefix, catalog):
     """
@@ -23,14 +31,15 @@ def write_catalog_to_s3(bucket, prefix, catalog):
     with prefix/catalog.json key.
     """
 
-    if 'license' not in catalog:
-        s3_catalog_file = prefix + '/catalog.json'
+    if "license" not in catalog:
+        s3_catalog_file = prefix + "/catalog.json"
     else:
-        s3_catalog_file = prefix + '/collection.json'
+        s3_catalog_file = prefix + "/collection.json"
 
-    S3_CLIENT.put_object(Body=json.dumps(catalog, indent=2),
-                         Bucket=bucket,
-                         Key=s3_catalog_file)
+    S3_CLIENT.put_object(
+        Body=json.dumps(catalog, indent=2), Bucket=bucket, Key=s3_catalog_file
+    )
+
 
 def build_catalog_from_s3(bucket, prefix, response=None):
     """
@@ -43,19 +52,22 @@ def build_catalog_from_s3(bucket, prefix, response=None):
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
     catalog_info = get_catalog_info(prefix)
-    catalog = base_stac_catalog(bucket,
-                                satellite=catalog_info['satellite+mission'],
-                                mission=None,
-                                camera=catalog_info['camera'],
-                                path=catalog_info['path'],
-                                row=catalog_info['row'])
-    if catalog_info['level'] == 0:
-        new_links = get_items_from_s3(bucket, prefix + '/', response)
+    catalog = base_stac_catalog(
+        bucket,
+        satellite=catalog_info["satellite+mission"],
+        mission=None,
+        camera=catalog_info["camera"],
+        path=catalog_info["path"],
+        row=catalog_info["row"],
+    )
+    if catalog_info["level"] == 0:
+        new_links = get_items_from_s3(bucket, prefix + "/", response)
     else:
-        new_links = get_catalogs_from_s3(bucket, prefix +'/', response)
-    catalog['links'] += new_links
+        new_links = get_catalogs_from_s3(bucket, prefix + "/", response)
+    catalog["links"] += new_links
 
     return catalog
+
 
 def get_catalog_info(key):
     """
@@ -74,22 +86,23 @@ def get_catalog_info(key):
     ret = dict()
 
     # Level
-    levels = key.split('/')
+    levels = key.split("/")
     level = 4 - len(levels)
     assert 0 <= level <= 2, "Unsupported level " + str(level)
-    ret['level'] = level
-    ret['satellite+mission'] = None
-    ret['camera'] = None
-    ret['path'] = None
-    ret['row'] = None
+    ret["level"] = level
+    ret["satellite+mission"] = None
+    ret["camera"] = None
+    ret["path"] = None
+    ret["row"] = None
     # @todo not currently used, check for removal
-    ret['is_collection'] = (level == 2)
+    ret["is_collection"] = level == 2
 
-    keys = ['satellite+mission', 'camera', 'path', 'row']
+    keys = ["satellite+mission", "camera", "path", "row"]
     for index, key_id in enumerate(levels):
         ret[keys[index]] = key_id
 
     return ret
+
 
 def get_catalogs_from_s3(bucket, prefix, response=None):
     """
@@ -103,15 +116,15 @@ def get_catalogs_from_s3(bucket, prefix, response=None):
     """
     ret = list()
     if not response:
-        response = S3_CLIENT.list_objects_v2(Bucket=bucket,
-                                             Delimiter='/',
-                                             Prefix=prefix)
-        assert not response['IsTruncated'], "Truncated S3 listing"
-    for item in response['CommonPrefixes']:
-        key = item['Prefix'].split('/')[-2] + '/catalog.json'
-        ret.append({"rel":"child",
-                    "href":key})
-    return sorted(ret, key=itemgetter('href'))
+        response = S3_CLIENT.list_objects_v2(
+            Bucket=bucket, Delimiter="/", Prefix=prefix
+        )
+        assert not response["IsTruncated"], "Truncated S3 listing"
+    for item in response["CommonPrefixes"]:
+        key = item["Prefix"].split("/")[-2] + "/catalog.json"
+        ret.append({"rel": "child", "href": key})
+    return sorted(ret, key=itemgetter("href"))
+
 
 def get_items_from_s3(bucket, prefix, response=None):
     """
@@ -125,17 +138,17 @@ def get_items_from_s3(bucket, prefix, response=None):
     """
     ret = list()
     if not response:
-        response = S3_CLIENT.list_objects_v2(Bucket=bucket,
-                                             Delimiter='/',
-                                             Prefix=prefix)
-        assert not response['IsTruncated'], "Truncated S3 listing"
-    for item in response['Contents']:
-        key = item['Key'].split('/')[-1]
+        response = S3_CLIENT.list_objects_v2(
+            Bucket=bucket, Delimiter="/", Prefix=prefix
+        )
+        assert not response["IsTruncated"], "Truncated S3 listing"
+    for item in response["Contents"]:
+        key = item["Key"].split("/")[-1]
         # Skip catalog.json files, including only L\d{1}.json
-        if re.match(r'.*L\d{1}.json', key):
-            ret.append({"rel":"item",
-                        "href":key})
-    return sorted(ret, key=itemgetter('href'))
+        if re.match(r".*L\d{1}.json", key):
+            ret.append({"rel": "item", "href": key})
+    return sorted(ret, key=itemgetter("href"))
+
 
 def sqs_messages(queue):
     """
@@ -151,14 +164,14 @@ def sqs_messages(queue):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(
-            QueueUrl=queue)
-        if 'Messages' not in response:
+        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        if "Messages" not in response:
             break
         retd = dict()
-        retd['stac_item'] = response['Messages'][0]['Body']
-        retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
+        retd["stac_item"] = response["Messages"][0]["Body"]
+        retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
+
 
 def get_base_collection(sat_mission: str, camera: str):
     """
@@ -172,32 +185,33 @@ def get_base_collection(sat_mission: str, camera: str):
 
     collection = deepcopy(BASE_CATALOG)
     collection.update(BASE_COLLECTION)
-    collection['properties'] = BASE_CAMERA[sat_mission][camera]['properties']
-    collection['item_assets'] = BASE_CAMERA[sat_mission][camera]['item_assets']
-    collection['extent']['temporal']['interval'] = \
-        CBERS_MISSIONS[sat_mission]['interval']
+    collection["properties"] = BASE_CAMERA[sat_mission][camera]["properties"]
+    collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]
+    collection["extent"]["temporal"]["interval"] = CBERS_MISSIONS[sat_mission][
+        "interval"
+    ]
 
     return collection
 
-def base_stac_catalog(bucket, satellite,
-                      mission=None, camera=None,
-                      path=None, row=None):
+
+def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches, too-many-statements
+    bucket, satellite, mission=None, camera=None, path=None, row=None
+):
     """JSON STAC catalog or collection with common items"""
 
     # Checks if on collection level
     in_collection = camera and not path and not row
 
     if in_collection:
-        json_filename = 'collection.json'
+        json_filename = "collection.json"
         # Deal with satellite including or not mission
         if mission:
             sat_mission = "{}{}".format(satellite, mission)
         else:
             sat_mission = satellite
-        stac_catalog = get_base_collection(sat_mission,
-                                           camera)
+        stac_catalog = get_base_collection(sat_mission, camera)
     else:
-        json_filename = 'catalog.json'
+        json_filename = "catalog.json"
         stac_catalog = BASE_CATALOG
 
     name = satellite
@@ -210,7 +224,7 @@ def base_stac_catalog(bucket, satellite,
     else:
         # Check for satellite+mission in first parameter
         # @todo change this to always separate satellite and mission
-        if satellite == 'CBERS':
+        if satellite == "CBERS":
             sat_sensor = None
         else:
             sat_sensor = satellite
@@ -220,77 +234,79 @@ def base_stac_catalog(bucket, satellite,
         description += mission
         sat_sensor += mission
     if camera:
-        name += ' %s' % (camera)
-        description += ' %s camera' % (camera)
-        sat_sensor += '/%s' % camera
+        name += " %s" % (camera)
+        description += " %s camera" % (camera)
+        sat_sensor += "/%s" % camera
     if path:
-        name += ' %s' % (path)
-        description += ' path %s' % (path)
+        name += " %s" % (path)
+        description += " path %s" % (path)
     if row:
-        name += '/%s' % (row)
-        description += ' row %s' % (row)
-    description += ' catalog'
+        name += "/%s" % (row)
+        description += " row %s" % (row)
+    description += " catalog"
 
     # @todo the collection id is also built in the stac item,
     # should be unified
     # @todo currently must support two cases: satellite concatenated
     # or not with mission. Clean up.
     if in_collection:
-        stac_catalog['id'] = build_collection_name(satellite=satellite,
-                                                   mission=mission,
-                                                   camera=camera)
+        stac_catalog["id"] = build_collection_name(
+            satellite=satellite, mission=mission, camera=camera
+        )
         # if mission:
         #     stac_catalog['id'] = satellite + mission + camera
         # else:
         #     stac_catalog['id'] = satellite + camera
     else:
-        stac_catalog['id'] = name
-    stac_catalog['description'] = description
+        stac_catalog["id"] = name
+    stac_catalog["description"] = description
 
-    stac_catalog['links'] = list()
+    stac_catalog["links"] = list()
 
     # Checks if on collection level
     if camera and not path and not row:
-        json_filename = 'collection.json'
+        json_filename = "collection.json"
     else:
-        json_filename = 'catalog.json'
+        json_filename = "catalog.json"
 
     # @todo use common function to build links, see item construction
     self_link = OrderedDict()
-    self_link['rel'] = 'self'
-    self_link['href'] = build_absolute_prefix(bucket,
-                                              sat_sensor,
-                                              path, row) + json_filename
-    stac_catalog['links'].append(self_link)
+    self_link["rel"] = "self"
+    self_link["href"] = (
+        build_absolute_prefix(bucket, sat_sensor, path, row) + json_filename
+    )
+    stac_catalog["links"].append(self_link)
 
     root_link = OrderedDict()
-    root_link['rel'] = 'root'
-    root_link['href'] = build_absolute_prefix(bucket) + 'catalog.json'
-    stac_catalog['links'].append(root_link)
+    root_link["rel"] = "root"
+    root_link["href"] = build_absolute_prefix(bucket) + "catalog.json"
+    stac_catalog["links"].append(root_link)
 
     if path and not row:
-        parent_json_filename = 'collection.json'
+        parent_json_filename = "collection.json"
     else:
-        parent_json_filename = 'catalog.json'
+        parent_json_filename = "catalog.json"
 
     if mission or camera or path or row:
 
         parent_link = OrderedDict()
-        parent_link['rel'] = 'parent'
-        parent_link['href'] = '../' + parent_json_filename
-        stac_catalog['links'].append(parent_link)
+        parent_link["rel"] = "parent"
+        parent_link["href"] = "../" + parent_json_filename
+        stac_catalog["links"].append(parent_link)
 
     return stac_catalog
+
 
 def trigger_handler(event, context):  # pylint: disable=unused-argument
     """Lambda entry point for SQS trigger integration
     Event keys:
     """
-    for record in event['Records']:
-        prefix = record['body']
+    for record in event["Records"]:
+        prefix = record["body"]
         print("Processing " + prefix)
-        catalog = build_catalog_from_s3(bucket=os.environ['CBERS_STAC_BUCKET'],
-                                        prefix=prefix)
-        write_catalog_to_s3(bucket=os.environ['CBERS_STAC_BUCKET'],
-                            prefix=prefix,
-                            catalog=catalog)
+        catalog = build_catalog_from_s3(
+            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix
+        )
+        write_catalog_to_s3(
+            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix, catalog=catalog
+        )
