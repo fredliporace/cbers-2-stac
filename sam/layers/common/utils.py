@@ -22,12 +22,7 @@ COLLECTIONS = {
 STAC_VERSION = "1.0.0-rc.2"
 
 BASE_CATALOG = OrderedDict(
-    {
-        "type": "Collection",
-        "stac_version": STAC_VERSION,
-        "id": None,
-        "description": None,
-    }
+    {"stac_version": STAC_VERSION, "id": None, "description": None,}
 )
 
 # Base template for root documents

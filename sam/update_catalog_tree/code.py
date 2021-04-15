@@ -210,9 +210,11 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         else:
             sat_mission = satellite
         stac_catalog = get_base_collection(sat_mission, camera)
+        stac_catalog = {**stac_catalog, **{"type": "Collection"}}
+
     else:
         json_filename = "catalog.json"
-        stac_catalog = BASE_CATALOG
+        stac_catalog = {**BASE_CATALOG, **{"type": "Catalog"}}
 
     name = satellite
     description = name

@@ -8,6 +8,7 @@ wget -O ./item-spec/json-schema/provider.json https://raw.githubusercontent.com/
 
 # Catalog
 wget -O ./catalog-spec/json-schema/catalog.json https://raw.githubusercontent.com/radiantearth/stac-spec/dev/catalog-spec/json-schema/catalog.json
+wget -O ./catalog-spec/json-schema/catalog-core.json https://raw.githubusercontent.com/radiantearth/stac-spec/dev/catalog-spec/json-schema/catalog-core.json
 
 # Collection
 wget -O ./collection-spec/json-schema/collection.json https://raw.githubusercontent.com/radiantearth/stac-spec/dev/collection-spec/json-schema/collection.json
