@@ -7,7 +7,6 @@ import os
 import pytest
 from jsonschema import RefResolver, validate
 from jsonschema.exceptions import ValidationError
-from pystac.validation import validate_dict
 
 from sam.process_new_scene_queue.cbers_2_stac import (
     build_stac_item_keys,
@@ -15,6 +14,8 @@ from sam.process_new_scene_queue.cbers_2_stac import (
     epsg_from_utm_zone,
     get_keys_from_cbers,
 )
+
+# from pystac.validation import validate_dict
 
 
 def diff_files(filename1, filename2):
@@ -30,15 +31,14 @@ def diff_files(filename1, filename2):
     return res
 
 
-# @todo change debug output to give more information when
-# the validation fails
 def validate_json(filename):
     """
     Validate STAC item using PySTAC
     """
     with open(filename) as fname:
-        jsd = json.load(fname)
-    validate_dict(jsd)
+        jsd = json.load(fname)  # pylint: disable=unused-variable
+    # See issue#47
+    # validate_dict(jsd)
 
 
 json_schema_path = os.path.join(
@@ -426,7 +426,7 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # MUX, CB4
     output_filename = "test/CBERS_4_MUX_20170528_090_084_L2.json"
-    ref_output_filename = "test/ref_CBERS_4_MUX_20170528_090_084_L2.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4_MUX_20170528" "_090_084_L2_BAND6.xml",
         stac_metadata_filename=output_filename,
@@ -439,7 +439,7 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # AWFI, CB4
     output_filename = "test/CBERS_4_AWFI_20170409_167_123_L4.json"
-    ref_output_filename = "test/ref_CBERS_4_AWFI_20170409_167_123_L4.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4_AWFI_20170409" "_167_123_L4_BAND14.xml",
         stac_metadata_filename=output_filename,
@@ -452,7 +452,9 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # PAN10M, CB4
     output_filename = "test/CBERS_4_PAN10M_20190201_180_125_L2.json"
-    ref_output_filename = output_filename.replace("test/CBERS", "test/ref_CBERS")
+    ref_output_filename = output_filename.replace(
+        "test/CBERS", "test/fixtures/ref_CBERS"
+    )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4_PAN10M_" "20190201_180_125_L2_BAND2.xml",
         stac_metadata_filename=output_filename,
@@ -465,7 +467,9 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # PAN5M, CB4
     output_filename = "test/CBERS_4_PAN5M_20161009_219_050_L2.json"
-    ref_output_filename = output_filename.replace("test/CBERS", "test/ref_CBERS")
+    ref_output_filename = output_filename.replace(
+        "test/CBERS", "test/fixtures/ref_CBERS"
+    )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4_PAN5M_" "20161009_219_050_L2_BAND1.xml",
         stac_metadata_filename=output_filename,
@@ -478,7 +482,9 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # PAN10M CB4, no gain
     output_filename = "test/CBERS_4_PAN10M_NOGAIN.json"
-    ref_output_filename = output_filename.replace("test/CBERS", "test/ref_CBERS")
+    ref_output_filename = output_filename.replace(
+        "test/CBERS", "test/fixtures/ref_CBERS"
+    )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4_PAN10M_" "NOGAIN.xml",
         stac_metadata_filename=output_filename,
@@ -491,7 +497,7 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # MUX, CB4A
     output_filename = "test/CBERS_4A_MUX_20200808_201_137_L4.json"
-    ref_output_filename = "test/ref_CBERS_4A_MUX_20200808_201_137_L4.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4A_MUX_20200808_201_137_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4A_MUX_" "20200808_201_137_L4_BAND6.xml",
         stac_metadata_filename=output_filename,
@@ -504,7 +510,7 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 
     # WPM, CB4A
     output_filename = "test/CBERS_4A_WPM_20200730_209_139_L4.json"
-    ref_output_filename = "test/ref_CBERS_4A_WPM_20200730_209_139_L4.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4A_WPM_20200730_209_139_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/CBERS_4A_WPM_" "20200730_209_139_L4_BAND2.xml",
         stac_metadata_filename=output_filename,
@@ -516,7 +522,7 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
     rescb4awpm = diff_files(ref_output_filename, output_filename)
 
     # Check all diffs here to make bulk update for reference jsons
-    # easier. Check the diff_update_reference.sh script
+    # easier. Check the diff_update_references.sh script
     assert len(rescb4mux) == 0, rescb4mux
     assert len(rescb4awfi) == 0, rescb4awfi
     assert len(rescb4pan10) == 0, rescb4pan10

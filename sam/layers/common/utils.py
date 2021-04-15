@@ -19,7 +19,7 @@ COLLECTIONS = {
     "CBERS4A-WPM": "CBERS4A/WPM/collection.json",
 }
 
-STAC_VERSION = "1.0.0-beta.2"
+STAC_VERSION = "1.0.0-rc.2"
 
 BASE_CATALOG = OrderedDict(
     {"stac_version": STAC_VERSION, "id": None, "description": None,}

@@ -11,11 +11,11 @@ declare -a items=("CBERS_4_MUX_20170528_090_084_L2.json"
 
 for item in ${items[@]}; do
     echo $item
-    diff --context=3 ref_$item $item
+    diff --context=3 fixtures/ref_$item $item
     echo "Update?"
     select yn in "Yes" "No"; do
         case $yn in
-            Yes ) cp $item ref_$item; break;;
+            Yes ) cp $item fixtures/ref_$item; break;;
             No ) break;;
         esac
     done

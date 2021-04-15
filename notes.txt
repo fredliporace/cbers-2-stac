@@ -1,0 +1,36 @@
+Elasticsearch
+
+Tive que executar comando:
+awslocal es create-elasticsearch-domain --domain-name es1
+
+E criar, como root, o diretório:
+/tmp/localstack/es_backup
+
+Para evitar o erro:
+
+[2021-04-14T19:01:34,354][ERROR][o.e.b.Bootstrap          ] [61af6963a5f1] Exception
+java.lang.IllegalStateException: Unable to access 'path.repo' (/tmp/localstack/es_backup)
+        at org.elasticsearch.bootstrap.FilePermissionUtils.addDirectoryPath(FilePermissionUtils.java:70) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Security.addFilePermissions(Security.java:313) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Security.createPermissions(Security.java:252) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Security.configure(Security.java:121) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Bootstrap.setup(Bootstrap.java:222) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Bootstrap.init(Bootstrap.java:393) [elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Elasticsearch.init(Elasticsearch.java:170) [elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Elasticsearch.execute(Elasticsearch.java:161) [elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.cli.EnvironmentAwareCommand.execute(EnvironmentAwareCommand.java:86) [elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.cli.Command.mainWithoutErrorHandling(Command.java:127) [elasticsearch-cli-7.7.0.jar:7.7.0]
+        at org.elasticsearch.cli.Command.main(Command.java:90) [elasticsearch-cli-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:126) [elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.Elasticsearch.main(Elasticsearch.java:92) [elasticsearch-7.7.0.jar:7.7.0]
+Caused by: java.nio.file.AccessDeniedException: /tmp/localstack/es_backup
+        at sun.nio.fs.UnixException.translateToIOException(Unknown Source) ~[?:?]
+        at sun.nio.fs.UnixException.rethrowAsIOException(Unknown Source) ~[?:?]
+        at sun.nio.fs.UnixException.rethrowAsIOException(Unknown Source) ~[?:?]
+        at sun.nio.fs.UnixFileSystemProvider.createDirectory(Unknown Source) ~[?:?]
+        at java.nio.file.Files.createDirectory(Unknown Source) ~[?:?]
+        at java.nio.file.Files.createAndCheckIsDirectory(Unknown Source) ~[?:?]
+        at java.nio.file.Files.createDirectories(Unknown Source) ~[?:?]
+        at org.elasticsearch.bootstrap.Security.ensureDirectoryExists(Security.java:389) ~[elasticsearch-7.7.0.jar:7.7.0]
+        at org.elasticsearch.bootstrap.FilePermissionUtils.addDirectoryPath(FilePermissionUtils.java:68) ~[elasticsearch-7.7.0.jar:7.7.0]
+        ... 12 more

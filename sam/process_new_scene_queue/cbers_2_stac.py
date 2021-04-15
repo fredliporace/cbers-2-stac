@@ -14,6 +14,7 @@ import utm
 
 from sam.layers.common.utils import (
     CBERS_MISSIONS,
+    STAC_VERSION,
     build_absolute_prefix,
     build_collection_name,
 )
@@ -286,7 +287,7 @@ def build_stac_item_keys(cbers, buckets):
 
     stac_item = OrderedDict()
 
-    stac_item["stac_version"] = "1.0.0-beta.2"
+    stac_item["stac_version"] = STAC_VERSION
     stac_item["stac_extensions"] = ["projection", "view", "eo"]
     stac_item["id"] = "CBERS_%s_%s_%s_" "%03d_%03d_L%s" % (
         cbers["number"],
