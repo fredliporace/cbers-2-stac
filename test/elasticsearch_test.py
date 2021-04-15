@@ -12,16 +12,22 @@ from test.conftest import ENDPOINT_URL
 import boto3
 import pytest
 
-from sam.elasticsearch.es import es_connect, parse_bbox, parse_datetime, strip_stac_item
+# Required by boto3
+if "AWS_DEFAULT_REGION" not in os.environ:
+    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
+
+from sam.elasticsearch.es import (  # pylint: disable=wrong-import-position
+    es_connect,
+    parse_bbox,
+    parse_datetime,
+    strip_stac_item,
+)
 
 # from sam.elasticsearch.elasticsearch.helpers import BulkIndexError
 # from sam.elasticsearch.elasticsearch import ConflictError
 
 # from localstack.utils.aws import aws_stack
 
-# Required by boto3
-if "AWS_DEFAULT_REGION" not in os.environ:
-    os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
 # create_stac_index, \
 #     create_document_in_index, bulk_create_document_in_index, \
