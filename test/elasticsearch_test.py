@@ -128,7 +128,7 @@ def test_parse_bbox():
 
 def test_strip_stac_item():
     """test_strip_stac_item"""
-    with open("test/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
         item = json.loads(fin.read())
     assert "bbox" in item
     strip = strip_stac_item(item)
@@ -168,7 +168,7 @@ def test_connection(es_client):
 #     self.assertFalse(es_client.
 #                      exists(index='stac', doc_type='_doc',
 #                             id='CBERS_4_MUX_20170528_090_084_L2'))
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_item = fin.read()
 #     create_document_in_index(es_client=es_client,
@@ -217,7 +217,7 @@ def test_connection(es_client):
 #     self.assertFalse(es_client.
 #                      exists(index='stac', doc_type='_doc',
 #                             id='CBERS_4_MUX_20170528_090_084_L2'))
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_item = json.loads(fin.read())
 #     create_document_in_index(es_client=es_client,
@@ -242,10 +242,10 @@ def test_connection(es_client):
 
 #     # Two distinct items, create
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -315,10 +315,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -413,10 +413,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -549,10 +549,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -605,10 +605,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -653,10 +653,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
@@ -735,10 +735,10 @@ def test_connection(es_client):
 #     es_client = es_connect('localhost', port=4571,
 #                            use_ssl=False, verify_certs=False)
 #     stac_items = list()
-#     with open('test/ref_CBERS_4_MUX_20170528_090_084_L2.json',
+#     with open('test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
-#     with open('test/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
+#     with open('test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json',
 #               'r') as fin:
 #         stac_items.append(fin.read())
 
