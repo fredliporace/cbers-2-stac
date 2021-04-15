@@ -20,6 +20,15 @@ extra_reqs = {
         "pylint",
         "pystac[validation]==0.5.1",
         "tox",
+        "docker",
+        "retry",
+        "awscli",
+        "awscli-local",
+        # The packages below are used by lambdas and need to be installed locally
+        # for testing to work
+        "elasticsearch==6.2.0",
+        "elasticsearch-dsl==6.2.0",
+        "aws-requests-auth==0.4.2",
     ],
 }
 

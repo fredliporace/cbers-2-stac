@@ -1,19 +1,27 @@
 """es"""
 
-import os
+# pylint: disable=too-many-lines
+
 import json
+import os
+from typing import Dict
+
 import boto3
+from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
+from elasticsearch_dsl import Q, Search
+
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
-from elasticsearch_dsl import Search, Q
-from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
+from sam.layers.common.utils import (
+    get_collection_ids,
+    get_collection_s3_key,
+    static_to_api_collection,
+)
 
-from utils import get_collection_s3_key, get_collection_ids, \
-    static_to_api_collection
-
-SQS_CLIENT = boto3.client('sqs')
-S3 = boto3.resource('s3')
+SQS_CLIENT = boto3.client("sqs")
+S3 = boto3.resource("s3")
 ES_CLIENT = None
+
 
 def sqs_messages(queue: str):
     """
@@ -27,15 +35,15 @@ def sqs_messages(queue: str):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(
-            QueueUrl=queue)
-        if 'Messages' not in response:
+        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        if "Messages" not in response:
             break
-        msg = json.loads(response['Messages'][0]['Body'])
+        msg = json.loads(response["Messages"][0]["Body"])
         retd = dict()
-        retd['stac_item'] = msg['Message']
-        retd['ReceiptHandle'] = response['Messages'][0]['ReceiptHandle']
+        retd["stac_item"] = msg["Message"]
+        retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
+
 
 def stac_item_from_s3_key(bucket: str, key: str):
     """
@@ -48,7 +56,8 @@ def stac_item_from_s3_key(bucket: str, key: str):
     """
 
     obj = S3.Object(bucket, key)
-    return json.loads(obj.get()['Body'].read().decode('utf-8'))
+    return json.loads(obj.get()["Body"].read().decode("utf-8"))
+
 
 def strip_stac_item(item: dict):
     """
@@ -60,23 +69,24 @@ def strip_stac_item(item: dict):
     """
 
     strip = item
-    strip.pop('bbox')
+    strip.pop("bbox")
     s3_key = None
-    for link in item['links']:
-        if link['rel'] == 'self':
-            s3_key = link['href']
+    for link in item["links"]:
+        if link["rel"] == "self":
+            s3_key = link["href"]
     assert s3_key is not None, "Can't find self key"
-    strip.pop('links')
-    strip.pop('assets')
+    strip.pop("links")
+    strip.pop("assets")
 
     # https://cbers-stac-0-6.s3.amazonaws.com/CBERS4/PAN5M/156/107/CBERS_4_PAN5M_20150610_156_107_L4.json
-    strip['s3_key'] = '/'.join(s3_key.split('/')[3:])
+    strip["s3_key"] = "/".join(s3_key.split("/")[3:])
 
     return strip
 
-def process_insert_queue(es_client, queue: str,
-                         batch_size: int = 1,
-                         delete_messages: bool = True):
+
+def process_insert_queue(
+    es_client, queue: str, batch_size: int = 1, delete_messages: bool = True
+):
     """
     Read queue with itemsto be inserted and send the items
     to ES.
@@ -90,24 +100,27 @@ def process_insert_queue(es_client, queue: str,
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        #print(msg['stac_item'])
-        create_document_in_index(es_client=es_client,
-                                 stac_item=msg['stac_item'])
+        # print(msg['stac_item'])
+        create_document_in_index(es_client=es_client, stac_item=msg["stac_item"])
 
         # Remove message from queue
         if delete_messages:
             SQS_CLIENT.delete_message(
-                QueueUrl=queue,
-                ReceiptHandle=msg['ReceiptHandle'])
+                QueueUrl=queue, ReceiptHandle=msg["ReceiptHandle"]
+            )
 
         processed_messages += 1
         if processed_messages == batch_size:
             break
 
-def bulk_process_insert_queue(es_client, queue: str,
-                              batch_size: int = 1,
-                              delete_messages: bool = True,
-                              stripped: bool = False):
+
+def bulk_process_insert_queue(
+    es_client,
+    queue: str,
+    batch_size: int = 1,
+    delete_messages: bool = True,
+    stripped: bool = False,
+):
     """
     Read queue with itemsto be inserted and send the items
     to ES.
@@ -123,24 +136,22 @@ def bulk_process_insert_queue(es_client, queue: str,
     items = list()
     for msg in sqs_messages(queue):
 
-        receipts.append(msg['ReceiptHandle'])
-        items.append(msg['stac_item'])
+        receipts.append(msg["ReceiptHandle"])
+        items.append(msg["stac_item"])
 
         processed_messages += 1
         if processed_messages == batch_size:
             break
 
-    bulk_create_document_in_index(es_client=es_client,
-                                  stac_items=items,
-                                  update_if_exists=True,
-                                  stripped=stripped)
+    bulk_create_document_in_index(
+        es_client=es_client, stac_items=items, update_if_exists=True, stripped=stripped
+    )
 
     # Remove messages from queue
     if delete_messages:
         for receipt in receipts:
-            SQS_CLIENT.delete_message(
-                QueueUrl=queue,
-                ReceiptHandle=receipt)
+            SQS_CLIENT.delete_message(QueueUrl=queue, ReceiptHandle=receipt)
+
 
 def parse_datetime(dtime: str):
     """
@@ -158,13 +169,14 @@ def parse_datetime(dtime: str):
     if not dtime:
         return None, None
 
-    fields = dtime.split('/')
+    fields = dtime.split("/")
     assert len(fields) < 3 and fields, "Can't parse " + dtime
     start = fields[0]
     end = None
     if len(fields) == 2:
         end = fields[1]
     return start, end
+
 
 def parse_bbox(bbox: str):
     """
@@ -175,15 +187,21 @@ def parse_bbox(bbox: str):
     :rtype: list
     """
 
-    els = bbox.split(',')
+    els = bbox.split(",")
     bbox_l = list()
     bbox_l.append([float(els[0]), float(els[1])])
     bbox_l.append([float(els[2]), float(els[3])])
     return bbox_l
 
-def es_connect(endpoint: str, port: int,
-               use_ssl: bool = True, verify_certs: bool = True,
-               http_auth=None, timeout: int = 60):
+
+def es_connect(  # pylint: disable=too-many-arguments
+    endpoint: str,
+    port: int,
+    use_ssl: bool = True,
+    verify_certs: bool = True,
+    http_auth=None,
+    timeout: int = 60,
+):
     """
     Connects to ES endpoint, returns Elasticsarch
     low level client.
@@ -195,18 +213,18 @@ def es_connect(endpoint: str, port: int,
     :rtype: class Elasticsearch
     """
 
-    es_client = Elasticsearch(hosts=[{'host':endpoint,
-                                      'port':port}],
-                              use_ssl=use_ssl,
-                              verify_certs=verify_certs,
-                              connection_class=RequestsHttpConnection,
-                              http_auth=http_auth,
-                              timeout=timeout)
+    es_client = Elasticsearch(
+        hosts=[{"host": endpoint, "port": port}],
+        use_ssl=use_ssl,
+        verify_certs=verify_certs,
+        connection_class=RequestsHttpConnection,
+        http_auth=http_auth,
+        timeout=timeout,
+    )
     return es_client
 
 
-def create_stac_index(es_client, mapping_name: str = "whole",
-                      timeout: int = 30):
+def create_stac_index(es_client, mapping_name: str = "whole", timeout: int = 30):
     """
     Create STAC index.
 
@@ -220,8 +238,9 @@ def create_stac_index(es_client, mapping_name: str = "whole",
     :param timeout int: timeout in seconds
     """
 
-    assert mapping_name in ("whole", "restricted"), \
+    assert mapping_name in ("whole", "restricted"), (
         "Unrecognized mapping name, " + mapping_name
+    )
 
     # Check for geometry precision and impact on indexing performance
     # http://teknosrc.com/elasticsearch-geo-shape-slow-indexing-performance-solved/
@@ -230,7 +249,9 @@ def create_stac_index(es_client, mapping_name: str = "whole",
     # @todo this index selection turns out to be not necessary, remove
 
     mapping = dict()
-    mapping['whole'] = '''
+    mapping[
+        "whole"
+    ] = """
 {
     "mappings": {
         "_doc": {
@@ -255,9 +276,11 @@ def create_stac_index(es_client, mapping_name: str = "whole",
         }
     }
 }
-'''
+"""
 
-    mapping['restricted'] = '''
+    mapping[
+        "restricted"
+    ] = """
 {
     "mappings": {
         "_doc": {
@@ -282,16 +305,16 @@ def create_stac_index(es_client, mapping_name: str = "whole",
         }
     }
 }
-'''
+"""
 
-    es_client.indices.create(index='stac', body=mapping[mapping_name],
-                             request_timeout=timeout)
+    es_client.indices.create(
+        index="stac", body=mapping[mapping_name], request_timeout=timeout
+    )
 
-def bulk_create_document_in_index(es_client,
-                                  stac_items: list,
-                                  update_if_exists: bool = False,
-                                  stripped: bool = False,
-                                  timeout: int = 30):
+
+def bulk_create_document_in_index(
+    es_client, stac_items: list, update_if_exists: bool = False, stripped: bool = False,
+):
     """
     Create operation, bulk mode
     """
@@ -307,31 +330,34 @@ def bulk_create_document_in_index(es_client,
             dict_item = strip_stac_item(json.loads(item))
         if not update_if_exists:
             bulk_item = dict()
-            bulk_item['_type'] = '_doc'
-            bulk_item['_id'] = dict_item['id']
-            bulk_item['_op_type'] = 'create'
-            bulk_item['_index'] = 'stac'
-            bulk_item['_source'] = dict_item
+            bulk_item["_type"] = "_doc"
+            bulk_item["_id"] = dict_item["id"]
+            bulk_item["_op_type"] = "create"
+            bulk_item["_index"] = "stac"
+            bulk_item["_source"] = dict_item
             stac_updates.append(bulk_item)
         else:
             bulk_item = dict()
-            bulk_item['_type'] = '_doc'
-            bulk_item['_id'] = dict_item['id']
-            bulk_item['_op_type'] = 'update'
-            bulk_item['_index'] = 'stac'
-            bulk_item['doc'] = dict_item
-            bulk_item['upsert'] = dict_item
+            bulk_item["_type"] = "_doc"
+            bulk_item["_id"] = dict_item["id"]
+            bulk_item["_op_type"] = "update"
+            bulk_item["_index"] = "stac"
+            bulk_item["doc"] = dict_item
+            bulk_item["upsert"] = dict_item
             stac_updates.append(bulk_item)
 
     success, _ = bulk(es_client, stac_updates)
 
     return success
 
-def create_document_in_index(es_client,
-                             stac_item: str,
-                             update_if_exists: bool = False,
-                             stripped: bool = False,
-                             timeout: int = 30):
+
+def create_document_in_index(
+    es_client,
+    stac_item: str,
+    update_if_exists: bool = False,
+    stripped: bool = False,
+    timeout: int = 30,
+):
     """
     Create document in STAC index
 
@@ -346,19 +372,34 @@ def create_document_in_index(es_client,
         item = strip_stac_item(json.loads(stac_item))
 
     if not update_if_exists:
-        es_client.create(index='stac', id=item['id'],
-                         body=item, doc_type='_doc',
-                         request_timeout=timeout)
+        es_client.create(
+            index="stac",
+            id=item["id"],
+            body=item,
+            doc_type="_doc",
+            request_timeout=timeout,
+        )
     else:
         document = dict()
-        document['doc'] = item
-        document['doc_as_upsert'] = True
-        es_client.update(index='stac', id=document['doc']['id'],
-                         body=document, doc_type='_doc',
-                         request_timeout=timeout)
+        document["doc"] = item
+        document["doc_as_upsert"] = True
+        es_client.update(
+            index="stac",
+            id=document["doc"]["id"],
+            body=document,
+            doc_type="_doc",
+            request_timeout=timeout,
+        )
 
-def stac_search(es_client, start_date: str = None, end_date: str = None,
-                bbox: list = None, limit: int = 10, page: int = 1):
+
+def stac_search(  # pylint: disable=too-many-arguments
+    es_client,
+    start_date: str = None,
+    end_date: str = None,
+    bbox: list = None,
+    limit: int = 10,
+    page: int = 1,
+):
     """
     Search STAC items
 
@@ -371,16 +412,13 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     :param page int: page number starting from 1
     :rtype: es.Search
     :return: built query
-    """
 
-    # @todo include support for third coordinate in bbox
-
-    """
     query = {
         "query": {
             "bool": {
                 "must": {
-                    "range": {"properties.datetime": {"gte": "2014-10-21T20:03:12.963", "lte": "2018-11-24T20:03:12.963"}}
+                    "range": {"properties.datetime": {"gte": "2014-10-21T20:03:12.963",
+                                                      "lte": "2018-11-24T20:03:12.963"}}
                 },
                 "filter": {
                     "geo_shape": {
@@ -399,36 +437,41 @@ def stac_search(es_client, start_date: str = None, end_date: str = None,
     res = es_client.search(index='stac',
                            doc_type='_doc',
                            body=query)
-
     """
 
-    search = Search(using=es_client, index='stac', doc_type='_doc')
+    # @todo include support for third coordinate in bbox
+
+    search = Search(using=es_client, index="stac", doc_type="_doc")
     # https://stackoverflow.com/questions/39263663/elasticsearch-dsl-py-query-formation
     query = search.query()
     if start_date or end_date:
-        date_range = dict()
-        date_range['properties.datetime'] = dict()
+        date_range: Dict[str, Dict[str, str]] = dict()
+        date_range["properties.datetime"] = dict()
         if start_date:
-            date_range['properties.datetime']['gte'] = start_date
+            date_range["properties.datetime"]["gte"] = start_date
         if end_date:
-            date_range['properties.datetime']['lte'] = end_date
+            date_range["properties.datetime"]["lte"] = end_date
         query = search.query("range", **date_range)
     if bbox:
-        query = query.filter("geo_shape",
-                             geometry={"shape": {"type": "envelope",
-                                                 "coordinates" : bbox},
-                                       "relation": "intersects"})
+        query = query.filter(
+            "geo_shape",
+            geometry={
+                "shape": {"type": "envelope", "coordinates": bbox},
+                "relation": "intersects",
+            },
+        )
 
-    query = query.sort('_id')
-    #query = query.query(Q("multi_match",
+    query = query.sort("_id")
+    # query = query.query(Q("multi_match",
     #                      query="aa",
     #                      fields=['properties.provider']))
-    #query = query.query(Q("match",
+    # query = query.query(Q("match",
     #                      properties__datetime="2017-05-28T09:01:17Z"))
-    #query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
+    # query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
 
-    #print(json.dumps(query.to_dict(), indent=2))
-    return query[(page - 1) * limit:page * limit]
+    # print(json.dumps(query.to_dict(), indent=2))
+    return query[(page - 1) * limit : page * limit]
+
 
 def process_intersects_filter(dsl_query, geometry: dict):
     """
@@ -441,15 +484,18 @@ def process_intersects_filter(dsl_query, geometry: dict):
     :return: DSL extended with query parameters
     """
 
-    dsl_query = dsl_query.\
-                filter("geo_shape",
-                       geometry={"shape":
-                                 {"type":
-                                  geometry["geometry"]["type"],
-                                  "coordinates":
-                                  geometry["geometry"]["coordinates"]},
-                                 "relation": "intersects"})
+    dsl_query = dsl_query.filter(
+        "geo_shape",
+        geometry={
+            "shape": {
+                "type": geometry["geometry"]["type"],
+                "coordinates": geometry["geometry"]["coordinates"],
+            },
+            "relation": "intersects",
+        },
+    )
     return dsl_query
+
 
 def process_collections_filter(dsl_query, collections: list):
     """
@@ -463,10 +509,9 @@ def process_collections_filter(dsl_query, collections: list):
     """
 
     for collection in collections:
-        dsl_query = dsl_query.\
-            query(Q("match",
-                    **{"collection":collection}))
+        dsl_query = dsl_query.query(Q("match", **{"collection": collection}))
     return dsl_query
+
 
 def process_feature_filter(dsl_query, feature_ids: list):
     """
@@ -480,10 +525,9 @@ def process_feature_filter(dsl_query, feature_ids: list):
     """
 
     for feature_id in feature_ids:
-        dsl_query = dsl_query.\
-            query(Q("match",
-                    **{"id":feature_id}))
+        dsl_query = dsl_query.query(Q("match", **{"id": feature_id}))
     return dsl_query
+
 
 def process_query_extension(dsl_query, query_params: dict):
     """
@@ -499,50 +543,64 @@ def process_query_extension(dsl_query, query_params: dict):
     # https://stackoverflow.com/questions/43138089/elasticsearch-dsl-python-unpack-q-queries
     # key is the property being queried
     for key in query_params:
-        assert isinstance(query_params[key], dict), \
-            "Query prop must be a dictionary"
+        assert isinstance(query_params[key], dict), "Query prop must be a dictionary"
         for operator in query_params[key]:
-            if operator == 'eq':
-                dsl_query = dsl_query.\
-                            query(Q("match",
-                                    **{"properties."+key:query_params[key]\
-                                       [operator]}))
-            elif operator == 'neq':
-                dsl_query = dsl_query.\
-                            query(~Q("match", # pylint: disable=invalid-unary-operand-type
-                                     **{"properties."+key:query_params[key]\
-                                        [operator]}))
-            elif operator in ['gt', 'gte', 'lt', 'lte']:
-                dsl_query = dsl_query.\
-                            query(Q("range",
-                                    **{"properties."+key:{operator:\
-                                                          query_params[key]\
-                                                          [operator]}}))
-            elif operator == 'startsWith':
-                dsl_query = dsl_query.\
-                            query(Q("query_string",
-                                    **{"default_field":"properties."+key,
-                                       "query":query_params[key]\
-                                       [operator]+"*"}))
-            elif operator == 'endsWith':
-                dsl_query = dsl_query.\
-                            query(Q("query_string",
-                                    **{"default_field":"properties."+key,
-                                       "query":"*"+query_params[key]\
-                                       [operator]}))
-            elif operator == 'contains':
-                dsl_query = dsl_query.\
-                            query(Q("query_string",
-                                    **{"default_field":"properties."+key,
-                                       "query":"*"+query_params[key]\
-                                       [operator]+"*"}))
+            if operator == "eq":
+                dsl_query = dsl_query.query(
+                    Q("match", **{"properties." + key: query_params[key][operator]})
+                )
+            elif operator == "neq":
+                dsl_query = dsl_query.query(
+                    ~Q(  # pylint: disable=invalid-unary-operand-type
+                        "match", **{"properties." + key: query_params[key][operator]}
+                    )
+                )
+            elif operator in ["gt", "gte", "lt", "lte"]:
+                dsl_query = dsl_query.query(
+                    Q(
+                        "range",
+                        **{"properties." + key: {operator: query_params[key][operator]}}
+                    )
+                )
+            elif operator == "startsWith":
+                dsl_query = dsl_query.query(
+                    Q(
+                        "query_string",
+                        **{
+                            "default_field": "properties." + key,
+                            "query": query_params[key][operator] + "*",
+                        }
+                    )
+                )
+            elif operator == "endsWith":
+                dsl_query = dsl_query.query(
+                    Q(
+                        "query_string",
+                        **{
+                            "default_field": "properties." + key,
+                            "query": "*" + query_params[key][operator],
+                        }
+                    )
+                )
+            elif operator == "contains":
+                dsl_query = dsl_query.query(
+                    Q(
+                        "query_string",
+                        **{
+                            "default_field": "properties." + key,
+                            "query": "*" + query_params[key][operator] + "*",
+                        }
+                    )
+                )
             else:
-                raise RuntimeError("{op} is not a supported operator".\
-                                   format(op=operator))
-        #dsl_query = dsl_query.query(Q("match",
+                raise RuntimeError(
+                    "{op} is not a supported operator".format(op=operator)
+                )
+        # dsl_query = dsl_query.query(Q("match",
         #                              **{"properties."+key:query_params[key]}))
 
     return dsl_query
+
 
 def query_from_event(es_client, event):
     """
@@ -552,52 +610,60 @@ def query_from_event(es_client, event):
     :return: DSL query
     """
 
-    if event['httpMethod'] == 'GET':
+    if event["httpMethod"] == "GET":
         document = dict()
-        qsp = event['queryStringParameters']
+        qsp = event["queryStringParameters"]
         # @todo process query extension for GET
         if qsp:
-            document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
-            document['time'] = qsp.get('time', None)
-            document['limit'] = int(qsp.get('limit', '10'))
-            document['page'] = int(qsp.get('page', '1'))
+            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,-90,180,90"))
+            document["time"] = qsp.get("time", None)
+            document["limit"] = int(qsp.get("limit", "10"))
+            document["page"] = int(qsp.get("page", "1"))
         else:
-            document['bbox'] = parse_bbox('-180,-90,180,90')
-            document['time'] = None
-            document['limit'] = 10
-            document['page'] = 1
-    else: # POST
-        document = json.loads(event['body'])
+            document["bbox"] = parse_bbox("-180,-90,180,90")
+            document["time"] = None
+            document["limit"] = 10
+            document["page"] = 1
+    else:  # POST
+        document = json.loads(event["body"])
         # bbox is not mandatory
-        if document.get('bbox'):
-            document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
-                                [document['bbox'][2], document['bbox'][3]]]
+        if document.get("bbox"):
+            document["bbox"] = [
+                [document["bbox"][0], document["bbox"][1]],
+                [document["bbox"][2], document["bbox"][3]],
+            ]
         else:
-            document['bbox'] = None
-        document['limit'] = int(document.get('limit', '10'))
-        document['page'] = int(document.get('page', '1'))
-        #print(document)
+            document["bbox"] = None
+        document["limit"] = int(document.get("limit", "10"))
+        document["page"] = int(document.get("page", "1"))
+        # print(document)
 
     start, end = None, None
-    if document.get('time'):
-        start, end = parse_datetime(document['time'])
+    if document.get("time"):
+        start, end = parse_datetime(document["time"])
 
     # Build basic query object
-    query = stac_search(es_client=es_client,
-                        start_date=start, end_date=end,
-                        bbox=document['bbox'],
-                        limit=document['limit'],
-                        page=document['page'])
+    query = stac_search(
+        es_client=es_client,
+        start_date=start,
+        end_date=end,
+        bbox=document["bbox"],
+        limit=document["limit"],
+        page=document["page"],
+    )
     return query
 
-def create_stac_index_handler(event, context): # pylint: disable=unused-argument
+
+def create_stac_index_handler(event, context):  # pylint: disable=unused-argument
     """
     Create STAC elasticsearch index
     """
 
-    auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                               aws_region=os.environ['AWS_REGION'],
-                               aws_service='es')
+    auth = BotoAWSRequestsAuth(
+        aws_host=os.environ["ES_ENDPOINT"],
+        aws_region=os.environ["AWS_REGION"],
+        aws_service="es",
+    )
 
     # es_client = Elasticsearch(hosts=[{'host':os.environ['ES_ENDPOINT'],
     #                                'port':int(os.environ['ES_PORT'])}],
@@ -606,54 +672,66 @@ def create_stac_index_handler(event, context): # pylint: disable=unused-argument
     #                          http_auth=auth)
     # print(es_client.info())
 
-    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                           port=int(os.environ['ES_PORT']),
-                           http_auth=auth)
-    #print(es_client.info())
+    es_client = es_connect(
+        endpoint=os.environ["ES_ENDPOINT"],
+        port=int(os.environ["ES_PORT"]),
+        http_auth=auth,
+    )
+    # print(es_client.info())
     create_stac_index(es_client)
 
-def create_documents_handler(event,
-                             context):  # pylint: disable=unused-argument
+
+def create_documents_handler(event, context):  # pylint: disable=unused-argument
     """
     Include document in index
     """
 
-    global ES_CLIENT # pylint: disable=global-statement
+    global ES_CLIENT  # pylint: disable=global-statement
     if not ES_CLIENT:
         print("Creating ES connection")
-        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                                   aws_region=os.environ['AWS_REGION'],
-                                   aws_service='es')
-        ES_CLIENT = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                               port=int(os.environ['ES_PORT']),
-                               http_auth=auth)
-    if 'queue' in event:
+        auth = BotoAWSRequestsAuth(
+            aws_host=os.environ["ES_ENDPOINT"],
+            aws_region=os.environ["AWS_REGION"],
+            aws_service="es",
+        )
+        ES_CLIENT = es_connect(
+            endpoint=os.environ["ES_ENDPOINT"],
+            port=int(os.environ["ES_PORT"]),
+            http_auth=auth,
+        )
+    if "queue" in event:
         # Read STAC items from queue
-        for _ in range(int(os.environ['BULK_CALLS'])):
-            #process_insert_queue(es_client=es_client,
+        for _ in range(int(os.environ["BULK_CALLS"])):
+            # process_insert_queue(es_client=es_client,
             #                     queue=event['queue'],
             #                     delete_messages=False)
-            bulk_process_insert_queue(es_client=ES_CLIENT,
-                                      queue=event['queue'],
-                                      delete_messages=True,
-                                      batch_size=int(os.environ['BULK_SIZE']),
-                                      stripped='ES_STRIPPED' in os.environ)
-    elif 'Records' in event:
+            bulk_process_insert_queue(
+                es_client=ES_CLIENT,
+                queue=event["queue"],
+                delete_messages=True,
+                batch_size=int(os.environ["BULK_SIZE"]),
+                stripped="ES_STRIPPED" in os.environ,
+            )
+    elif "Records" in event:
         # Lambda called from SQS trigger
         stac_items = list()
-        for record in event['Records']:
-            #print(json.dumps(record, indent=2))
-            stac_items.append(json.loads(record['body'])['Message'])
-        bulk_create_document_in_index(es_client=ES_CLIENT,
-                                      stac_items=stac_items,
-                                      update_if_exists=True,
-                                      stripped='ES_STRIPPED' in os.environ)
+        for record in event["Records"]:
+            # print(json.dumps(record, indent=2))
+            stac_items.append(json.loads(record["body"])["Message"])
+        bulk_create_document_in_index(
+            es_client=ES_CLIENT,
+            stac_items=stac_items,
+            update_if_exists=True,
+            stripped="ES_STRIPPED" in os.environ,
+        )
 
-    #print(es_client.info())
-    #create_document_in_index(es_client)
+    # print(es_client.info())
+    # create_document_in_index(es_client)
 
-def stac_search_endpoint_handler(event,
-                                 context): # pylint: disable=unused-argument
+
+def stac_search_endpoint_handler(
+    event, context
+):  # pylint: disable=unused-argument, too-many-branches
     """
     Lambda entry point
     """
@@ -661,79 +739,89 @@ def stac_search_endpoint_handler(event,
     # @todo common code with WFS3 {collectionId/items} endpoint, unify
 
     # Check for local development or production environment
-    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
-        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                                   aws_region=os.environ['AWS_REGION'],
-                                   aws_service='es')
+    if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
+        auth = BotoAWSRequestsAuth(
+            aws_host=os.environ["ES_ENDPOINT"],
+            aws_region=os.environ["AWS_REGION"],
+            aws_service="es",
+        )
     else:
         auth = None
 
-    #print(os.environ['ES_ENDPOINT'])
-    #print(os.environ['ES_PORT'])
-    #print(os.environ['ES_SSL'])
-    #print(auth)
-    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                           port=int(os.environ['ES_PORT']),
-                           use_ssl=(auth is not None),
-                           verify_certs=(auth is not None),
-                           http_auth=auth)
-    #print(es_client)
-    #print("Checking ES connecion")
-    #print(es_client.ping())
-    #print("Checking ES connecion end")
+    # print(os.environ['ES_ENDPOINT'])
+    # print(os.environ['ES_PORT'])
+    # print(os.environ['ES_SSL'])
+    # print(auth)
+    es_client = es_connect(
+        endpoint=os.environ["ES_ENDPOINT"],
+        port=int(os.environ["ES_PORT"]),
+        use_ssl=(auth is not None),
+        verify_certs=(auth is not None),
+        http_auth=auth,
+    )
+    # print(es_client)
+    # print("Checking ES connecion")
+    # print(es_client.ping())
+    # print("Checking ES connecion end")
 
-    #print(json.dumps(event, indent=2))
-    if event['httpMethod'] == 'GET':
+    # print(json.dumps(event, indent=2))
+    if event["httpMethod"] == "GET":
         document = dict()
-        qsp = event['queryStringParameters']
+        qsp = event["queryStringParameters"]
         # @todo process query extension for GET
         if qsp:
-            document['bbox'] = parse_bbox(qsp.get('bbox', '-180,-90,180,90'))
-            document['time'] = qsp.get('time', None)
-            document['limit'] = int(qsp.get('limit', '10'))
-            document['page'] = int(qsp.get('page', '1'))
+            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,-90,180,90"))
+            document["time"] = qsp.get("time", None)
+            document["limit"] = int(qsp.get("limit", "10"))
+            document["page"] = int(qsp.get("page", "1"))
         else:
-            document['bbox'] = parse_bbox('-180,-90,180,90')
-            document['time'] = None
-            document['limit'] = 10
-            document['page'] = 1
-    else: # POST
-        document = json.loads(event['body'])
+            document["bbox"] = parse_bbox("-180,-90,180,90")
+            document["time"] = None
+            document["limit"] = 10
+            document["page"] = 1
+    else:  # POST
+        document = json.loads(event["body"])
         # bbox is not mandatory
-        if document.get('bbox'):
-            document['bbox'] = [[document['bbox'][0], document['bbox'][1]],
-                                [document['bbox'][2], document['bbox'][3]]]
+        if document.get("bbox"):
+            document["bbox"] = [
+                [document["bbox"][0], document["bbox"][1]],
+                [document["bbox"][2], document["bbox"][3]],
+            ]
         else:
-            document['bbox'] = None
-        document['limit'] = int(document.get('limit', '10'))
-        document['page'] = int(document.get('page', '1'))
-        #print(document)
+            document["bbox"] = None
+        document["limit"] = int(document.get("limit", "10"))
+        document["page"] = int(document.get("page", "1"))
+        # print(document)
 
     start, end = None, None
-    if document.get('time'):
-        start, end = parse_datetime(document['time'])
+    if document.get("time"):
+        start, end = parse_datetime(document["time"])
 
     # Build basic query object
-    query = stac_search(es_client=es_client,
-                        start_date=start, end_date=end,
-                        bbox=document['bbox'],
-                        limit=document['limit'],
-                        page=document['page'])
+    query = stac_search(
+        es_client=es_client,
+        start_date=start,
+        end_date=end,
+        bbox=document["bbox"],
+        limit=document["limit"],
+        page=document["page"],
+    )
 
     # Process 'query' extension
-    if document.get('query'):
-        query = process_query_extension(dsl_query=query,
-                                        query_params=document['query'])
+    if document.get("query"):
+        query = process_query_extension(dsl_query=query, query_params=document["query"])
 
     # Process 'intersects' filter
-    if document.get('intersects'):
-        query = process_intersects_filter(dsl_query=query,
-                                          geometry=document['intersects'])
+    if document.get("intersects"):
+        query = process_intersects_filter(
+            dsl_query=query, geometry=document["intersects"]
+        )
 
     # Process 'collections' filter
-    if document.get('collections'):
-        query = process_collections_filter(dsl_query=query,
-                                           collections=document['collections'])
+    if document.get("collections"):
+        query = process_collections_filter(
+            dsl_query=query, collections=document["collections"]
+        )
 
     # Execute query
     res = query.execute()
@@ -745,98 +833,105 @@ def stac_search_endpoint_handler(event,
         item_dict = item.to_dict()
         # If s3_key is present then we recover the original item from
         # the STAC bucket
-        if 's3_key' in item_dict:
-            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
-                                                                'STAC_BUCKET'],
-                                              key=item_dict['s3_key'])
+        if "s3_key" in item_dict:
+            item_dict = stac_item_from_s3_key(
+                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+            )
         results["features"].append(item_dict)
 
     retmsg = {
-        'statusCode': '200',
-        'body': json.dumps(results, indent=2),
-        'headers': {
-            'Content-Type': 'application/json',
-        }
+        "statusCode": "200",
+        "body": json.dumps(results, indent=2),
+        "headers": {"Content-Type": "application/json",},
     }
 
     return retmsg
 
-def wfs3_collections_endpoint_handler(event, context):  # pylint: disable=unused-argument
+
+def wfs3_collections_endpoint_handler(
+    event, context
+):  # pylint: disable=unused-argument
     """
     Lambda entry point serving WFS3 collections requests
     """
 
     collections = dict()
-    collections['collections'] = list()
-    collections['links'] = list()
+    collections["collections"] = list()
+    collections["links"] = list()
     cids = get_collection_ids()
     for cid in cids:
-        collections['collections'].\
-            append(static_to_api_collection(collection=\
-                                            stac_item_from_s3_key(bucket=\
-                                                                  os.environ['CBERS_STAC_BUCKET'],
-                                                                  key=get_collection_s3_key(cid)),
-                                            event=event))
+        collections["collections"].append(
+            static_to_api_collection(
+                collection=stac_item_from_s3_key(
+                    bucket=os.environ["CBERS_STAC_BUCKET"],
+                    key=get_collection_s3_key(cid),
+                ),
+                event=event,
+            )
+        )
     retmsg = {
-        'statusCode': '200',
-        'body': json.dumps(collections,
-                           indent=2),
-        'headers': {
-            'Content-Type': 'application/json',
-        }
+        "statusCode": "200",
+        "body": json.dumps(collections, indent=2),
+        "headers": {"Content-Type": "application/json",},
     }
 
     return retmsg
 
-def wfs3_collectionid_endpoint_handler(event,
-                                       context):  # pylint: disable=unused-argument
+
+def wfs3_collectionid_endpoint_handler(
+    event, context
+):  # pylint: disable=unused-argument
     """
     Lambda entry point serving WFS3 collection/{collectionId} requests
     """
 
-    cid = event['pathParameters']['collectionId']
-    collection = stac_item_from_s3_key(bucket=os.environ['CBERS_STAC_BUCKET'],
-                                       key=get_collection_s3_key(cid))
+    cid = event["pathParameters"]["collectionId"]
+    collection = stac_item_from_s3_key(
+        bucket=os.environ["CBERS_STAC_BUCKET"], key=get_collection_s3_key(cid)
+    )
     retmsg = {
-        'statusCode': '200',
-        'body': json.dumps(static_to_api_collection(collection=collection,
-                                                    event=event),
-                           indent=2),
-        'headers': {
-            'Content-Type': 'application/json',
-        }
+        "statusCode": "200",
+        "body": json.dumps(
+            static_to_api_collection(collection=collection, event=event), indent=2
+        ),
+        "headers": {"Content-Type": "application/json",},
     }
 
     return retmsg
 
-def wfs3_collectionid_items_endpoint_handler(event,
-                                             context):  # pylint: disable=unused-argument
+
+def wfs3_collectionid_items_endpoint_handler(
+    event, context
+):  # pylint: disable=unused-argument
     """
     Lambda entry point serving WFS3 collection/{collectionId}/items requests
     """
 
     # Check for local development or production environment
-    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
-        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                                   aws_region=os.environ['AWS_REGION'],
-                                   aws_service='es')
+    if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
+        auth = BotoAWSRequestsAuth(
+            aws_host=os.environ["ES_ENDPOINT"],
+            aws_region=os.environ["AWS_REGION"],
+            aws_service="es",
+        )
     else:
         auth = None
 
-    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                           port=int(os.environ['ES_PORT']),
-                           use_ssl=(auth is not None),
-                           verify_certs=(auth is not None),
-                           http_auth=auth)
+    es_client = es_connect(
+        endpoint=os.environ["ES_ENDPOINT"],
+        port=int(os.environ["ES_PORT"]),
+        use_ssl=(auth is not None),
+        verify_certs=(auth is not None),
+        http_auth=auth,
+    )
 
-    cid = event['pathParameters']['collectionId']
+    cid = event["pathParameters"]["collectionId"]
 
     # Build basic query object
     query = query_from_event(es_client=es_client, event=event)
 
     # Process 'collections' filter
-    query = process_collections_filter(dsl_query=query,
-                                       collections=[cid])
+    query = process_collections_filter(dsl_query=query, collections=[cid])
 
     # Execute query
     res = query.execute()
@@ -848,52 +943,54 @@ def wfs3_collectionid_items_endpoint_handler(event,
         item_dict = item.to_dict()
         # If s3_key is present then we recover the original item from
         # the STAC bucket
-        if 's3_key' in item_dict:
-            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
-                                                                'STAC_BUCKET'],
-                                              key=item_dict['s3_key'])
+        if "s3_key" in item_dict:
+            item_dict = stac_item_from_s3_key(
+                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+            )
         results["features"].append(item_dict)
 
     retmsg = {
-        'statusCode': '200',
-        'body': json.dumps(results, indent=2),
-        'headers': {
-            'Content-Type': 'application/json',
-        }
+        "statusCode": "200",
+        "body": json.dumps(results, indent=2),
+        "headers": {"Content-Type": "application/json",},
     }
     return retmsg
 
-def wfs3_collectionid_featureid_endpoint_handler(event,
-                                                 context):  # pylint: disable=unused-argument
+
+def wfs3_collectionid_featureid_endpoint_handler(
+    event, context
+):  # pylint: disable=unused-argument
     """
     Lambda entry point serving WFS3 collection/{collectionId}/items/{featureId} requests
     """
 
     # Check for local development or production environment
-    if os.environ['ES_SSL'].lower() in ['y', 'yes', 't', 'true']:
-        auth = BotoAWSRequestsAuth(aws_host=os.environ['ES_ENDPOINT'],
-                                   aws_region=os.environ['AWS_REGION'],
-                                   aws_service='es')
+    if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
+        auth = BotoAWSRequestsAuth(
+            aws_host=os.environ["ES_ENDPOINT"],
+            aws_region=os.environ["AWS_REGION"],
+            aws_service="es",
+        )
     else:
         auth = None
 
-    es_client = es_connect(endpoint=os.environ['ES_ENDPOINT'],
-                           port=int(os.environ['ES_PORT']),
-                           use_ssl=(auth is not None),
-                           verify_certs=(auth is not None),
-                           http_auth=auth)
+    es_client = es_connect(
+        endpoint=os.environ["ES_ENDPOINT"],
+        port=int(os.environ["ES_PORT"]),
+        use_ssl=(auth is not None),
+        verify_certs=(auth is not None),
+        http_auth=auth,
+    )
 
-    cid = event['pathParameters']['collectionId']
-    fid = event['pathParameters']['featureId']
+    cid = event["pathParameters"]["collectionId"]
+    fid = event["pathParameters"]["featureId"]
 
     # Build basic query object
     query = query_from_event(es_client=es_client, event=event)
 
     # Process filters
-    query = process_collections_filter(dsl_query=query,
-                                       collections=[cid])
-    query = process_feature_filter(dsl_query=query,
-                                   feature_ids=[fid])
+    query = process_collections_filter(dsl_query=query, collections=[cid])
+    query = process_feature_filter(dsl_query=query, feature_ids=[fid])
 
     # Execute query
     res = query.execute()
@@ -905,17 +1002,15 @@ def wfs3_collectionid_featureid_endpoint_handler(event,
         item_dict = item.to_dict()
         # If s3_key is present then we recover the original item from
         # the STAC bucket
-        if 's3_key' in item_dict:
-            item_dict = stac_item_from_s3_key(bucket=os.environ['CBERS_'\
-                                                                'STAC_BUCKET'],
-                                              key=item_dict['s3_key'])
+        if "s3_key" in item_dict:
+            item_dict = stac_item_from_s3_key(
+                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+            )
         results["features"].append(item_dict)
 
     retmsg = {
-        'statusCode': '200',
-        'body': json.dumps(results, indent=2),
-        'headers': {
-            'Content-Type': 'application/json',
-        }
+        "statusCode": "200",
+        "body": json.dumps(results, indent=2),
+        "headers": {"Content-Type": "application/json",},
     }
     return retmsg
