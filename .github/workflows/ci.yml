@@ -12,12 +12,16 @@ jobs:
 
     steps:
 
-      # Hack to use act
-      # https://github.com/nektos/act/issues/251#issuecomment-706412948
+      # Hacks (act, ES on localstack)
       - run: |
           # Hack to get setup-python to work on act
+          # https://github.com/nektos/act/issues/251#issuecomment-706412948
           if [ ! -f "/etc/lsb-release" ] ; then
             echo "DISTRIB_RELEASE=18.04" > /etc/lsb-release
+          fi
+          # Hack needed for ES to start
+          if [ ! -d "/tmp/localstack/es_backup" ] ; then
+            mkdir -p /tmp/localstack/es_backup
           fi
 
       - uses: actions/checkout@v2
@@ -58,11 +62,11 @@ jobs:
         run: |
           tox -e py || (cd test && docker-compose logs && false)
 
-      # Show localstack logs after testing
-      - name: Show localstack logs
-        # logs are not shown in local testing using act
-        if: github.actor != 'nektos/act'
-        run: cd test && docker-compose logs
+      # # Show localstack logs after testing
+      # - name: Show localstack logs
+      #   # logs are not shown in local testing using act
+      #   if: github.actor != 'nektos/act'
+      #   run: cd test && docker-compose logs
 
       - name: Upload Results
         if: success()

@@ -33,6 +33,7 @@ extra_reqs = {
         # Used in process_new_scene_queue
         "utm",
     ],
+    "deploy": ["aws-cdk.core", "aws-cdk.aws-sqs",],
 }
 
 setup(
