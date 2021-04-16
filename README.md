@@ -1,6 +1,6 @@
 # cbers-2-stac
 
-[![CircleCI](https://circleci.com/gh/fredliporace/cbers-2-stac.svg?style=svg)](https://circleci.com/gh/fredliporace/cbers-2-stac)
+![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=dev)
 
 Create and keep up-to-date a [STAC](https://github.com/radiantearth/stac-spec/tree/v0.7.0) static catalog for [CBERS-4 images on AWS](https://registry.opendata.aws/cbers/) and serve its contents through the STAC API.
 

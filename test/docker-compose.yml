@@ -9,7 +9,7 @@ services:
       - "4566:4566"
       # This is the Elasticsearch port
       - "4571:4571"
-      - "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
+      #- "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
     environment:
       - SERVICES=sqs,s3,sns,lambda,cloudwatch,dynamodb,es
       - DEBUG=1
