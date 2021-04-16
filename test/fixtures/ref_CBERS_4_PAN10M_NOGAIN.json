@@ -1,9 +1,9 @@
 {
   "stac_version": "1.0.0-rc.2",
   "stac_extensions": [
-    "projection",
-    "view",
-    "eo"
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
   ],
   "id": "CBERS_4_PAN10M_20160322_156_117_L2",
   "type": "Feature",

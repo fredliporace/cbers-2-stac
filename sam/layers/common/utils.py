@@ -84,14 +84,16 @@ CBERS_MISSIONS = {
     },
 }
 
-# Ugh...using this while there are acess as both CBERS-4
-# and CBERS4, refactor and unify keys
+# Ugh...using this while there are accesses as both CBERS-4
+# and CBERS4, refactor and unify keys...someday
 CBERS_MISSIONS["CBERS4"] = CBERS_MISSIONS["CBERS-4"]
 CBERS_MISSIONS["CBERS4A"] = CBERS_MISSIONS["CBERS-4A"]
 
 BASE_COLLECTION = OrderedDict(
     {
-        "stac_extensions": ["item-assets"],
+        "stac_extensions": [
+            "https://stac-extensions.github.io/item-assets/v1.0.0/schema.json"
+        ],
         "license": "CC-BY-SA-3.0",
         "providers": [
             {

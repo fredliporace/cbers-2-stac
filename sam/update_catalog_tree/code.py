@@ -6,6 +6,7 @@ import re
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
+from typing import Any, Dict
 
 import boto3
 
@@ -173,7 +174,7 @@ def sqs_messages(queue):
         yield retd
 
 
-def get_base_collection(sat_mission: str, camera: str):
+def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     """
     Return the base collection for the camera.
 
@@ -210,11 +211,11 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         else:
             sat_mission = satellite
         stac_catalog = get_base_collection(sat_mission, camera)
-        stac_catalog = {**stac_catalog, **{"type": "Collection"}}
+        stac_catalog = {**{"type": "Collection"}, **stac_catalog}
 
     else:
         json_filename = "catalog.json"
-        stac_catalog = {**BASE_CATALOG, **{"type": "Catalog"}}
+        stac_catalog = {**{"type": "Catalog"}, **BASE_CATALOG}
 
     name = satellite
     description = name

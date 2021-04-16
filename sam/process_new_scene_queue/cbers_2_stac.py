@@ -288,7 +288,11 @@ def build_stac_item_keys(cbers, buckets):
     stac_item = OrderedDict()
 
     stac_item["stac_version"] = STAC_VERSION
-    stac_item["stac_extensions"] = ["projection", "view", "eo"]
+    stac_item["stac_extensions"] = [
+        "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    ]
     stac_item["id"] = "CBERS_%s_%s_%s_" "%03d_%03d_L%s" % (
         cbers["number"],
         cbers["sensor"],
