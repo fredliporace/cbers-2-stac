@@ -1,0 +1,8 @@
+# This is the original filelist in the directory.
+# A requirements.txt file must be created with updated
+# package versions and executed by the pip_on_lambdas.sh
+# script. This will be done when upgrading to CDK
+aws_requests_auth                  certifi-2018.11.29.dist-info  elasticsearch                  idna                __pycache__                urllib3
+aws_requests_auth-0.4.2.dist-info  chardet                       elasticsearch-6.2.0.dist-info  idna-2.8.dist-info  requests                   urllib3-1.22.dist-info
+bin                                chardet-3.0.4.dist-info       elasticsearch_dsl              __init__.py         requests-2.21.0.dist-info  urllib3-1.24.1.dist-info
+certifi                            dateutil                      es.py                          ipaddress.py        six.py

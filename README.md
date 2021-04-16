@@ -65,9 +65,9 @@ After the first deployment it is required to create the Elasticseach index by ex
 *Install*
 
 ```bash
-$ git clone git@github.com:fredliporace/cbers-2-stac.git
+$ git clone git@github.com:AMS-Kepler/cbers-2-stac.git
 $ cd cbers-2-stac
-$ pip install -e .[dev]
+$ pip install -e .[dev,test]
 ```
 
 *Git hooks*
@@ -76,4 +76,21 @@ This repo is set to use `pre-commit` to run *isort*, *pylint*, *pydocstring*, *b
 
 ```bash
 $ pre-commit install
+```
+
+*Testing*
+
+Requires localstack up to execute tests:
+
+```bash
+$ cd test && docker-compose up # Starts localstack
+```
+
+*Check CI integration testing before pushing*
+
+[https://github.com/nektos/act](act) may be used to test github actions locally. At the project's root directory:
+
+```bash
+$ act -j tests
+$ act -r -j tests # To keep docker containers' state
 ```

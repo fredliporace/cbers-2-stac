@@ -6,29 +6,32 @@ with open("README.md") as f:
     long_description = f.read()
 
 inst_reqs = [
-    "utm",
     "boto3",
-    "jsonschema==3.2.0",
+    "jsonschema",
 ]
 
 extra_reqs = {
-    "dev": [
+    "dev": ["awscli", "awscli-local",],
+    "test": [
         "importlib-metadata<2,>=0.12",  # This is required by tox 3.2.0
         "pytest",
         "pytest-cov",
         "pre-commit",
         "pylint",
-        "pystac[validation]==0.5.1",
+        "pystac[validation]==0.5.6",
         "tox",
         "docker",
         "retry",
-        "awscli",
-        "awscli-local",
         # The packages below are used by lambdas and need to be installed locally
         # for testing to work
-        "elasticsearch==6.2.0",
-        "elasticsearch-dsl==6.2.0",
-        "aws-requests-auth==0.4.2",
+        # "elasticsearch==6.2.0",
+        # "elasticsearch-dsl==6.2.0",
+        # "aws-requests-auth==0.4.2",
+        "elasticsearch",
+        "elasticsearch-dsl",
+        "aws-requests-auth",
+        # Used in process_new_scene_queue
+        "utm",
     ],
 }
 

@@ -4,3 +4,5 @@
 .\#*
 /cbers_2_stac.egg-info/
 /.mypy_cache/
+/.coverage
+/coverage.xml
