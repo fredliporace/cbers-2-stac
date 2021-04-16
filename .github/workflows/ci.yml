@@ -53,16 +53,16 @@ jobs:
 
       # Run tox using the version of Python in `PATH`
       # Always displays docker-compose logs for debugging
-      #   add || cd tests && docker-compose logs && false
+      #   add || (cd test && docker-compose logs && false)
       - name: Run Tox
         run: |
-          tox -e py
+          tox -e py || (cd test && docker-compose logs && false)
 
       # Show localstack logs after testing
       - name: Show localstack logs
         # logs are not shown in local testing using act
         if: github.actor != 'nektos/act'
-        run: cd tests && docker-compose logs
+        run: cd test && docker-compose logs
 
       - name: Upload Results
         if: success()
