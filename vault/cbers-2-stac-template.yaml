@@ -246,46 +246,51 @@ Resources:
   # SQS(with triggers)/Subscription start
   #################################################
 
-  NewScenesQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 385
-      RedrivePolicy:
-        deadLetterTargetArn:
-            "Fn::GetAtt":
-              - ProcessNewSceneQueueFunctionDLQ
-              - Arn
-        maxReceiveCount: 3
+  # CDK: new_scenes_queue
+  # NewScenesQueue:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
+  #     VisibilityTimeout: 385
+  #     RedrivePolicy:
+  #       deadLetterTargetArn:
+  #           "Fn::GetAtt":
+  #             - ProcessNewSceneQueueFunctionDLQ
+  #             - Arn
+  #       maxReceiveCount: 3
 
+  # CDK: new_scenes_queue subscribed to topic
   # This queue is subscribed to topics from all quicklooks,
-  NewMUXSceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook'
+  # NewMUXSceneSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt NewScenesQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook'
 
-  NewAWFISceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
+  # CDK: new_scenes_queue subscribed to topic
+  # NewAWFISceneSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt NewScenesQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook'
 
-  NewPAN10SceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
+  # CDK: new_scenes_queue subscribed to topic
+  # NewPAN10SceneSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt NewScenesQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook'
 
-  NewPAN5SceneSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt NewScenesQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
+  # CDK: new_scenes_queue subscribed to topic
+  # NewPAN5SceneSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt NewScenesQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: 'arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook'
 
   NewSceneQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
@@ -495,10 +500,11 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt ProcessNewSceneQueueFunctionDLQ.Arn
 
-  ProcessNewSceneQueueFunctionDLQ:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
+  # CDK: new_scenes_queue_dlq
+  # ProcessNewSceneQueueFunctionDLQ:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
 
   PopulateReconcileQueueFunction:
     Type: 'AWS::Serverless::Function'

@@ -33,7 +33,15 @@ extra_reqs = {
         # Used in process_new_scene_queue
         "utm",
     ],
-    "deploy": ["aws-cdk.core", "aws-cdk.aws-sqs",],
+    "deploy": [
+        "pydantic",
+        "aws-cdk.core",
+        "aws-cdk.aws-sqs",
+        "aws-cdk.aws-sns",
+        "aws-cdk.aws-sns-subscriptions",
+        "aws-cdk.aws-cloudwatch",
+        "aws-cdk.aws-cloudwatch-actions",
+    ],
 }
 
 setup(

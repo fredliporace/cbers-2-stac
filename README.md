@@ -24,21 +24,73 @@ A live version of the stack is deployed to AWS and serve its contents in:
   * WFS3 [endpoint](https://stac.amskepler.com/v07/).
   * STAC [endpoint](https://stac.amskepler.com/v07/stac/).
 
-## Development
+# Development
 
-### Environment
+# Development
 
-Developed and tested in CentOS8 with python 3.8.0
+## Install
 
-JAVA is required to execute elasticsearch under localstack.
-
-To start local AWS infrastructure required for tests run
+```bash
+$ git clone git@github.com:AMS-Kepler/cbers-2-stac.git
+$ cd cbers-2-stac
+$ pip install -e .[dev,test]
 ```
-(export DEBUG=1 && export SERVICES=es,sqs,dynamodb,s3 && export DATA_DIR=/tmp/localstack/data && calstack start
+
+## Git hooks
+
+This repo is set to use `pre-commit` to run *isort*, *pylint*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
+
+```bash
+$ pre-commit install
 ```
 
-### Deployment to AWS
+## Testing
 
+Requires localstack up to execute tests:
+
+```bash
+$ cd test && docker-compose up # Starts localstack
+```
+
+### Check CI integration testing before pushing*
+
+[https://github.com/nektos/act](act) may be used to test github actions locally. At the project's root directory:
+
+```bash
+$ act -j tests
+$ act -r -j tests # To keep docker containers' state
+```
+
+# Deployment to AWS
+
+Deployment uses AWS CDK.
+
+Requirements:
+* node.js 10.3.0 or later is required (13.0.0 through 13.6.0 are not supported)
+* AWS credentials configured
+
+To install and check AWS CDK:
+```bash
+$ npm install -g aws-cdk
+$ cdk --version
+
+$ cdk bootstrap # Deploys the CDK toolkit stack into an AWS environment
+
+# in specific region
+$ cdk bootstrap aws://${AWS_ACCOUNT_ID}/eu-central-1
+```
+
+```bash
+# Create a .env file in the project root directory and
+# configure. You may use .env.example as a guide
+
+# To list the available stacks
+$ cdk list
+
+$ cdk deploy cbers2stac-dev
+```
+
+<!---
 First you need to define two buckets:
 
 * STAC\_BUCKET, the bucket that will be populated with STAC files. This bucket currently needs to be named cbers-stac-VERSIONMAJOR-VERSIONMINOR, for instance, cbers-stac-1-0
@@ -59,38 +111,4 @@ To deploy the stack execute in the ./sam directory:
 ```
 
 After the first deployment it is required to create the Elasticseach index by executing the CreateElasticIndexFunction lambda with an empty payload input.
-
-# Development
-
-*Install*
-
-```bash
-$ git clone git@github.com:AMS-Kepler/cbers-2-stac.git
-$ cd cbers-2-stac
-$ pip install -e .[dev,test]
-```
-
-*Git hooks*
-
-This repo is set to use `pre-commit` to run *isort*, *pylint*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
-
-```bash
-$ pre-commit install
-```
-
-*Testing*
-
-Requires localstack up to execute tests:
-
-```bash
-$ cd test && docker-compose up # Starts localstack
-```
-
-*Check CI integration testing before pushing*
-
-[https://github.com/nektos/act](act) may be used to test github actions locally. At the project's root directory:
-
-```bash
-$ act -j tests
-$ act -r -j tests # To keep docker containers' state
-```
+--->

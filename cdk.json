@@ -1,4 +1,3 @@
-
 {
-    "app": "python3 stack/app.py"
+    "app": "(export PYTHONPATH=. && python stack/app.py)"
 }

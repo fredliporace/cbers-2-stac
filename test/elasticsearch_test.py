@@ -90,7 +90,7 @@ def es_client(request):
     for _ in range(0, 30):
         if client.ping():
             break
-        time.sleep(20)
+        time.sleep(2)
     assert client.ping()
 
     return client

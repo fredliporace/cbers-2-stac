@@ -7,3 +7,5 @@
 /.coverage
 /coverage.xml
 /.tox/
+/.env
+/cdk.out/
