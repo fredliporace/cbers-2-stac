@@ -7,7 +7,7 @@ import re
 
 import boto3
 
-from cbers2stac.process_new_scene_queue.cbers_2_stac import convert_inpe_to_stac
+from cbers2stac.layers.common.cbers_2_stac import convert_inpe_to_stac
 
 # CBERS metadata
 # @todo check if quicklook_pixel_size is being used

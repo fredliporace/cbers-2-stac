@@ -2,17 +2,17 @@
 
 # import json
 # import os
-# from test.conftest import create_lambda_layer_from_dir
+from test.conftest import create_lambda_layer_from_dir
 from typing import Any, Dict, Optional
 
+# from aws_cdk import aws_s3 as s3
+# from aws_cdk import aws_s3_notifications as s3n
 # from aws_cdk import aws_dynamodb as dynamodb
 # from aws_cdk import aws_events, aws_events_targets
 # from aws_cdk import aws_iam as iam
-# from aws_cdk import aws_lambda
-# from aws_cdk import aws_s3 as s3
-# from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
+from aws_cdk import aws_lambda
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
@@ -129,6 +129,42 @@ class CBERS2STACStack(core.Stack):
             id="CBPAN5M",
             topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook",
         ).add_subscription(sns_subscriptions.SqsSubscription(new_scenes_queue))
+
+        # Common utils lambda layer
+        create_lambda_layer_from_dir(
+            output_dir="./stack",
+            tag="common",
+            layer_dir="./cbers2stac/layers/common",
+            prefix="python",
+        )
+        common_layer_asset = aws_lambda.Code.asset("./stack/common.zip")
+        common_layer = aws_lambda.LayerVersion(
+            self,
+            "common_layer",
+            code=common_layer_asset,
+            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_7],
+            description="Common utils",
+        )
+
+        # Lambdas
+        lambdas = []
+        # self.lambdas_env_["DBTABLE"] = db_table.table_name
+        # self.lambdas_env_["working_bucket_name"] = working_bucket.bucket_name
+        # self.lambdas_env_["pds_bucket_name"] = pds_bucket_name
+
+        process_new_scene_lambda = aws_lambda.Function(
+            self,
+            "process_new_scene_lambda",
+            code=aws_lambda.Code.from_asset(path="cbers2stac/process_new_scene_queue"),
+            handler="code.handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment={**self.lambdas_env_},
+            timeout=core.Duration.seconds(55),
+            dead_letter_queue=process_new_scenes_queue_dlq,
+            layers=[common_layer],
+            description="Process new scenes from quicklook queue",
+        )
+        lambdas.append(process_new_scene_lambda)
 
 
 app = core.App()

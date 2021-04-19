@@ -9,3 +9,4 @@
 /.tox/
 /.env
 /cdk.out/
+/stack/common.zip
