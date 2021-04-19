@@ -13,12 +13,13 @@ Parameters:
 Globals:
   Function:
     Runtime: python3.8
-    Environment:
-      Variables:
-        CBERS_PDS_BUCKET: cbers-pds
-        CBERS_META_PDS_BUCKET: cbers-meta-pds
-        CBERS_STAC_BUCKET: !Ref STACBucket
-        DELETE_MESSAGES: 1
+    # CDK
+    # Environment:
+    #   Variables:
+    #     CBERS_PDS_BUCKET: cbers-pds
+    #     CBERS_META_PDS_BUCKET: cbers-meta-pds
+    #     CBERS_STAC_BUCKET: !Ref STACBucket
+    #     DELETE_MESSAGES: 1
 
 Resources:
 
@@ -89,8 +90,9 @@ Resources:
 
   # This is the public topic used to broadcast items
   # not generated in a reconcile operation
-  CBERSSTACItemTopic:
-    Type: 'AWS::SNS::Topic'
+  # CDK
+  # CBERSSTACItemTopic:
+  #   Type: 'AWS::SNS::Topic'
 
   CBERSSTACItemTopicPolicy:
     Type: AWS::SNS::TopicPolicy
@@ -134,8 +136,9 @@ Resources:
         - !Ref CBERSSTACItemTopic
 
   # This is the topic used for reconciling operations
-  ReconcileCBERSSTACItemTopic:
-    Type: 'AWS::SNS::Topic'
+  # CDK
+  # ReconcileCBERSSTACItemTopic:
+  #   Type: 'AWS::SNS::Topic'
   CBERSSTACItemTopicPolicy:
     Type: AWS::SNS::TopicPolicy
     Properties:
@@ -164,13 +167,14 @@ Resources:
       Topics:
         - !Ref ReconcileCBERSSTACItemTopic
 
-  AlarmTopic:
-    Type: AWS::SNS::Topic
-    Properties:
-      Subscription:
-        -
-          Endpoint: !Ref OperatorEmail
-          Protocol: "email"
+  # CDK
+  # AlarmTopic:
+  #   Type: AWS::SNS::Topic
+  #   Properties:
+  #     Subscription:
+  #       -
+  #         Endpoint: !Ref OperatorEmail
+  #         Protocol: "email"
 
   #################################################
   # SNS Topic End

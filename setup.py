@@ -41,7 +41,9 @@ extra_reqs = {
         "aws-cdk.aws-sns-subscriptions",
         "aws-cdk.aws-cloudwatch",
         "aws-cdk.aws-cloudwatch-actions",
-        "aws-cds.aws-lambda",
+        "aws-cdk.aws-lambda",
+        "aws-cdk.aws-s3",
+        "aws-cdk.aws-iam",
     ],
 }
 

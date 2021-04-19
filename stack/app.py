@@ -5,14 +5,14 @@
 from test.conftest import create_lambda_layer_from_dir
 from typing import Any, Dict, Optional
 
-# from aws_cdk import aws_s3 as s3
 # from aws_cdk import aws_s3_notifications as s3n
 # from aws_cdk import aws_dynamodb as dynamodb
 # from aws_cdk import aws_events, aws_events_targets
-# from aws_cdk import aws_iam as iam
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
+from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
+from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
@@ -70,14 +70,91 @@ class CBERS2STACStack(core.Stack):
         """Ctor."""
         super().__init__(scope, stack_id, description=description, *kwargs)
 
-        self.lambdas_env_.update(env)
+        # Parameters that will not typically change and thus
+        # are defined as fixed ENVs
+        self.lambdas_env_.update(
+            {
+                # The CBERS PDS bucket (COGs, metadata)
+                "CBERS_PDS_BUCKET": "cbers-pds",
+                # The CBERS metadata bucket (metadata only)
+                "CBERS_META_PDS_BUCKET": "cbers-meta-pds",
+                # If 1 then processed messages are deleted from queues
+                "DELETE_MESSAGES": "1",
+            }
+        )
 
+        # Internal topics
         # General alarm topic to signal problems in stack execution
         # and e-mail subscription
-        alarm_topic = sns.Topic(self, "AlarmTopic")
+        alarm_topic = sns.Topic(self, "alarm_topic")
         alarm_topic.add_subscription(
             sns_subscriptions.EmailSubscription(settings.operator_email)
         )
+        # Public STAC item topic for new STAC items
+        stac_item_topic = sns.Topic(self, "stac_item_topic")
+        sit_policy = iam.PolicyDocument(
+            assign_sids=True,
+            statements=[
+                iam.PolicyStatement(
+                    actions=["SNS:Subscribe", "SNS:Receive"],
+                    principals=[iam.AnyPrincipal()],
+                    resources=[stac_item_topic.topic_arn],
+                )
+            ],
+        )
+        sit_policy.add_statements(
+            iam.PolicyStatement(
+                actions=[
+                    "SNS:GetTopicAttributes",
+                    "SNS:SetTopicAttributes",
+                    "SNS:AddPermission",
+                    "SNS:RemovePermission",
+                    "SNS:DeleteTopic",
+                    "SNS:Subscribe",
+                    "SNS:ListSubscriptionsByTopic",
+                    "SNS:Publish",
+                    "SNS:Receive",
+                ],
+                principals=[iam.AccountPrincipal(self.account)],
+                resources=[stac_item_topic.topic_arn],
+            )
+        )
+        sns.TopicPolicy(
+            self,
+            "sns_public_topic_policy",
+            topics=[stac_item_topic],
+            policy_document=sit_policy,
+        )
+        # Reconcile topic, used internally for reconciliation operations
+        reconcile_stac_item_topic = sns.Topic(self, "reconcile_stac_item_topic")
+
+        # Update lambdas_env_ with environment options defined
+        # in settings
+        self.lambdas_env_.update(env)
+
+        # Lambdas list and permissions to be applied
+        lambda_perms = list()
+        lambdas = list()
+
+        # Create STAC bucket if not configured
+        if settings.stac_bucket_name:
+            # Use external STAC bucket name
+            self.lambdas_env_.update({"CBERS_STAC_BUCKET": settings.stac_bucket_name})
+        else:
+            # Create and use internal STAC bucket
+            stac_working_bucket = s3.Bucket(self, "stac_working_bucket")
+            self.lambdas_env_.update(
+                {"CBERS_STAC_BUCKET": stac_working_bucket.bucket_name}
+            )
+            lambda_perms.append(
+                iam.PolicyStatement(
+                    actions=["s3:PutObject", "s3:PutObjectAcl"],
+                    resources=[
+                        stac_working_bucket.bucket_arn,
+                        f"{stac_working_bucket.bucket_arn}/*",
+                    ],
+                )
+            )
 
         # General DLQs for lambdas
         general_dlq = self.create_queue("dead_letter_queue")
@@ -147,7 +224,6 @@ class CBERS2STACStack(core.Stack):
         )
 
         # Lambdas
-        lambdas = []
         # self.lambdas_env_["DBTABLE"] = db_table.table_name
         # self.lambdas_env_["working_bucket_name"] = working_bucket.bucket_name
         # self.lambdas_env_["pds_bucket_name"] = pds_bucket_name
@@ -158,13 +234,24 @@ class CBERS2STACStack(core.Stack):
             code=aws_lambda.Code.from_asset(path="cbers2stac/process_new_scene_queue"),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
-            environment={**self.lambdas_env_},
+            environment={
+                **self.lambdas_env_,
+                **{
+                    "SNS_TARGET_ARN": stac_item_topic.topic_arn,
+                    "SNS_RECONCILE_TARGET_ARN": reconcile_stac_item_topic.topic_arn,
+                },
+            },
             timeout=core.Duration.seconds(55),
             dead_letter_queue=process_new_scenes_queue_dlq,
             layers=[common_layer],
             description="Process new scenes from quicklook queue",
         )
         lambdas.append(process_new_scene_lambda)
+
+        # Common lambda permissions
+        for perm in lambda_perms:
+            for lambda_f in lambdas:
+                lambda_f.add_to_role_policy(perm)
 
 
 app = core.App()

@@ -14,6 +14,8 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     operator_email: str
     cost_center: Optional[str]
 
+    stac_bucket_name: Optional[str] = None
+
     additional_env: Dict[str, str] = {}
 
     class Config:  # pylint: disable=too-few-public-methods
