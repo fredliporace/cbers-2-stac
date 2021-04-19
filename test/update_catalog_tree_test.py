@@ -21,10 +21,10 @@ os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 # This import is here because the environment must be
 # set before importing. This may be changed by
 # using getters within update_catalog_tree
-from sam.layers.common.utils import (  # pylint: disable=wrong-import-position
+from cbers2stac.layers.common.utils import (  # pylint: disable=wrong-import-position
     STAC_VERSION,
 )
-from sam.update_catalog_tree.code import (  # pylint: disable=wrong-import-position
+from cbers2stac.update_catalog_tree.code import (  # pylint: disable=wrong-import-position
     base_stac_catalog,
     build_catalog_from_s3,
     get_catalog_info,

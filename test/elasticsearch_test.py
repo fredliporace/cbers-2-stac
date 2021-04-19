@@ -16,7 +16,7 @@ import pytest
 if "AWS_DEFAULT_REGION" not in os.environ:
     os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 
-from sam.elasticsearch.es import (  # pylint: disable=wrong-import-position
+from cbers2stac.elasticsearch.es import (  # pylint: disable=wrong-import-position
     es_connect,
     parse_bbox,
     parse_datetime,

@@ -10,13 +10,13 @@ import boto3
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
 
-from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch.helpers import bulk
-from sam.layers.common.utils import (
+from cbers2stac.layers.common.utils import (
     get_collection_ids,
     get_collection_s3_key,
     static_to_api_collection,
 )
+from elasticsearch import Elasticsearch, RequestsHttpConnection
+from elasticsearch.helpers import bulk
 
 SQS_CLIENT = boto3.client("sqs")
 S3 = boto3.resource("s3")

@@ -1,22 +1,25 @@
 """generate_catalog_levels_to_be_upated"""
 
 import os
+
 import boto3
 
-DB_CLIENT = boto3.client('dynamodb')
-SQS_CLIENT = boto3.client('sqs')
+DB_CLIENT = boto3.client("dynamodb")
+SQS_CLIENT = boto3.client("sqs")
+
 
 def get_catalog_levels(item):
     """
     Return the levels to be updated given a STAC item key
     """
     levels = list()
-    levels.append('/'.join(item.split('/')[:-1]))
-    levels.append('/'.join(item.split('/')[:-2]))
-    levels.append('/'.join(item.split('/')[:-3]))
+    levels.append("/".join(item.split("/")[:-1]))
+    levels.append("/".join(item.split("/")[:-2]))
+    levels.append("/".join(item.split("/")[:-3]))
     return levels
 
-class GenerateCatalogLevelsToBeUpdated():
+
+class GenerateCatalogLevelsToBeUpdated:
     """
     Reads DynamoDB input table for generated/updated STAC items
     and writes into output DynamoDB table the catalog levels
@@ -24,8 +27,16 @@ class GenerateCatalogLevelsToBeUpdated():
     Items are removed input table after being processed.
     """
 
-    def __init__(self, input_table, output_table, queue, limit=1000,
-                 iterations=100, sqs_client=None, db_client=None):
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        input_table,
+        output_table,
+        queue,
+        limit=1000,
+        iterations=100,
+        sqs_client=None,
+        db_client=None,
+    ):
         """
         Ctor.
         input_table(string): DynamoDB table with STAC items
@@ -40,7 +51,7 @@ class GenerateCatalogLevelsToBeUpdated():
         self._limit = limit
         self._iterations = iterations
         # Using ctors clients for local testing only
-        global DB_CLIENT, SQS_CLIENT
+        global DB_CLIENT, SQS_CLIENT  # pylint: disable=global-statement
         if sqs_client:
             SQS_CLIENT = sqs_client
         if db_client:
@@ -67,31 +78,31 @@ class GenerateCatalogLevelsToBeUpdated():
         """
         self._items.extend(items)
         for item in items:
-            #print(item['stacitem']['S'])
-            for level in get_catalog_levels(item['stacitem']['S']):
+            # print(item['stacitem']['S'])
+            for level in get_catalog_levels(item["stacitem"]["S"]):
                 self._levels_to_be_updated.add(level)
 
     def process(self):
         """
         Main processing
         """
-        response = DB_CLIENT.scan(
-            TableName=self._input_table,
-            Limit=self._limit)
-        self.__parse_items(response['Items'])
+        response = DB_CLIENT.scan(TableName=self._input_table, Limit=self._limit)
+        self.__parse_items(response["Items"])
         iterations = 1
-        while 'LastEvaluatedKey' in response and \
-              iterations <= self._iterations:
+        while "LastEvaluatedKey" in response and iterations <= self._iterations:
             response = DB_CLIENT.scan(
                 TableName=self._input_table,
                 Limit=self._limit,
-                ExclusiveStartKey=response['LastEvaluatedKey'])
-            self.__parse_items(response['Items'])
+                ExclusiveStartKey=response["LastEvaluatedKey"],
+            )
+            self.__parse_items(response["Items"])
             iterations += 1
-        #print(self._levels_to_be_updated)
-        print('Number of stacitems: {}'.format(len(self._items)))
-        print('Number of levels to be updated: {}'.format(len(self._levels_to_be_updated)))
-        print('Start sending SQS messages')
+        # print(self._levels_to_be_updated)
+        print("Number of stacitems: {}".format(len(self._items)))
+        print(
+            "Number of levels to be updated: {}".format(len(self._levels_to_be_updated))
+        )
+        print("Start sending SQS messages")
         # Update catalog level table and send prefix to catalog update queue
         entries = list()
         for level in self._levels_to_be_updated:
@@ -100,40 +111,38 @@ class GenerateCatalogLevelsToBeUpdated():
             # not used
             if self._output_table:
                 response = DB_CLIENT.put_item(
-                    TableName=self._output_table,
-                    Item={
-                        'catalog_level': {"S": level}})
+                    TableName=self._output_table, Item={"catalog_level": {"S": level}}
+                )
 
-            entries.append({'Id':str(len(entries)),
-                            'MessageBody':level})
+            entries.append({"Id": str(len(entries)), "MessageBody": level})
             # SQS_CLIENT.send_message(QueueUrl=self._queue,
             #                         MessageBody=level)
             if len(entries) == 10:
-                SQS_CLIENT.send_message_batch(QueueUrl=self._queue,
-                                              Entries=entries)
+                SQS_CLIENT.send_message_batch(QueueUrl=self._queue, Entries=entries)
                 entries.clear()
         if entries:
-            SQS_CLIENT.send_message_batch(QueueUrl=self._queue,
-                                          Entries=entries)
+            SQS_CLIENT.send_message_batch(QueueUrl=self._queue, Entries=entries)
             entries.clear()
 
         # Remove processed items
-        print('Start deleting stacitems')
+        print("Start deleting stacitems")
         for item in self._items:
             response = DB_CLIENT.delete_item(
                 TableName=self._input_table,
-                Key={
-                    'stacitem': {"S": item['stacitem']['S']}})
-        print('Finished')
+                Key={"stacitem": {"S": item["stacitem"]["S"]}},
+            )
+        print("Finished")
 
-def handler(event, context):
+
+def handler(event, context):  # pylint: disable=unused-argument
     """Lambda entry point
     Event keys:
     """
 
-    gcl = GenerateCatalogLevelsToBeUpdated(input_table=os.environ['CATALOG_UPDATE_TABLE'],
-                                           output_table=\
-                                           os.environ.get('CATALOG_LEVELS_UPDATE_TABLE'),
-                                           queue=os.environ['CATALOG_PREFIX_UPDATE_QUEUE'],
-                                           iterations=16)
+    gcl = GenerateCatalogLevelsToBeUpdated(
+        input_table=os.environ["CATALOG_UPDATE_TABLE"],
+        output_table=os.environ.get("CATALOG_LEVELS_UPDATE_TABLE"),
+        queue=os.environ["CATALOG_PREFIX_UPDATE_QUEUE"],
+        iterations=16,
+    )
     gcl.process()

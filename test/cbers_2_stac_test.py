@@ -8,7 +8,7 @@ import pytest
 from jsonschema import RefResolver, validate
 from jsonschema.exceptions import ValidationError
 
-from sam.process_new_scene_queue.cbers_2_stac import (
+from cbers2stac.process_new_scene_queue.cbers_2_stac import (
     build_stac_item_keys,
     convert_inpe_to_stac,
     epsg_from_utm_zone,

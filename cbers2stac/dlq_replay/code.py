@@ -5,8 +5,8 @@ Thanks to https://github.com/coveo/sqs-deadletterqueue-replayer-lambda
 
 import boto3
 
-def transfer_messages(source_queue,  # pylint: disable=missing-docstring
-                      target_queue):
+
+def transfer_messages(source_queue, target_queue):  # pylint: disable=missing-docstring
     total_messages_transferred = 0
     while True:
         messages = gather_messages(source_queue)
@@ -18,30 +18,32 @@ def transfer_messages(source_queue,  # pylint: disable=missing-docstring
     print("In total " + str(total_messages_transferred) + " were transferred.")
 
 
-def gather_messages(queue): # pylint: disable=missing-docstring
-    messages = queue.receive_messages(MaxNumberOfMessages=10,
-                                      WaitTimeSeconds=20)
+def gather_messages(queue):  # pylint: disable=missing-docstring
+    messages = queue.receive_messages(MaxNumberOfMessages=10, WaitTimeSeconds=20)
     print("Collected: " + str(len(messages)) + " messages.")
     return messages
 
-def send_messages(messages, queue): # pylint: disable=missing-docstring
-    entries = [dict(Id=str(i + 1),
-                    MessageBody=message.body) for i, message in \
-               enumerate(messages)]
+
+def send_messages(messages, queue):  # pylint: disable=missing-docstring
+    entries = [
+        dict(Id=str(i + 1), MessageBody=message.body)
+        for i, message in enumerate(messages)
+    ]
 
     queue.send_messages(Entries=entries)
 
-def delete_messages(messages): # pylint: disable=missing-docstring
+
+def delete_messages(messages):  # pylint: disable=missing-docstring
     for message in messages:
         print("Copied " + str(message.body))
         message.delete()
 
 
-def handler(event, context): # pylint: disable=missing-docstring,unused-argument
-    sqs = boto3.resource(service_name='sqs')
+def handler(event, context):  # pylint: disable=missing-docstring,unused-argument
+    sqs = boto3.resource(service_name="sqs")
 
-    source_queue_name = event['source_queue']
-    target_queue_name = event['target_queue']
+    source_queue_name = event["source_queue"]
+    target_queue_name = event["target_queue"]
 
     print("From: " + source_queue_name + " To: " + target_queue_name)
 

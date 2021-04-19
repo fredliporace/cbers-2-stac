@@ -2,7 +2,7 @@
 
 import json
 
-from sam.layers.common.utils import (
+from cbers2stac.layers.common.utils import (
     build_collection_name,
     get_api_stac_root,
     get_collection_ids,

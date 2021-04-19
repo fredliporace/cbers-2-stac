@@ -12,7 +12,7 @@ from collections import OrderedDict
 
 import utm
 
-from sam.layers.common.utils import (
+from cbers2stac.layers.common.utils import (
     CBERS_MISSIONS,
     STAC_VERSION,
     build_absolute_prefix,

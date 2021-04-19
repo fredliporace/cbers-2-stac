@@ -8,7 +8,7 @@ os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 # This import is here because the environment must be
 # set before importing. This may be changed by
 # using getters within sam.process_new_scene_queue.code
-from sam.process_new_scene_queue.code import (  # pylint: disable=wrong-import-position
+from cbers2stac.process_new_scene_queue.code import (  # pylint: disable=wrong-import-position
     build_sns_topic_msg_attributes,
     convert_inpe_to_stac,
     get_s3_keys,

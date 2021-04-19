@@ -10,7 +10,7 @@ from typing import Any, Dict
 
 import boto3
 
-from sam.layers.common.utils import (
+from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
     BASE_CATALOG,
     BASE_COLLECTION,

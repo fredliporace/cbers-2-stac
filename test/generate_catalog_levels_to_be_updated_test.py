@@ -15,7 +15,7 @@ os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
 os.environ["AWS_ACCESS_KEY_ID"] = "foobar"
 os.environ["AWS_SECRET_ACCESS_KEY"] = "foobar"
 
-# from sam.generate_catalog_levels_to_be_updated.code import (  # pylint: disable=wrong-import-position
+# from cbers2stac.generate_catalog_levels_to_be_updated.code import (  # pylint: disable=wrong-import-position
 #     GenerateCatalogLevelsToBeUpdated,
 # )
 
