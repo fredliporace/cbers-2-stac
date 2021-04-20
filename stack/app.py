@@ -119,6 +119,7 @@ class CBERS2STACStack(core.Stack):
                 resources=[stac_item_topic.topic_arn],
             )
         )
+        # We could add the document directly to stac_item_policy
         sns.TopicPolicy(
             self,
             "sns_public_topic_policy",
