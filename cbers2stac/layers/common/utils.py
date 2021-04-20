@@ -4,8 +4,55 @@ Definitions for base item, catalog and collections
 """
 
 import copy
+import os
 from collections import OrderedDict
 from typing import Any, Dict
+
+import boto3
+
+# TODO: This is a singleton, check for more elegant, pythonic way # pylint: disable=fixme
+# Dictionary for aws clients, service is the key
+CLIENT = dict()  # type: dict
+RESOURCE = dict()  # type: dict
+
+
+def get_client(service: str) -> boto3.client:
+    """
+    Create localstack or production client
+
+    service is the AWS service identification, "sqs", "s3", etc.
+    """
+
+    global CLIENT  #  pylint: disable=global-statement
+    if not CLIENT.get(service):
+        if os.environ.get("LOCALSTACK_HOSTNAME"):
+            CLIENT[service] = boto3.client(
+                service,
+                endpoint_url="http://{}:4566".format(os.environ["LOCALSTACK_HOSTNAME"]),
+            )
+        else:
+            CLIENT[service] = boto3.client(service)
+    return CLIENT[service]
+
+
+def get_resource(service: str) -> boto3.client:
+    """
+    Create localstack or production resource
+
+    service is the AWS service identification, "sqs", "s3", etc.
+    """
+
+    global RESOURCE  #  pylint: disable=global-statement
+    if not RESOURCE.get(service):
+        if os.environ.get("LOCALSTACK_HOSTNAME"):
+            RESOURCE[service] = boto3.resource(
+                service,
+                endpoint_url="http://{}:4566".format(os.environ["LOCALSTACK_HOSTNAME"]),
+            )
+        else:
+            RESOURCE[service] = boto3.resource(service)
+    return RESOURCE[service]
+
 
 # Collections are currently hard-coded here, this is not
 # an issue for CBERS on AWS since this does not frequently change

@@ -392,7 +392,7 @@ def handler(event, context):  # pylint: disable=unused-argument
     """
 
     if "queue" in event:
-        # Lambda is being invoked to read messages directly from queue
+        # Lambda is being invoked to read messages directly from queue URL
         # In that mode SNS events are always sent to the internal
         # reconcile topic
         process_queue(

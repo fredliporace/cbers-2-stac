@@ -3,7 +3,8 @@ version: '2.1'
 services:
   localstack:
     container_name: cbers2stac-localstack_main
-    image: localstack/localstack
+    #image: localstack/localstack
+    image: localstack/localstack-full
     network_mode: bridge
     ports:
       - "4566:4566"

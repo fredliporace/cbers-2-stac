@@ -184,27 +184,28 @@ Resources:
   # Cloudwatch start
   #################################################
 
-  DLQDepthAlarmProcessNewScene:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: 'ProcessNewSceneQueueFunctionDLQ with more than one message'
-      ActionsEnabled: True
-      Namespace: 'AWS/SQS'
-      MetricName: 'ApproximateNumberOfMessagesVisible'
-      Dimensions:
-        - Name: 'QueueName'
-          Value: !GetAtt ProcessNewSceneQueueFunctionDLQ.QueueName
-      Statistic: 'Sum'
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 0.0
-      ComparisonOperator: 'GreaterThanThreshold'
-      AlarmActions:
-        - !Ref AlarmTopic
-      # See comment in sqs_keep_alive for rationale behind
-      # removing this alarm action
-      #InsufficientDataActions:
-      #  - !Ref AlarmTopic
+  # CDK
+  # DLQDepthAlarmProcessNewScene:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: 'ProcessNewSceneQueueFunctionDLQ with more than one message'
+  #     ActionsEnabled: True
+  #     Namespace: 'AWS/SQS'
+  #     MetricName: 'ApproximateNumberOfMessagesVisible'
+  #     Dimensions:
+  #       - Name: 'QueueName'
+  #         Value: !GetAtt ProcessNewSceneQueueFunctionDLQ.QueueName
+  #     Statistic: 'Sum'
+  #     Period: 300
+  #     EvaluationPeriods: 1
+  #     Threshold: 0.0
+  #     ComparisonOperator: 'GreaterThanThreshold'
+  #     AlarmActions:
+  #       - !Ref AlarmTopic
+  #     # See comment in sqs_keep_alive for rationale behind
+  #     # removing this alarm action
+  #     #InsufficientDataActions:
+  #     #  - !Ref AlarmTopic
 
   DLQDepthAlarmConsumeReconcile:
     Type: AWS::CloudWatch::Alarm
@@ -314,13 +315,14 @@ Resources:
       Queues:
         - !Ref NewScenesQueue
 
-  NewScenesQueueTrigger:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 10
-      EventSourceArn: !GetAtt [NewScenesQueue, Arn]
-      FunctionName: !Ref ProcessNewSceneQueueFunction
-      Enabled: True
+  # CDK
+  # NewScenesQueueTrigger:
+  #   Type: AWS::Lambda::EventSourceMapping
+  #   Properties:
+  #     BatchSize: 10
+  #     EventSourceArn: !GetAtt [NewScenesQueue, Arn]
+  #     FunctionName: !Ref ProcessNewSceneQueueFunction
+  #     Enabled: True
 
   # This queue expects messages of S3 prefixes
   # Each prefix is searched for .jpg files and a message
@@ -484,25 +486,26 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  ProcessNewSceneQueueFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: process_new_scene_queue
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: Process new scenes in queue
-      # This timeout is suitable for SQS/Lambda triggers,
-      # which is limited to 10 messages per lambda call
-      Timeout: 55
-      Environment:
-        Variables:
-          SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
-          CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
-          SNS_RECONCILE_TARGET_ARN: !Ref ReconcileCBERSSTACItemTopic
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt ProcessNewSceneQueueFunctionDLQ.Arn
+  # CDK
+  # ProcessNewSceneQueueFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: process_new_scene_queue
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: Process new scenes in queue
+  #     # This timeout is suitable for SQS/Lambda triggers,
+  #     # which is limited to 10 messages per lambda call
+  #     Timeout: 55
+  #     Environment:
+  #       Variables:
+  #         SNS_TARGET_ARN: !Ref CBERSSTACItemTopic
+  #         CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
+  #         SNS_RECONCILE_TARGET_ARN: !Ref ReconcileCBERSSTACItemTopic
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt ProcessNewSceneQueueFunctionDLQ.Arn
 
   # CDK: new_scenes_queue_dlq
   # ProcessNewSceneQueueFunctionDLQ:
@@ -886,18 +889,19 @@ Resources:
   # catalog files upate procedure
   # This table is also defined for testing, the definitions
   # must be the same
-  CatalogUpdateTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      AttributeDefinitions:
-        -
-          AttributeName: "stacitem"
-          AttributeType: "S"
-      KeySchema:
-        -
-          AttributeName: "stacitem"
-          KeyType: "HASH"
-      BillingMode: "PAY_PER_REQUEST"
+  # CDK
+  # CatalogUpdateTable:
+  #   Type: AWS::DynamoDB::Table
+  #   Properties:
+  #     AttributeDefinitions:
+  #       -
+  #         AttributeName: "stacitem"
+  #         AttributeType: "S"
+  #     KeySchema:
+  #       -
+  #         AttributeName: "stacitem"
+  #         KeyType: "HASH"
+  #     BillingMode: "PAY_PER_REQUEST"
 
   #################################################
   # DynamoDB end

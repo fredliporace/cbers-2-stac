@@ -1,15 +1,15 @@
 """App construction"""
 
-# import json
-# import os
-from test.conftest import create_lambda_layer_from_dir
-from typing import Any, Dict, Optional
+from test.conftest import (  # pylint: disable=no-name-in-module, import-error
+    create_lambda_layer_from_dir,
+)
+from typing import Any, Dict, List, Optional
 
-# from aws_cdk import aws_s3_notifications as s3n
-# from aws_cdk import aws_dynamodb as dynamodb
 # from aws_cdk import aws_events, aws_events_targets
+# from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
+from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_s3 as s3
@@ -18,14 +18,12 @@ from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
 from aws_cdk import core
 from aws_cdk.aws_cloudwatch import ComparisonOperator
+from aws_cdk.aws_lambda_event_sources import SqsEventSource
 
-# from cbers04aonaws.layers.common.dbtable import DBTable
+from cbers2stac.layers.common.dbtable import DBTable
 from stack.config import StackSettings
 
 # import docker
-
-
-# from aws_cdk.aws_lambda_event_sources import SqsEventSource
 
 
 settings = StackSettings()
@@ -57,9 +55,10 @@ class CBERS2STACStack(core.Stack):
         #     )
         # )
         self.lambdas_env_[f"{queue_name}_url"] = queue.queue_url
+        self.queues_.append(queue)
         return queue
 
-    def __init__(  # pylint: disable=too-many-locals
+    def __init__(  # pylint: disable=too-many-locals,too-many-statements
         self,
         scope: core.Construct,
         stack_id: str,
@@ -69,6 +68,12 @@ class CBERS2STACStack(core.Stack):
     ) -> None:
         """Ctor."""
         super().__init__(scope, stack_id, description=description, *kwargs)
+
+        # All stack queues
+        self.queues_: List[sqs.Queue] = list()
+
+        # All stack topics
+        self.topics_: List[sns.Topic] = list()
 
         # Parameters that will not typically change and thus
         # are defined as fixed ENVs
@@ -87,11 +92,13 @@ class CBERS2STACStack(core.Stack):
         # General alarm topic to signal problems in stack execution
         # and e-mail subscription
         alarm_topic = sns.Topic(self, "alarm_topic")
+        self.topics_.append(alarm_topic)
         alarm_topic.add_subscription(
             sns_subscriptions.EmailSubscription(settings.operator_email)
         )
         # Public STAC item topic for new STAC items
         stac_item_topic = sns.Topic(self, "stac_item_topic")
+        self.topics_.append(stac_item_topic)
         sit_policy = iam.PolicyDocument(
             assign_sids=True,
             statements=[
@@ -128,6 +135,7 @@ class CBERS2STACStack(core.Stack):
         )
         # Reconcile topic, used internally for reconciliation operations
         reconcile_stac_item_topic = sns.Topic(self, "reconcile_stac_item_topic")
+        self.topics_.append(reconcile_stac_item_topic)
 
         # Update lambdas_env_ with environment options defined
         # in settings
@@ -174,9 +182,24 @@ class CBERS2STACStack(core.Stack):
         # soon as the quicklooks are created in the PDS bucket
         process_new_scenes_queue_dlq = sqs.Queue(
             self,
-            "process_new_scenes_queue",
+            "process_new_scenes_queue_dlq",
             retention_period=core.Duration.seconds(1209600),
         )
+        self.queues_.append(process_new_scenes_queue_dlq)
+        process_new_scenes_queue_alarm = cloudwatch.Alarm(
+            self,
+            "ProcessNewScenesQueueAlarm",
+            metric=process_new_scenes_queue_dlq.metric(
+                "ApproximateNumberOfMessagesVisible"
+            ),
+            evaluation_periods=1,
+            threshold=0.0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        process_new_scenes_queue_alarm.add_alarm_action(
+            cw_actions.SnsAction(alarm_topic)
+        )
+
         new_scenes_queue = sqs.Queue(
             self,
             "new_scenes_queue",
@@ -186,6 +209,7 @@ class CBERS2STACStack(core.Stack):
                 max_receive_count=3, queue=process_new_scenes_queue_dlq
             ),
         )
+        self.queues_.append(new_scenes_queue)
         # Add subscriptions for each CB4 camera
         sns.Topic.from_topic_arn(
             self,
@@ -208,6 +232,20 @@ class CBERS2STACStack(core.Stack):
             topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook",
         ).add_subscription(sns_subscriptions.SqsSubscription(new_scenes_queue))
 
+        # DynamoDB table
+        db_table_schema = DBTable.schema()
+        catalog_update_table = dynamodb.Table(
+            self,
+            db_table_schema["TableName"],
+            partition_key=dynamodb.Attribute(
+                name=DBTable.pk_attr_name_, type=dynamodb.AttributeType.STRING
+            ),
+            billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+        )
+        self.lambdas_env_.update(
+            {"CATALOG_UPDATE_TABLE": catalog_update_table.table_name}
+        )
+
         # Common utils lambda layer
         create_lambda_layer_from_dir(
             output_dir="./stack",
@@ -225,9 +263,6 @@ class CBERS2STACStack(core.Stack):
         )
 
         # Lambdas
-        # self.lambdas_env_["DBTABLE"] = db_table.table_name
-        # self.lambdas_env_["working_bucket_name"] = working_bucket.bucket_name
-        # self.lambdas_env_["pds_bucket_name"] = pds_bucket_name
 
         process_new_scene_lambda = aws_lambda.Function(
             self,
@@ -240,6 +275,9 @@ class CBERS2STACStack(core.Stack):
                 **{
                     "SNS_TARGET_ARN": stac_item_topic.topic_arn,
                     "SNS_RECONCILE_TARGET_ARN": reconcile_stac_item_topic.topic_arn,
+                    # This is used for testing, number of messages read from queue
+                    # when manually invoking lambda
+                    "MESSAGE_BATCH_SIZE": "1",
                 },
             },
             timeout=core.Duration.seconds(55),
@@ -248,8 +286,47 @@ class CBERS2STACStack(core.Stack):
             description="Process new scenes from quicklook queue",
         )
         lambdas.append(process_new_scene_lambda)
+        process_new_scene_lambda.add_event_source(
+            SqsEventSource(queue=new_scenes_queue, batch_size=10)
+        )
 
         # Common lambda permissions
+        # Full access to all queues within stack
+        lambda_perms.append(
+            iam.PolicyStatement(
+                actions=["sqs:*"],
+                resources=[queue.queue_arn for queue in self.queues_],
+            )
+        )
+        # Full access to all buckets within stack
+        if settings.stac_bucket_name:
+            lambda_perms.append(
+                iam.PolicyStatement(
+                    actions=["s3:*"],
+                    resources=[
+                        stac_working_bucket.bucket_arn,
+                        f"{stac_working_bucket.bucket_arn}/*",
+                    ],
+                )
+            )
+        # DynamoDB
+        lambda_perms.append(
+            iam.PolicyStatement(
+                actions=["dynamodb:*"],
+                resources=[
+                    catalog_update_table.table_arn,
+                    f"{catalog_update_table.table_arn}/*",
+                ],
+            )
+        )
+        # SNS topics
+        lambda_perms.append(
+            iam.PolicyStatement(
+                actions=["sns:*"],
+                resources=[topic.topic_arn for topic in self.topics_],
+            )
+        )
+
         for perm in lambda_perms:
             for lambda_f in lambdas:
                 lambda_f.add_to_role_policy(perm)
