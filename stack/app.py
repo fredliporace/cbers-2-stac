@@ -46,6 +46,14 @@ class CBERS2STACStack(core.Stack):
         self.queues_.append(queue)
         return queue
 
+    def create_stack_lambda(self, **kwargs: Any) -> aws_lambda.Function:
+        """
+        Create a lambda function and keep stack internal references updated.
+        """
+        lfun = aws_lambda.Function(self, **kwargs)
+        self.lambdas_.append(lfun)
+        return lfun
+
     def create_queue(
         self,
         queue_name: str,
@@ -86,6 +94,9 @@ class CBERS2STACStack(core.Stack):
 
         # All stack topics
         self.topics_: List[sns.Topic] = list()
+
+        # All lambdas
+        self.lambdas_: List[aws_lambda.Function] = list()
 
         # Parameters that will not typically change and thus
         # are defined as fixed ENVs
@@ -153,9 +164,8 @@ class CBERS2STACStack(core.Stack):
         # in settings
         self.lambdas_env_.update(env)
 
-        # Lambdas list and permissions to be applied
+        # Lambdas permissions to be applied
         lambda_perms = list()
-        lambdas = list()
 
         # Create STAC bucket if not configured
         if settings.stac_bucket_name is None:
@@ -308,9 +318,8 @@ class CBERS2STACStack(core.Stack):
 
         # Lambdas
 
-        process_new_scene_lambda = aws_lambda.Function(
-            self,
-            "process_new_scene_lambda",
+        process_new_scene_lambda = self.create_stack_lambda(
+            id="process_new_scene_lambda",
             code=aws_lambda.Code.from_asset(path="cbers2stac/process_new_scene_queue"),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
@@ -329,14 +338,12 @@ class CBERS2STACStack(core.Stack):
             layers=[common_layer],
             description="Process new scenes from quicklook queue",
         )
-        lambdas.append(process_new_scene_lambda)
         process_new_scene_lambda.add_event_source(
             SqsEventSource(queue=new_scenes_queue, batch_size=10)
         )
 
-        generate_catalog_levels_to_be_updated_lambda = aws_lambda.Function(
-            self,
-            "generate_catalog_levels_to_be_updated_lambda",
+        generate_catalog_levels_to_be_updated_lambda = self.create_stack_lambda(
+            id="generate_catalog_levels_to_be_updated_lambda",
             code=aws_lambda.Code.from_asset(
                 path="cbers2stac/generate_catalog_levels_to_be_updated"
             ),
@@ -353,7 +360,21 @@ class CBERS2STACStack(core.Stack):
             layers=[common_layer],
             description="Generate levels into output table from input table",
         )
-        lambdas.append(generate_catalog_levels_to_be_updated_lambda)
+
+        update_catalog_prefix_lambda = self.create_stack_lambda(
+            id="update_catalog_prefix_lambda",
+            code=aws_lambda.Code.from_asset(path="cbers2stac/update_catalog_tree"),
+            handler="code.trigger_handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment={**self.lambdas_env_,},
+            timeout=core.Duration.seconds(55),
+            dead_letter_queue=general_dlq,
+            layers=[common_layer],
+            description="Update catalog from prefix",
+        )
+        update_catalog_prefix_lambda.add_event_source(
+            SqsEventSource(queue=catalog_prefix_update_queue, batch_size=10)
+        )
 
         aws_events.Rule(
             self,
@@ -407,7 +428,7 @@ class CBERS2STACStack(core.Stack):
         )
 
         for perm in lambda_perms:
-            for lambda_f in lambdas:
+            for lambda_f in self.lambdas_:
                 lambda_f.add_to_role_policy(perm)
 
 

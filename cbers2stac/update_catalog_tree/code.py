@@ -1,14 +1,13 @@
 """update_catalog_tree"""
 
 import json
+import logging
 import os
 import re
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
 from typing import Any, Dict, Optional
-
-import boto3
 
 from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
@@ -17,15 +16,15 @@ from cbers2stac.layers.common.utils import (
     CBERS_MISSIONS,
     build_absolute_prefix,
     build_collection_name,
+    get_client,
     get_collections_for_satmission,
     get_satmissions,
 )
 
-# from botocore.errorfactory import ClientError
-
-
-S3_CLIENT = boto3.client("s3")
-SQS_CLIENT = boto3.client("sqs")
+# Get rid of "Found credentials in environment variables" messages
+logging.getLogger("botocore.credentials").disabled = True
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
 
 def write_catalog_to_s3(bucket, prefix, catalog):
@@ -39,7 +38,7 @@ def write_catalog_to_s3(bucket, prefix, catalog):
     else:
         s3_catalog_file = prefix + "/collection.json"
 
-    S3_CLIENT.put_object(
+    get_client("s3").put_object(
         Body=json.dumps(catalog, indent=2), Bucket=bucket, Key=s3_catalog_file
     )
 
@@ -119,7 +118,7 @@ def get_catalogs_from_s3(bucket, prefix, response=None):
     """
     ret = list()
     if not response:
-        response = S3_CLIENT.list_objects_v2(
+        response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
         )
         assert not response["IsTruncated"], "Truncated S3 listing"
@@ -141,7 +140,7 @@ def get_items_from_s3(bucket, prefix, response=None):
     """
     ret = list()
     if not response:
-        response = S3_CLIENT.list_objects_v2(
+        response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
         )
         assert not response["IsTruncated"], "Truncated S3 listing"
@@ -167,7 +166,7 @@ def sqs_messages(queue):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        response = get_client("sqs").receive_message(QueueUrl=queue)
         if "Messages" not in response:
             break
         retd = dict()
@@ -358,7 +357,7 @@ def trigger_handler(event, context):  # pylint: disable=unused-argument
     """
     for record in event["Records"]:
         prefix = record["body"]
-        print("Processing " + prefix)
+        LOGGER.info("Processing %s", prefix)
         catalog = build_catalog_from_s3(
             bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix
         )

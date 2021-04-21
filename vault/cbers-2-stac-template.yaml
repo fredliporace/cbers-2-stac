@@ -365,12 +365,13 @@ Resources:
   #             - Arn
   #       maxReceiveCount: 3
 
-  CatalogPrefixUpdateQueueTrigger:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      BatchSize: 10
-      EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
-      FunctionName: !Ref UpdateCatalogPrefixFunction
+  # CDK
+  # CatalogPrefixUpdateQueueTrigger:
+  #   Type: AWS::Lambda::EventSourceMapping
+  #   Properties:
+  #     BatchSize: 10
+  #     EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
+  #     FunctionName: !Ref UpdateCatalogPrefixFunction
 
   # This queue subscribes to the new STAC item SNS topic
   # and has a lambda trigger that inserts the item into
@@ -548,19 +549,20 @@ Resources:
   #       Type: 'SQS'
   #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  UpdateCatalogPrefixFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: update_catalog_tree
-      Handler: code.trigger_handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        Update catalog from prefix
-      Timeout: 55
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+  # CDK
+  # UpdateCatalogPrefixFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: update_catalog_tree
+  #     Handler: code.trigger_handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: >
+  #       Update catalog from prefix
+  #     Timeout: 55
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   CreateElasticIndexFunction:
     Type: 'AWS::Serverless::Function'

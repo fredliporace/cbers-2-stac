@@ -13,11 +13,6 @@ import pytest
 from dateutil.tz import tzutc
 from jsonschema import RefResolver, validate
 
-# from pystac.validation import validate_dict
-
-# Region is required for testing
-os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
 # This import is here because the environment must be
 # set before importing. This may be changed by
 # using getters within update_catalog_tree
@@ -32,6 +27,9 @@ from cbers2stac.update_catalog_tree.code import (  # pylint: disable=wrong-impor
     get_items_from_s3,
     write_catalog_to_s3,
 )
+
+# from pystac.validation import validate_dict
+
 
 MUX_083_RESPONSE = {
     "ResponseMetadata": {
@@ -446,13 +444,23 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
 
 
-@pytest.mark.skip("Requires AWS credentials and environment")
-def test_integration():
+@pytest.mark.s3_bucket_args("cbers-stac")
+def test_integration(s3_bucket):
     """integration_test"""
 
+    s3_client, s3_resource = s3_bucket  # pylint: disable=unused-variable
     prefix = "CBERS4/MUX/083/095"
+
+    # Create STAC metadata structure, single file
+    # The file contents doesn't matter for the test, we only check
+    # here the filename
+    s3_client.upload_file(
+        Filename="test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json",
+        Bucket="cbers-stac",
+        Key=f"{prefix}/CBERS_4_MUX_20170714_083_095_L4.json",
+    )
     catalog = build_catalog_from_s3(bucket="cbers-stac", prefix=prefix)
-    assert catalog["name"] == "CBERS4 MUX 083/095"
+    assert catalog["id"] == "CBERS4 MUX 083/095"
     write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)
 
     prefix = "CBERS4/MUX/083"
