@@ -13,6 +13,7 @@ from aws_cdk import aws_dynamodb as dynamodb
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_s3_deployment as s3_deployment
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
@@ -21,6 +22,9 @@ from aws_cdk.aws_cloudwatch import ComparisonOperator
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
 
 from cbers2stac.layers.common.dbtable import DBTable
+from cbers2stac.local.create_static_catalog_structure import (
+    create_local_catalog_structure,
+)
 from stack.config import StackSettings
 
 # import docker
@@ -146,24 +150,49 @@ class CBERS2STACStack(core.Stack):
         lambdas = list()
 
         # Create STAC bucket if not configured
-        if settings.stac_bucket_name:
+        if settings.stac_bucket_name is None:
+            raise RuntimeError("STACK_STAC_BUCKET_NAME is mandatory")
             # Use external STAC bucket name
-            self.lambdas_env_.update({"CBERS_STAC_BUCKET": settings.stac_bucket_name})
-        else:
-            # Create and use internal STAC bucket
-            stac_working_bucket = s3.Bucket(self, "stac_working_bucket")
-            self.lambdas_env_.update(
-                {"CBERS_STAC_BUCKET": stac_working_bucket.bucket_name}
+            # self.lambdas_env_.update({"CBERS_STAC_BUCKET": settings.stac_bucket_name})
+
+        # Create and use internal STAC bucket
+        stac_working_bucket = s3.Bucket(
+            self, "stac_working_bucket", bucket_name=settings.stac_bucket_name
+        )
+        self.lambdas_env_.update({"CBERS_STAC_BUCKET": stac_working_bucket.bucket_name})
+        lambda_perms.append(
+            iam.PolicyStatement(
+                actions=["s3:PutObject", "s3:PutObjectAcl"],
+                resources=[
+                    stac_working_bucket.bucket_arn,
+                    f"{stac_working_bucket.bucket_arn}/*",
+                ],
             )
-            lambda_perms.append(
-                iam.PolicyStatement(
-                    actions=["s3:PutObject", "s3:PutObjectAcl"],
-                    resources=[
-                        stac_working_bucket.bucket_arn,
-                        f"{stac_working_bucket.bucket_arn}/*",
-                    ],
-                )
+        )
+        # Check for public read access
+        if settings.stac_bucket_public_read:
+            stac_working_bucket.grant_public_access("*", "s3:Get*")
+        # Check for CORS
+        if settings.stac_bucket_enable_cors:
+            stac_working_bucket.add_cors_rule(
+                allowed_methods=[s3.HttpMethods.GET, s3.HttpMethods.HEAD],
+                allowed_origins=["*"],
+                allowed_headers=["*"],
+                exposed_headers=[],
+                max_age=3000,
             )
+        # Deploy static structure
+        create_local_catalog_structure(
+            root_directory="stack/static_catalog_structure",
+            bucket_name=settings.stac_bucket_name,
+        )
+        s3_deployment.BucketDeployment(
+            self,
+            "static_catalog",
+            sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
+            destination_bucket=stac_working_bucket,
+            prune=False,
+        )
 
         # General DLQs for lambdas
         general_dlq = self.create_queue("dead_letter_queue")

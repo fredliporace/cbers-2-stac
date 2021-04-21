@@ -446,39 +446,6 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
 
 
-def test_static_catalogs_collections(setup):
-    """root_catalog_cat_schema_test"""
-
-    catalog_files = [
-        "stac_catalogs/catalog.json",
-        "stac_catalogs/CBERS4/catalog.json",
-        "stac_catalogs/CBERS4A/catalog.json",
-    ]
-    for c_file in catalog_files:
-        with open(c_file, "r") as catalog_file:
-            catalog = json.loads(catalog_file.read())
-            assert (
-                validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
-            )
-
-    collection_files = [
-        "stac_catalogs/CBERS4/AWFI/collection.json",
-        "stac_catalogs/CBERS4/MUX/collection.json",
-        "stac_catalogs/CBERS4/PAN10M/collection.json",
-        "stac_catalogs/CBERS4/PAN5M/collection.json",
-        "stac_catalogs/CBERS4A/MUX/collection.json",
-        "stac_catalogs/CBERS4A/WFI/collection.json",
-        "stac_catalogs/CBERS4A/WPM/collection.json",
-    ]
-    for c_file in collection_files:
-        with open(c_file, "r") as collection_file:
-            collection = json.loads(collection_file.read())
-            assert (
-                validate(collection, setup.col_schema, resolver=setup.col_resolver)
-                is None
-            )
-
-
 @pytest.mark.skip("Requires AWS credentials and environment")
 def test_integration():
     """integration_test"""

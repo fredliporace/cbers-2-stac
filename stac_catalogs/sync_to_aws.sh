@@ -1,1 +1,2 @@
-aws s3 cp . s3://cbers-stac-1-0 --recursive --exclude "*" --include "*catalog.json" --include "*.html"
+# Usage: ./sync_to_aws [STACBucketName]
+aws s3 cp . s3://$1 --recursive --exclude "*" --include "*catalog.json" --include "*collection.json"

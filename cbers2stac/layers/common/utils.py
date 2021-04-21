@@ -6,7 +6,7 @@ Definitions for base item, catalog and collections
 import copy
 import os
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 import boto3
 
@@ -84,7 +84,20 @@ STAC_DOC_TEMPLATE: Dict[str, Any] = {
 COG_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
 # CBERS general missions definitions
-CBERS_MISSIONS = {
+# This requires Python3.8
+# class Mission(TypedDict):  # pylint: disable=too-few-public-methods
+#     """
+#     Mission parameters
+#     """
+
+#     interval: List[List]
+#     quicklook: Dict[str, str]
+#     instruments: List[str]
+#     band: Dict[str, Dict[str, str]]
+
+
+# CBERS_MISSIONS: Dict[str, Mission] = {
+CBERS_MISSIONS: Dict[str, Any] = {
     "CBERS-4": {
         "interval": [["2014-12-08T00:00:00Z", None]],
         "quicklook": {"extension": "jpg", "type": "jpeg"},
@@ -133,6 +146,10 @@ CBERS_MISSIONS = {
 
 # Ugh...using this while there are accesses as both CBERS-4
 # and CBERS4, refactor and unify keys...someday
+# Accesses shold be always using SATELLITE-MISSION
+# One approach to do that is to encapsulate all globals within
+# this module and only allow access through functions such
+# as get_satmissions()
 CBERS_MISSIONS["CBERS4"] = CBERS_MISSIONS["CBERS-4"]
 CBERS_MISSIONS["CBERS4A"] = CBERS_MISSIONS["CBERS-4A"]
 
@@ -479,3 +496,28 @@ def get_collection_s3_key(collection_id: str):
     :return: bucket key
     """
     return COLLECTIONS[collection_id]
+
+
+def get_collections_for_satmission(satellite: str, mission: str) -> List[str]:
+    """
+    Returns all collections for a given satellite mission, e.g., CBERS-4
+    """
+    return CBERS_MISSIONS[f"{satellite}-{mission}"]["instruments"]
+
+
+def get_satmissions(use_hyphen: bool) -> List[str]:
+    """
+    Return all supported satmissions.
+    Hyphens are used or not depending on use_hyphen parameter
+    """
+    ret: List[str] = list()
+    for satmission in CBERS_MISSIONS:
+        if "-" not in satmission:
+            continue
+        if use_hyphen:
+            ret.append(satmission)
+        else:
+            satellite = satmission.split("-")[0]
+            mission = satmission.split("-")[1]
+            ret.append(f"{satellite}{mission}")
+    return ret

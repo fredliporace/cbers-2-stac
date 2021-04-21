@@ -6,7 +6,7 @@ import re
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import boto3
 
@@ -17,6 +17,8 @@ from cbers2stac.layers.common.utils import (
     CBERS_MISSIONS,
     build_absolute_prefix,
     build_collection_name,
+    get_collections_for_satmission,
+    get_satmissions,
 )
 
 # from botocore.errorfactory import ClientError
@@ -174,7 +176,9 @@ def sqs_messages(queue):
         yield retd
 
 
-def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
+def get_base_collection(
+    sat_mission: str, camera: Optional[str] = None
+) -> Dict[str, Any]:
     """
     Return the base collection for the camera.
 
@@ -183,6 +187,8 @@ def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     :rtype: dict
     :return: base collection
     """
+
+    assert camera is not None
 
     collection = deepcopy(BASE_CATALOG)
     collection.update(BASE_COLLECTION)
@@ -195,9 +201,44 @@ def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     return collection
 
 
+def base_root_catalog(bucket: str) -> Dict[Any, Any]:
+    """
+    root catalog for all missions
+    """
+    json_filename = "catalog.json"
+    stac_catalog: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
+    stac_catalog["id"] = "CBERS"
+    stac_catalog["description"] = "Catalogs from CBERS missions' imagery on AWS"
+    stac_catalog["title"] = "CBERS on AWS"
+    stac_catalog["links"] = list()
+
+    self_link = OrderedDict()
+    self_link["rel"] = "self"
+    self_link["href"] = build_absolute_prefix(bucket) + json_filename
+    stac_catalog["links"].append(self_link)
+
+    root_link = OrderedDict()
+    root_link["rel"] = "root"
+    root_link["href"] = build_absolute_prefix(bucket) + "catalog.json"
+    stac_catalog["links"].append(root_link)
+
+    for catalog in get_satmissions(use_hyphen=False):
+        child_link = OrderedDict()
+        child_link["rel"] = "child"
+        child_link["href"] = f"{catalog}/catalog.json"
+        stac_catalog["links"].append(child_link)
+
+    return stac_catalog
+
+
 def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches, too-many-statements
-    bucket, satellite, mission=None, camera=None, path=None, row=None
-):
+    bucket: str,
+    satellite: str,
+    mission: str = None,
+    camera: str = None,
+    path: str = None,
+    row: str = None,
+) -> Dict[Any, Any]:
     """JSON STAC catalog or collection with common items"""
 
     # Checks if on collection level
@@ -228,7 +269,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         # Check for satellite+mission in first parameter
         # @todo change this to always separate satellite and mission
         if satellite == "CBERS":
-            sat_sensor = None
+            sat_sensor = None  # type: ignore
         else:
             sat_sensor = satellite
 
@@ -267,7 +308,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     stac_catalog["links"] = list()
 
     # Checks if on collection level
-    if camera and not path and not row:
+    if in_collection:
         json_filename = "collection.json"
     else:
         json_filename = "catalog.json"
@@ -296,6 +337,17 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         parent_link["rel"] = "parent"
         parent_link["href"] = "../" + parent_json_filename
         stac_catalog["links"].append(parent_link)
+
+    # Create child links for first level catalogs
+    if not in_collection and not path and not row and not camera:
+        # import pdb; pdb.set_trace()
+        if stac_catalog["id"] in get_satmissions(use_hyphen=False):
+            # This is a satellite catalog
+            for collection in get_collections_for_satmission(satellite, mission):
+                child_link = OrderedDict()
+                child_link["rel"] = "child"
+                child_link["href"] = f"{collection}/collection.json"
+                stac_catalog["links"].append(child_link)
 
     return stac_catalog
 

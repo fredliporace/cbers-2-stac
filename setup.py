@@ -46,6 +46,7 @@ extra_reqs = {
         "aws-cdk.aws-iam",
         "aws-cdk.aws-dynamodb",
         "aws-cdk.aws-lambda-event-sources",
+        "aws-cdk.aws-s3-deployment",
     ],
 }
 

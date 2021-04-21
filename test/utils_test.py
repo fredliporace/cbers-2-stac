@@ -7,9 +7,31 @@ from cbers2stac.layers.common.utils import (
     get_api_stac_root,
     get_collection_ids,
     get_collection_s3_key,
+    get_collections_for_satmission,
+    get_satmissions,
     parse_api_gateway_event,
     static_to_api_collection,
 )
+
+
+def test_get_collection_from_satmission():
+    """test_get_collection_from_satmission"""
+    cols = get_collections_for_satmission(satellite="CBERS", mission="4")
+    assert set(cols) == set(["MUX", "AWFI", "PAN5M", "PAN10M"])
+
+    cols = get_collections_for_satmission(satellite="CBERS", mission="4A")
+    assert set(cols) == set(["MUX", "WFI", "WPM"])
+
+
+def test_get_satmissions():
+    """
+    test_get_satmissions
+    """
+    smi = get_satmissions(use_hyphen=False)
+    assert set(smi) == set(["CBERS4", "CBERS4A"])
+
+    smi = get_satmissions(use_hyphen=True)
+    assert set(smi) == set(["CBERS-4", "CBERS-4A"])
 
 
 def test_build_collection_name():
