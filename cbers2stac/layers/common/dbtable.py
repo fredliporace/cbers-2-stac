@@ -3,6 +3,7 @@ DBTable
 """
 
 from dataclasses import dataclass
+from typing import Any, Dict
 
 from cbers2stac.layers.common.utils import get_resource
 
@@ -39,7 +40,7 @@ class DBTable:
         return self.table_
 
     @staticmethod
-    def schema():
+    def schema() -> Dict[str, Any]:
         """
         Schema getter (testing and CDK deployment)
         """

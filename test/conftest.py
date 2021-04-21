@@ -158,7 +158,7 @@ def s3_bucket(request):
 def sqs_queue(request):
     """SQS queue for testing"""
     marker = request.node.get_closest_marker("sqs_queue_args")
-    # Marker is mandatory, first argument is bucket name
+    # Marker is mandatory, first argument is queue name
     assert marker
     queue_name = marker.args[0]
     queue = None

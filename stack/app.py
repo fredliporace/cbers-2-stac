@@ -5,11 +5,11 @@ from test.conftest import (  # pylint: disable=no-name-in-module, import-error
 )
 from typing import Any, Dict, List, Optional
 
-# from aws_cdk import aws_events, aws_events_targets
 # from aws_cdk import aws_s3_notifications as s3n
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
 from aws_cdk import aws_dynamodb as dynamodb
+from aws_cdk import aws_events, aws_events_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_s3 as s3
@@ -37,6 +37,14 @@ class CBERS2STACStack(core.Stack):
     """CBERS2STACStack"""
 
     lambdas_env_: Dict[str, str] = dict()
+
+    def create_stack_queue(self, **kwargs: Any) -> sqs.Queue:
+        """
+        Create a queue and keep stack internal references updated.
+        """
+        queue = sqs.Queue(self, **kwargs)
+        self.queues_.append(queue)
+        return queue
 
     def create_queue(
         self,
@@ -229,16 +237,14 @@ class CBERS2STACStack(core.Stack):
             cw_actions.SnsAction(alarm_topic)
         )
 
-        new_scenes_queue = sqs.Queue(
-            self,
-            "new_scenes_queue",
+        new_scenes_queue = self.create_stack_queue(
+            id="new_scenes_queue",
             visibility_timeout=core.Duration.seconds(385),
             retention_period=core.Duration.seconds(1209600),
             dead_letter_queue=sqs.DeadLetterQueue(
                 max_receive_count=3, queue=process_new_scenes_queue_dlq
             ),
         )
-        self.queues_.append(new_scenes_queue)
         # Add subscriptions for each CB4 camera
         sns.Topic.from_topic_arn(
             self,
@@ -260,6 +266,15 @@ class CBERS2STACStack(core.Stack):
             id="CBPAN5M",
             topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook",
         ).add_subscription(sns_subscriptions.SqsSubscription(new_scenes_queue))
+
+        catalog_prefix_update_queue = self.create_stack_queue(
+            id="catalog_prefix_update_queue",
+            visibility_timeout=core.Duration.seconds(60),
+            retention_period=core.Duration.seconds(1209600),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3, queue=general_dlq
+            ),
+        )
 
         # DynamoDB table
         db_table_schema = DBTable.schema()
@@ -317,6 +332,41 @@ class CBERS2STACStack(core.Stack):
         lambdas.append(process_new_scene_lambda)
         process_new_scene_lambda.add_event_source(
             SqsEventSource(queue=new_scenes_queue, batch_size=10)
+        )
+
+        generate_catalog_levels_to_be_updated_lambda = aws_lambda.Function(
+            self,
+            "generate_catalog_levels_to_be_updated_lambda",
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/generate_catalog_levels_to_be_updated"
+            ),
+            handler="code.handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment={
+                **self.lambdas_env_,
+                **{
+                    "CATALOG_PREFIX_UPDATE_QUEUE": catalog_prefix_update_queue.queue_url
+                },
+            },
+            timeout=core.Duration.seconds(900),
+            dead_letter_queue=general_dlq,
+            layers=[common_layer],
+            description="Generate levels into output table from input table",
+        )
+        lambdas.append(generate_catalog_levels_to_be_updated_lambda)
+
+        aws_events.Rule(
+            self,
+            "GCLTBU",
+            description="Generate catalog levels to be updated every 30 minutes",
+            schedule=aws_events.Schedule.cron(minute="*/30"),
+            targets=[
+                aws_events_targets.LambdaFunction(
+                    handler=generate_catalog_levels_to_be_updated_lambda,
+                    dead_letter_queue=general_dlq,
+                    retry_attempts=0,
+                )
+            ],
         )
 
         # Common lambda permissions

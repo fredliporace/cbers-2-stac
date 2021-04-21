@@ -352,17 +352,18 @@ Resources:
 
   # This queue receives prefixes of STAC catalogs
   # that need to be updated
-  CatalogPrefixUpdateQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 60
-      RedrivePolicy:
-        deadLetterTargetArn:
-            "Fn::GetAtt":
-              - GeneralLambdaDLQ
-              - Arn
-        maxReceiveCount: 3
+  # CDK
+  # CatalogPrefixUpdateQueue:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
+  #     VisibilityTimeout: 60
+  #     RedrivePolicy:
+  #       deadLetterTargetArn:
+  #           "Fn::GetAtt":
+  #             - GeneralLambdaDLQ
+  #             - Arn
+  #       maxReceiveCount: 3
 
   CatalogPrefixUpdateQueueTrigger:
     Type: AWS::Lambda::EventSourceMapping
@@ -529,22 +530,23 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  GenerateCatalogLevelsToBeUpdatedFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: generate_catalog_levels_to_be_updated
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: Generate levels into output table from input table
-      Timeout: 900
-      Environment:
-        Variables:
-          CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
-          CATALOG_PREFIX_UPDATE_QUEUE: !Ref CatalogPrefixUpdateQueue
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+  # CDK
+  # GenerateCatalogLevelsToBeUpdatedFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: generate_catalog_levels_to_be_updated
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: Generate levels into output table from input table
+  #     Timeout: 900
+  #     Environment:
+  #       Variables:
+  #         CATALOG_UPDATE_TABLE: !Ref CatalogUpdateTable
+  #         CATALOG_PREFIX_UPDATE_QUEUE: !Ref CatalogPrefixUpdateQueue
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   UpdateCatalogPrefixFunction:
     Type: 'AWS::Serverless::Function'
@@ -859,15 +861,16 @@ Resources:
   # Rule start
   #################################################
 
-  GenerateCatalogLevels:
-    Type: 'AWS::Events::Rule'
-    Properties:
-      Description: 'Generate catalog levels to be updated every 30 minutes'
-      State: 'ENABLED'
-      ScheduleExpression: 'cron(*/30 * * * ? *)'
-      Targets:
-      - Arn: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
-        Id: "GCLTBU"
+  # CDK
+  # GenerateCatalogLevels:
+  #   Type: 'AWS::Events::Rule'
+  #   Properties:
+  #     Description: 'Generate catalog levels to be updated every 30 minutes'
+  #     State: 'ENABLED'
+  #     ScheduleExpression: 'cron(*/30 * * * ? *)'
+  #     Targets:
+  #     - Arn: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
+  #       Id: "GCLTBU"
 
   GenerateCatalogLevelsPermission:
     Type: 'AWS::Lambda::Permission'
