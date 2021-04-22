@@ -4,10 +4,7 @@ import json
 import os
 import re
 
-import boto3
-
-SQS_CLIENT = boto3.client("sqs")
-S3_CLIENT = boto3.client("s3")
+from cbers2stac.layers.common.utils import get_client
 
 
 def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
@@ -16,7 +13,7 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
     from bucket/prefix/*/suffix
     """
     suffix = r".*" + suffix
-    files = S3_CLIENT.list_objects_v2(
+    files = get_client("s3").list_objects_v2(
         Bucket=bucket, Prefix=prefix, RequestPayer="requester"
     )
 
@@ -32,10 +29,12 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
                         ]
                     }
                 )
-                SQS_CLIENT.send_message(QueueUrl=queue, MessageBody=json.dumps(message))
+                get_client("sqs").send_message(
+                    QueueUrl=queue, MessageBody=json.dumps(message)
+                )
         if not files["IsTruncated"]:
             break
-        files = S3_CLIENT.list_objects_v2(
+        files = get_client("s3").list_objects_v2(
             Bucket=bucket,
             Prefix=prefix,
             ContinuationToken=files["NextContinuationToken"],
@@ -51,7 +50,7 @@ def handler(event, context):  # pylint: disable=unused-argument
 
     if "queue" in event:
         # Consume payload data from job queue, one job only
-        response = SQS_CLIENT.receive_message(QueueUrl=event["queue"])
+        response = get_client("sqs").receive_message(QueueUrl=event["queue"])
         receipt_handle = response["Messages"][0]["ReceiptHandle"]
         populate_queue_with_quicklooks(
             bucket=os.environ["CBERS_PDS_BUCKET"],
@@ -61,7 +60,9 @@ def handler(event, context):  # pylint: disable=unused-argument
         )
         # r_params.append(json.loads(response['Messages'][0]['Body']))
         # print(json.dumps(response, indent=2))
-        SQS_CLIENT.delete_message(QueueUrl=event["queue"], ReceiptHandle=receipt_handle)
+        get_client("sqs").delete_message(
+            QueueUrl=event["queue"], ReceiptHandle=receipt_handle
+        )
 
     else:
         # Lambda called from SQS trigger

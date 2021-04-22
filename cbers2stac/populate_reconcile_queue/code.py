@@ -2,16 +2,13 @@
 
 import os
 
-import boto3
-
-SQS_CLIENT = boto3.client("sqs")
-S3_CLIENT = boto3.client("s3")
+from cbers2stac.layers.common.utils import get_client
 
 
 def populate_queue_with_subdirs(bucket, prefix, queue):
     """
     Populate queue with messages containing S3 keys from
-    'prefix', gruped by the first occurrence of '/' after
+    'prefix', grouped by the first occurrence of '/' after
     'prefix'.
     Input:
       bucket(string): ditto
@@ -19,13 +16,13 @@ def populate_queue_with_subdirs(bucket, prefix, queue):
       queue(string): queue url
     """
 
-    dirs = S3_CLIENT.list_objects_v2(
+    dirs = get_client("s3").list_objects_v2(
         Bucket=bucket, Prefix=prefix, Delimiter="/", RequestPayer="requester"
     )
 
     assert not dirs["IsTruncated"]
     for dir_key in dirs["CommonPrefixes"]:
-        SQS_CLIENT.send_message(QueueUrl=queue, MessageBody=dir_key["Prefix"])
+        get_client("sqs").send_message(QueueUrl=queue, MessageBody=dir_key["Prefix"])
 
 
 def handler(event, context):  # pylint: disable=unused-argument

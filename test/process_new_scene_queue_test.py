@@ -1,14 +1,8 @@
 """process_new_scene_test"""
 
-import os
+import pytest
 
-# Region is required for testing
-os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-# This import is here because the environment must be
-# set before importing. This may be changed by
-# using getters within sam.process_new_scene_queue.code
-from cbers2stac.process_new_scene_queue.code import (  # pylint: disable=wrong-import-position
+from cbers2stac.process_new_scene_queue.code import (  # process_queue
     build_sns_topic_msg_attributes,
     convert_inpe_to_stac,
     get_s3_keys,
@@ -96,13 +90,13 @@ def test_sns_topic_msg_attr_test():
     }
 
 
-# @pytest.mark.skip("Require AWS credentials and environment")
-# def process_queue_test():
-#     """process_queue_test"""
-#     process_queue(cbers_pds_bucket='cbers-pds',
-#                   cbers_stac_bucket='cbers-stac',
-#                   cbers_meta_pds_bucket='cbers-meta-pds',
-#                   queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
-#                   'NewAWFIQuicklookMonitor',
-#                   message_batch_size=1,
-#                   sns_target_arn=None)
+@pytest.mark.skip("Test needs update to include SNS and DynamoDB")
+def process_queue_test():
+    """process_queue_test"""
+    # process_queue(cbers_pds_bucket='cbers-pds',
+    #               cbers_stac_bucket='cbers-stac',
+    #               cbers_meta_pds_bucket='cbers-meta-pds',
+    #               queue='https://sqs.us-east-1.amazonaws.com/769537946825/'
+    #               'NewAWFIQuicklookMonitor',
+    #               message_batch_size=1,
+    #               sns_target_arn=None)

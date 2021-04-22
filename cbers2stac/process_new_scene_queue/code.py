@@ -5,9 +5,8 @@ import json
 import os
 import re
 
-import boto3
-
 from cbers2stac.layers.common.cbers_2_stac import convert_inpe_to_stac
+from cbers2stac.layers.common.utils import get_client
 
 # CBERS metadata
 # @todo check if quicklook_pixel_size is being used
@@ -68,11 +67,6 @@ CMETA = {
         "meta_band": 2,
     },
 }
-
-S3_CLIENT = boto3.client("s3")
-SQS_CLIENT = boto3.client("sqs")
-SNS_CLIENT = boto3.client("sns")
-DB_CLIENT = boto3.client("dynamodb")
 
 
 def parse_quicklook_key(key):
@@ -165,7 +159,7 @@ def sqs_messages(queue):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        response = get_client("sqs").receive_message(QueueUrl=queue)
         if "Messages" not in response:
             break
         msg = json.loads(response["Messages"][0]["Body"])
@@ -230,7 +224,7 @@ def process_message(
     local_stac_item = "/tmp/" + metadata_keys["stac"].split("/")[-1]
     # Download INPE metadata and generate STAC item file
     with open(local_inpe_metadata, "wb") as data:
-        S3_CLIENT.download_fileobj(
+        get_client("s3").download_fileobj(
             buckets["cog"],
             metadata_keys["inpe_metadata"],
             data,
@@ -243,10 +237,10 @@ def process_message(
     )
     # Upload STAC item file
     with open(local_stac_item, "rb") as data:
-        S3_CLIENT.upload_fileobj(data, buckets["stac"], metadata_keys["stac"])
+        get_client("s3").upload_fileobj(data, buckets["stac"], metadata_keys["stac"])
 
     # Publish to SNS topic
-    SNS_CLIENT.publish(
+    get_client("sns").publish(
         TargetArn=sns_target_arn,
         Message=json.dumps(stac_meta),
         MessageAttributes=build_sns_topic_msg_attributes(stac_meta),
@@ -254,7 +248,7 @@ def process_message(
 
     # Send message to update catalog tree queue
     if catalog_update_queue:
-        SQS_CLIENT.send_message(
+        get_client("sqs").send_message(
             QueueUrl=catalog_update_queue, MessageBody=metadata_keys["stac"]
         )
 
@@ -274,7 +268,7 @@ def catalog_update_request(table_name, stac_item_key):
       table_name(string): DynamoDB table name
     """
 
-    DB_CLIENT.put_item(
+    get_client("dynamodb").put_item(
         TableName=table_name,
         Item={
             "stacitem": {"S": stac_item_key},
@@ -377,7 +371,7 @@ def process_queue(  # pylint: disable=too-many-arguments
 
         # Remove message from queue
         if delete_processed_messages:
-            SQS_CLIENT.delete_message(
+            get_client("sqs").delete_message(
                 QueueUrl=queue, ReceiptHandle=msg["ReceiptHandle"]
             )
 

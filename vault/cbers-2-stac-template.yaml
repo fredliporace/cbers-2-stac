@@ -207,23 +207,24 @@ Resources:
   #     #InsufficientDataActions:
   #     #  - !Ref AlarmTopic
 
-  DLQDepthAlarmConsumeReconcile:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      AlarmDescription: 'ConsumeReconcileQueueFunctionDLQ with more than one message'
-      ActionsEnabled: True
-      Namespace: 'AWS/SQS'
-      MetricName: 'ApproximateNumberOfMessagesVisible'
-      Dimensions:
-        - Name: 'QueueName'
-          Value: !GetAtt ConsumeReconcileQueueFunctionDLQ.QueueName
-      Statistic: 'Sum'
-      Period: 300
-      EvaluationPeriods: 1
-      Threshold: 0.0
-      ComparisonOperator: 'GreaterThanThreshold'
-      AlarmActions:
-        - !Ref AlarmTopic
+  # CDK
+  # DLQDepthAlarmConsumeReconcile:
+  #   Type: AWS::CloudWatch::Alarm
+  #   Properties:
+  #     AlarmDescription: 'ConsumeReconcileQueueFunctionDLQ with more than one message'
+  #     ActionsEnabled: True
+  #     Namespace: 'AWS/SQS'
+  #     MetricName: 'ApproximateNumberOfMessagesVisible'
+  #     Dimensions:
+  #       - Name: 'QueueName'
+  #         Value: !GetAtt ConsumeReconcileQueueFunctionDLQ.QueueName
+  #     Statistic: 'Sum'
+  #     Period: 300
+  #     EvaluationPeriods: 1
+  #     Threshold: 0.0
+  #     ComparisonOperator: 'GreaterThanThreshold'
+  #     AlarmActions:
+  #       - !Ref AlarmTopic
 
   DLQDepthGeneral:
     Type: AWS::CloudWatch::Alarm
@@ -324,31 +325,33 @@ Resources:
   #     FunctionName: !Ref ProcessNewSceneQueueFunction
   #     Enabled: True
 
+  # CDK
   # This queue expects messages of S3 prefixes
   # Each prefix is searched for .jpg files and a message
   # emulating a 'NewScene' is sent to the queue responsible
   # to update the static STAC catalog
-  ReconcileQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-      VisibilityTimeout: 1000
-      RedrivePolicy:
-        deadLetterTargetArn:
-            "Fn::GetAtt":
-              - ConsumeReconcileQueueFunctionDLQ
-              - Arn
-        maxReceiveCount: 3
+  # ReconcileQueue:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
+  #     VisibilityTimeout: 1000
+  #     RedrivePolicy:
+  #       deadLetterTargetArn:
+  #           "Fn::GetAtt":
+  #             - ConsumeReconcileQueueFunctionDLQ
+  #             - Arn
+  #       maxReceiveCount: 3
 
-  ReconcileQueueTrigger:
-    Type: AWS::Lambda::EventSourceMapping
-    Properties:
-      # Limit to 5 directories for each lambda execution, listing
-      # searching for .jpg may take a long time
-      BatchSize: 5
-      EventSourceArn: !GetAtt [ReconcileQueue, Arn]
-      FunctionName: !Ref ConsumeReconcileQueueFunction
-      Enabled: True
+  # CDK
+  # ReconcileQueueTrigger:
+  #   Type: AWS::Lambda::EventSourceMapping
+  #   Properties:
+  #     # Limit to 5 directories for each lambda execution, listing
+  #     # searching for .jpg may take a long time
+  #     BatchSize: 5
+  #     EventSourceArn: !GetAtt [ReconcileQueue, Arn]
+  #     FunctionName: !Ref ConsumeReconcileQueueFunction
+  #     Enabled: True
 
   # This queue receives prefixes of STAC catalogs
   # that need to be updated
@@ -515,21 +518,22 @@ Resources:
   #   Properties:
   #     MessageRetentionPeriod: 1209600
 
-  PopulateReconcileQueueFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: populate_reconcile_queue
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: Populates reconcile queue with S3 keys from a common prefix
-      Timeout: 300
-      Environment:
-        Variables:
-          RECONCILE_QUEUE: !Ref ReconcileQueue
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+  # CDK
+  # PopulateReconcileQueueFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: populate_reconcile_queue
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: Populates reconcile queue with S3 keys from a common prefix
+  #     Timeout: 300
+  #     Environment:
+  #       Variables:
+  #         RECONCILE_QUEUE: !Ref ReconcileQueue
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   # CDK
   # GenerateCatalogLevelsToBeUpdatedFunction:
@@ -584,31 +588,32 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  ConsumeReconcileQueueFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: consume_reconcile_queue
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        Consume dirs from reconcile queue, populating
-        NewScenesQueue with quicklooks to be processed
-      # This timeout is big since this function list the quicklooks
-      # for whole S3 prefix, this may take a long time if we choose
-      # to reconcile from root. This may be improved if the reconcile
-      # queue is populated with all children prefixes instead of a single
-      # one.
-      Timeout: 900
-      # Limit the number of instances simultaneously
-      # accessing S3 for listing
-      # ReservedConcurrentExecutions: 10
-      Environment:
-        Variables:
-          NEW_SCENES_QUEUE: !Ref NewScenesQueue
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+  # CDK
+  # ConsumeReconcileQueueFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: consume_reconcile_queue
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: >
+  #       Consume dirs from reconcile queue, populating
+  #       NewScenesQueue with quicklooks to be processed
+  #     # This timeout is big since this function list the quicklooks
+  #     # for whole S3 prefix, this may take a long time if we choose
+  #     # to reconcile from root. This may be improved if the reconcile
+  #     # queue is populated with all children prefixes instead of a single
+  #     # one.
+  #     Timeout: 900
+  #     # Limit the number of instances simultaneously
+  #     # accessing S3 for listing
+  #     # ReservedConcurrentExecutions: 10
+  #     Environment:
+  #       Variables:
+  #         NEW_SCENES_QUEUE: !Ref NewScenesQueue
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
 
   ConsumeInsertIntoElasticsearchQueueFunction:
     Type: 'AWS::Serverless::Function'
@@ -829,10 +834,11 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  ConsumeReconcileQueueFunctionDLQ:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
+  # CDK
+  # ConsumeReconcileQueueFunctionDLQ:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
 
   SQSKeepAliveFunction:
     Type: 'AWS::Serverless::Function'
