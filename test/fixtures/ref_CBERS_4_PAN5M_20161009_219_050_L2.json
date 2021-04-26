@@ -49,6 +49,7 @@
     "instruments": [
       "PAN5M"
     ],
+    "gsd": 5.0,
     "view:sun_azimuth": 167.751,
     "view:sun_elevation": 38.3015,
     "view:off_nadir": 0.0050659,

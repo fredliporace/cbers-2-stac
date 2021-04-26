@@ -11,6 +11,7 @@ from typing import Any, Dict, Union
 
 from jsonschema import RefResolver, validate
 from pydantic import BaseModel
+from retry import retry
 
 
 class STACValidator(BaseModel):
@@ -68,6 +69,8 @@ class STACValidator(BaseModel):
             # See issue#47
             # validate_dict(jsd)
 
+    # Retry needed when there is a schema download error
+    @retry(subprocess.CalledProcessError, tries=5, delay=1)
     def validate_node(self, filename: str):
         """
         Validate using stac-node-validator

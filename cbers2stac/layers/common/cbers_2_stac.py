@@ -13,6 +13,7 @@ from collections import OrderedDict
 import utm
 
 from cbers2stac.layers.common.utils import (
+    BASE_CAMERA,
     CBERS_MISSIONS,
     STAC_VERSION,
     build_absolute_prefix,
@@ -337,6 +338,9 @@ def build_stac_item_keys(cbers, buckets):
     # Common metadata
     stac_item["properties"]["platform"] = cbers["sat_number"]
     stac_item["properties"]["instruments"] = [cbers["sensor"]]
+    stac_item["properties"]["gsd"] = BASE_CAMERA[
+        f"{cbers['mission']}{cbers['number']}"
+    ][cbers["sensor"]]["summaries"]["gsd"][0]
 
     # Links
     meta_prefix = "https://s3.amazonaws.com/%s/" % (buckets["metadata"])
@@ -429,7 +433,7 @@ def build_stac_item_keys(cbers, buckets):
         asset_type="text/xml",
         title="INPE original metadata",
     )
-    for index, band in enumerate(cbers["bands"]):  # pylint: disable=unused-variable
+    for band in cbers["bands"]:
         band_id = "B" + band
         gsd = CBERS_MISSIONS[cbers["sat_number"]]["band"][band_id].get("gsd")
         if gsd:

@@ -127,11 +127,11 @@ CBERS_MISSIONS: Dict[str, Any] = {
                 # gsd is only defined for values greater than
                 # what is defined at collection level
                 "common_name": "blue",
-                "gsd": 8,
+                "gsd": 8.0,
             },
-            "B2": {"common_name": "green", "gsd": 8},
-            "B3": {"common_name": "red", "gsd": 8},
-            "B4": {"common_name": "nir", "gsd": 8},
+            "B2": {"common_name": "green", "gsd": 8.0},
+            "B3": {"common_name": "red", "gsd": 8.0},
+            "B4": {"common_name": "nir", "gsd": 8.0},
             "B5": {"common_name": "blue"},
             "B6": {"common_name": "green"},
             "B7": {"common_name": "red"},
@@ -182,8 +182,8 @@ BASE_COLLECTION = OrderedDict(
             "spatial": {"bbox": [[-180.0, -83.0, 180.0, 83.0]],},
             "temporal": {"interval": None},
         },
+        "summaries": {"gsd": None},
         "links": None,
-        "properties": {"gsd": None, "platform": None, "instruments": None,},
         "item_assets": None,
     }
 )
@@ -191,7 +191,7 @@ BASE_COLLECTION = OrderedDict(
 BASE_CAMERA = {
     "CBERS4": {
         "MUX": {
-            "properties": {"gsd": 20.0, "platform": "CBERS-4", "instruments": ["MUX"],},
+            "summaries": {"gsd": [20.0]},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -214,11 +214,7 @@ BASE_CAMERA = {
             },
         },
         "AWFI": {
-            "properties": {
-                "gsd": 64.0,
-                "platform": "CBERS-4",
-                "instruments": ["AWFI"],
-            },
+            "summaries": {"gsd": [64.0],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -241,11 +237,7 @@ BASE_CAMERA = {
             },
         },
         "PAN5M": {
-            "properties": {
-                "gsd": 5.0,
-                "platform": "CBERS-4",
-                "instruments": ["PAN5M"],
-            },
+            "summaries": {"gsd": [5.0],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -256,11 +248,7 @@ BASE_CAMERA = {
             },
         },
         "PAN10M": {
-            "properties": {
-                "gsd": 10.0,
-                "platform": "CBERS-4",
-                "instruments": ["PAN10M"],
-            },
+            "summaries": {"gsd": [10.0],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -281,11 +269,7 @@ BASE_CAMERA = {
     },
     "CBERS4A": {
         "MUX": {
-            "properties": {
-                "gsd": 16.5,
-                "platform": "CBERS-4A",
-                "instruments": ["MUX"],
-            },
+            "summaries": {"gsd": [16.5],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -308,11 +292,7 @@ BASE_CAMERA = {
             },
         },
         "WFI": {
-            "properties": {
-                "gsd": 55.0,
-                "platform": "CBERS-4A",
-                "instruments": ["WFI"],
-            },
+            "summaries": {"gsd": [55.0],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -335,7 +315,8 @@ BASE_CAMERA = {
             },
         },
         "WPM": {
-            "properties": {"gsd": 2.0, "platform": "CBERS-4A", "instruments": ["WPM"],},
+            # First GSD should be the smaller
+            "summaries": {"gsd": [2.0, 8.0],},
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},

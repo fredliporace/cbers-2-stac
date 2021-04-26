@@ -172,6 +172,7 @@ def test_build_awfi_stac_item_keys():
 
     # properties
     assert smeta["properties"]["datetime"] == "2017-04-09T14:09:23Z"
+    assert smeta["properties"]["gsd"] == 64.0
 
     # properties:view
     assert smeta["properties"]["view:sun_azimuth"] == 43.9164

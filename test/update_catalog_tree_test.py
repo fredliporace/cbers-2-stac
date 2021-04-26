@@ -332,7 +332,7 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
         == "https://cbers-stac.s3.amazonaws.com/catalog.json"
     )
     assert collection["links"][2]["rel"] == "parent"
-    assert collection["properties"]["gsd"] == 64.0
+    assert collection["summaries"]["gsd"] == [64.0]
     assert collection["links"][2]["href"] == "../catalog.json"
     # assert validate(collection, setup.col_schema, resolver=setup.col_resolver) is None
     colv.validate_dict(collection)
@@ -357,7 +357,7 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    assert catalog["properties"]["gsd"] == 64.0
+    assert catalog["summaries"]["gsd"] == [64.0]
     # assert validate(catalog, setup.col_schema, resolver=setup.col_resolver) is None
     colv.validate_dict(catalog)
 

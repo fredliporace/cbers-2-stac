@@ -49,6 +49,7 @@
     "instruments": [
       "WPM"
     ],
+    "gsd": 2.0,
     "view:sun_azimuth": 32.9789,
     "view:sun_elevation": 44.3304,
     "view:off_nadir": 0.000453806,
@@ -94,7 +95,7 @@
     "B1": {
       "href": "s3://cbers-pds/CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/CBERS_4A_WPM_20200730_209_139_L4_BAND1.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
-      "gsd": 8,
+      "gsd": 8.0,
       "eo:bands": [
         {
           "name": "B1",
@@ -105,7 +106,7 @@
     "B2": {
       "href": "s3://cbers-pds/CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/CBERS_4A_WPM_20200730_209_139_L4_BAND2.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
-      "gsd": 8,
+      "gsd": 8.0,
       "eo:bands": [
         {
           "name": "B2",
@@ -116,7 +117,7 @@
     "B3": {
       "href": "s3://cbers-pds/CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/CBERS_4A_WPM_20200730_209_139_L4_BAND3.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
-      "gsd": 8,
+      "gsd": 8.0,
       "eo:bands": [
         {
           "name": "B3",
@@ -127,7 +128,7 @@
     "B4": {
       "href": "s3://cbers-pds/CBERS4A/WPM/209/139/CBERS_4A_WPM_20200730_209_139_L4/CBERS_4A_WPM_20200730_209_139_L4_BAND4.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
-      "gsd": 8,
+      "gsd": 8.0,
       "eo:bands": [
         {
           "name": "B4",

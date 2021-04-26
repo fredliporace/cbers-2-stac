@@ -464,7 +464,7 @@ class CBERS2STACStack(core.Stack):
             "static_catalog",
             sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
             destination_bucket=stac_working_bucket,
-            prune=False,
+            prune=settings.stac_bucket_prune,
         )
 
         # DynamoDB table

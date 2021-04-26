@@ -49,6 +49,7 @@
     "instruments": [
       "AWFI"
     ],
+    "gsd": 64.0,
     "view:sun_azimuth": 43.9164,
     "view:sun_elevation": 53.4479,
     "view:off_nadir": 0.00828942,

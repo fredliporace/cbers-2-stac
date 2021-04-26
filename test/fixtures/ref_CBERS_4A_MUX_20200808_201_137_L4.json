@@ -49,6 +49,7 @@
     "instruments": [
       "MUX"
     ],
+    "gsd": 16.5,
     "view:sun_azimuth": 35.2135,
     "view:sun_elevation": 47.8578,
     "view:off_nadir": 0.000389889,
