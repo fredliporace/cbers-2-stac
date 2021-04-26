@@ -71,6 +71,21 @@ def test_get_s3_keys():
     )
     assert s3_keys["quicklook_keys"]["camera"] == "WPM"
 
+    s3_keys = get_s3_keys(
+        "CBERS4A/MUX/219/125/"
+        "CBERS_4A_MUX_20210416_219_125_L4/"
+        "CBERS_4A_MUX_20210416_219_125.png"
+    )
+    assert (
+        s3_keys["stac"] == "CBERS4A/MUX/219/125/CBERS_4A_MUX_20210416_219_125_L4.json"
+    )
+    assert (
+        s3_keys["inpe_metadata"]
+        == "CBERS4A/MUX/219/125/CBERS_4A_MUX_20210416_219_125_L4/"
+        "CBERS_4A_MUX_20210416_219_125_L4_BAND6.xml"
+    )
+    assert s3_keys["quicklook_keys"]["camera"] == "MUX"
+
 
 def test_sns_topic_msg_attr_test():
     """build_sns_topic_msg_attributes_test"""
@@ -78,7 +93,8 @@ def test_sns_topic_msg_attr_test():
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
 
     stac_meta = convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_MUX_20170528" "_090_084_L2_BAND6.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
+        "_090_084_L2_BAND6.xml",
         stac_metadata_filename=None,
         buckets=buckets,
     )

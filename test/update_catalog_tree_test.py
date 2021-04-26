@@ -4,22 +4,13 @@
 # pylint: disable=redefined-outer-name
 
 import datetime
-import json
-import os
-from dataclasses import dataclass
-from typing import Dict
+from test.stac_validator import STACValidator
 
 import pytest
 from dateutil.tz import tzutc
-from jsonschema import RefResolver, validate
 
-# This import is here because the environment must be
-# set before importing. This may be changed by
-# using getters within update_catalog_tree
-from cbers2stac.layers.common.utils import (  # pylint: disable=wrong-import-position
-    STAC_VERSION,
-)
-from cbers2stac.update_catalog_tree.code import (  # pylint: disable=wrong-import-position
+from cbers2stac.layers.common.utils import STAC_VERSION
+from cbers2stac.update_catalog_tree.code import (
     base_stac_catalog,
     build_catalog_from_s3,
     get_catalog_info,
@@ -27,9 +18,6 @@ from cbers2stac.update_catalog_tree.code import (  # pylint: disable=wrong-impor
     get_items_from_s3,
     write_catalog_to_s3,
 )
-
-# from pystac.validation import validate_dict
-
 
 MUX_083_RESPONSE = {
     "ResponseMetadata": {
@@ -145,48 +133,6 @@ MUX_083_095_RESPONSE = {
 }
 
 
-@dataclass
-class Config:
-    """
-    Module test helpers
-    """
-
-    cat_resolver: RefResolver
-    cat_schema: Dict
-    col_resolver: RefResolver
-    col_schema: Dict
-
-
-@pytest.fixture(scope="module")
-def setup():
-    """
-    Setup for test module
-    """
-
-    params = dict()
-    json_schema_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "json_schema/catalog-spec/json-schema",
-    )
-    # Catalog schema validator
-    schema_path = os.path.join(json_schema_path, "catalog.json")
-    params["cat_resolver"] = RefResolver("file://" + json_schema_path + "/", None)
-    with open(schema_path) as fp_schema:
-        params["cat_schema"] = json.load(fp_schema)
-
-    # Collection schema validator
-    json_schema_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "json_schema/collection-spec/json-schema",
-    )
-    schema_path = os.path.join(json_schema_path, "collection.json")
-    params["col_resolver"] = RefResolver("file://" + json_schema_path + "/", None)
-    with open(schema_path) as fp_schema:
-        params["col_schema"] = json.load(fp_schema)
-
-    return Config(**params)
-
-
 def test_get_items_from_s3():
     """get_items_from_s3_test"""
 
@@ -240,14 +186,15 @@ def test_get_catalog_info():
     }
 
 
-def test_build_catalog_from_s3(setup):
+def test_build_catalog_from_s3():
     """build_catalog_from_s3_test"""
+
+    catv = STACValidator(schema_filename="catalog.json")
 
     catalog = build_catalog_from_s3(
         bucket="cbers-stac", prefix="CBERS4/MUX/083/095", response=MUX_083_095_RESPONSE
     )
     assert catalog["stac_version"] == STAC_VERSION
-    # validate_dict(catalog)
     assert catalog["id"] == "CBERS4 MUX 083/095"
     assert catalog["description"] == "CBERS4 MUX camera path 083 row 095 catalog"
     assert len(catalog["links"]) == 5
@@ -267,7 +214,7 @@ def test_build_catalog_from_s3(setup):
     assert catalog["links"][3]["href"] == "CBERS_4_MUX_20170714_083_095_L4.json"
     assert catalog["links"][4]["rel"] == "item"
     assert catalog["links"][4]["href"] == "CBERS_4_MUX_20180903_083_095_L2.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
 
     catalog = build_catalog_from_s3(
         bucket="cbers-stac", prefix="CBERS4/MUX/083", response=MUX_083_RESPONSE
@@ -293,11 +240,14 @@ def test_build_catalog_from_s3(setup):
     assert catalog["links"][3]["href"] == "083/catalog.json"
     assert catalog["links"][-1]["rel"] == "child"
     assert catalog["links"][-1]["href"] == "111/catalog.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
 
 
-def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
+def test_base_stac_catalog():  # pylint: disable=too-many-statements
     """base_stac_catalog_test"""
+
+    catv = STACValidator(schema_filename="catalog.json")
+    colv = STACValidator(schema_filename="collection.json")
 
     catalog = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI", "130", "100")
     assert catalog["stac_version"] == STAC_VERSION
@@ -316,7 +266,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
     assert "license" not in catalog
 
     # Same as before using concatenated satellite+mission
@@ -338,7 +289,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
     assert "license" not in catalog
 
     catalog = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI", "130")
@@ -359,7 +311,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../collection.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
 
     # This is the collection level
     collection = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI")
@@ -381,7 +334,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     assert collection["links"][2]["rel"] == "parent"
     assert collection["properties"]["gsd"] == 64.0
     assert collection["links"][2]["href"] == "../catalog.json"
-    assert validate(collection, setup.col_schema, resolver=setup.col_resolver) is None
+    # assert validate(collection, setup.col_schema, resolver=setup.col_resolver) is None
+    colv.validate_dict(collection)
 
     # This is the collection level using satellite and mission
     # concatenated
@@ -404,7 +358,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
     assert catalog["properties"]["gsd"] == 64.0
-    assert validate(catalog, setup.col_schema, resolver=setup.col_resolver) is None
+    # assert validate(catalog, setup.col_schema, resolver=setup.col_resolver) is None
+    colv.validate_dict(catalog)
 
     catalog = base_stac_catalog("cbers-stac", "CBERS", "4")
     assert catalog["stac_version"] == STAC_VERSION
@@ -423,7 +378,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
 
     catalog = base_stac_catalog("cbers-stac", "CBERS")
     assert catalog["stac_version"], STAC_VERSION
@@ -441,7 +397,8 @@ def test_base_stac_catalog(setup):  # pylint: disable=too-many-statements
         catalog["links"][1]["href"]
         == "https://cbers-stac.s3.amazonaws.com/catalog.json"
     )
-    assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
+    catv.validate_dict(catalog)
 
 
 @pytest.mark.s3_bucket_args("cbers-stac")

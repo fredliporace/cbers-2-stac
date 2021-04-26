@@ -13,6 +13,7 @@ inst_reqs = [
 extra_reqs = {
     "dev": ["awscli", "awscli-local",],
     "test": [
+        "pydantic",
         "importlib-metadata<2,>=0.12",  # This is required by tox 3.2.0
         "pytest",
         "pytest-cov",

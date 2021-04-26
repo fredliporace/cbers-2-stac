@@ -2,11 +2,17 @@
 
 import datetime
 import json
+import logging
 import os
 import re
 
 from cbers2stac.layers.common.cbers_2_stac import convert_inpe_to_stac
 from cbers2stac.layers.common.utils import get_client
+
+# Get rid of "Found credentials in environment variables" messages
+logging.getLogger("botocore.credentials").disabled = True
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
 # CBERS metadata
 # @todo check if quicklook_pixel_size is being used
@@ -208,7 +214,7 @@ def process_message(
       catalog_update_table: DynamoDB that hold the catalog update requests
     """
 
-    print(msg["key"])
+    LOGGER.info(msg["key"])
     metadata_keys = get_s3_keys(msg["key"])
 
     assert metadata_keys["quicklook_keys"]["camera"] in (

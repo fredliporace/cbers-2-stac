@@ -1,11 +1,9 @@
 """cbers_to_stac_test"""
 
 import difflib
-import json
-import os
+from test.stac_validator import STACValidator
 
 import pytest
-from jsonschema import RefResolver, validate
 from jsonschema.exceptions import ValidationError
 
 from cbers2stac.layers.common.cbers_2_stac import (
@@ -14,8 +12,6 @@ from cbers2stac.layers.common.cbers_2_stac import (
     epsg_from_utm_zone,
     get_keys_from_cbers,
 )
-
-# from pystac.validation import validate_dict
 
 
 def diff_files(filename1, filename2):
@@ -31,21 +27,6 @@ def diff_files(filename1, filename2):
     return res
 
 
-def validate_json(filename):
-    """
-    Validate STAC item using PySTAC
-    """
-    with open(filename) as fname:
-        jsd = json.load(fname)  # pylint: disable=unused-variable
-    # See issue#47
-    # validate_dict(jsd)
-
-
-json_schema_path = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "json_schema/item-spec/json-schema"
-)
-
-
 def test_epsg_from_utm_zone():
     """test_epsg_from_utm_zone"""
     assert epsg_from_utm_zone(-23) == 32723
@@ -56,7 +37,9 @@ def test_get_keys_from_cbers4():
     """test_get_keys_from_cbers"""
 
     # MUX
-    meta = get_keys_from_cbers("test/CBERS_4_MUX_20170528_090_084_" "L2_BAND6.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_MUX_20170528_090_084_" "L2_BAND6.xml"
+    )
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
     assert meta["sensor"] == "MUX"
@@ -68,7 +51,9 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-MUX"
 
     # AWFI
-    meta = get_keys_from_cbers("test/CBERS_4_AWFI_20170409_167_123" "_L4_BAND14.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_AWFI_20170409_167_123" "_L4_BAND14.xml"
+    )
     assert meta["sensor"] == "AWFI"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -78,7 +63,9 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-AWFI"
 
     # PAN10
-    meta = get_keys_from_cbers("test/CBERS_4_PAN10M_20190201_180_" "125_L2_BAND2.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_PAN10M_20190201_180_" "125_L2_BAND2.xml"
+    )
     assert meta["sensor"] == "PAN10M"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -88,7 +75,9 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-PAN10M"
 
     # PAN5
-    meta = get_keys_from_cbers("test/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml"
+    )
     assert meta["sensor"] == "PAN5M"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -98,7 +87,7 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-PAN5M"
 
     # PAN10, no gain attribute for each band
-    meta = get_keys_from_cbers("test/CBERS_4_PAN10M_NOGAIN.xml")
+    meta = get_keys_from_cbers("test/fixtures/CBERS_4_PAN10M_NOGAIN.xml")
     assert meta["sensor"] == "PAN10M"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -109,7 +98,9 @@ def test_get_keys_from_cbers4a():
     """test_get_keys_from_cbers4a"""
 
     # MUX
-    meta = get_keys_from_cbers("test/CBERS_4A_MUX_20200808_201_137_" "L4_BAND6.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4A_MUX_20200808_201_137_" "L4_BAND6.xml"
+    )
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4A"
     assert meta["sensor"] == "MUX"
@@ -119,7 +110,9 @@ def test_get_keys_from_cbers4a():
     assert meta["collection"] == "CBERS4A-MUX"
 
     # WPM
-    meta = get_keys_from_cbers("test/CBERS_4A_WPM_20200730_209_139_" "L4_BAND2.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4A_WPM_20200730_209_139_" "L4_BAND2.xml"
+    )
     assert meta["sensor"] == "WPM"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4A"
@@ -129,7 +122,9 @@ def test_get_keys_from_cbers4a():
     assert meta["collection"] == "CBERS4A-WPM"
 
     # WFI
-    meta = get_keys_from_cbers("test/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml"
+    )
     assert meta["sensor"] == "WFI"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4A"
@@ -152,7 +147,9 @@ def test_get_keys_from_cbers4a():
 def test_build_awfi_stac_item_keys():
     """test_awfi_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers("test/CBERS_4_AWFI_20170409_167_123_" "L4_BAND14.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_AWFI_20170409_167_123_" "L4_BAND14.xml"
+    )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
 
@@ -193,7 +190,9 @@ def test_build_awfi_stac_item_keys():
 def test_build_mux_stac_item_keys():
     """test_mux_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers("test/CBERS_4_MUX_20170528_090_084_L2_" "BAND6.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_" "BAND6.xml"
+    )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
 
@@ -259,7 +258,9 @@ def test_build_mux_stac_item_keys():
 def test_build_pan10_stac_item_keys():
     """test_pan10_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers("test/CBERS_4_PAN10M_20190201_180_125_" "L2_BAND2.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_PAN10M_20190201_180_125_" "L2_BAND2.xml"
+    )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
 
@@ -321,7 +322,9 @@ def test_build_pan10_stac_item_keys():
 def test_build_pan5_stac_item_keys():
     """test_pan5_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers("test/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml"
+    )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
 
@@ -380,7 +383,9 @@ def test_build_pan5_stac_item_keys():
 def test_build_wfi_stac_item_keys():
     """test_wfi_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers("test/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml")
+    meta = get_keys_from_cbers(
+        "test/fixtures/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml"
+    )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
 
@@ -414,13 +419,10 @@ def test_build_wfi_stac_item_keys():
     assert smeta["properties"]["cbers:row"] == 156
 
 
-def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
+def test_convert_inpe_to_stac():
     """test_convert_inpe_to_stac"""
 
-    schema_path = os.path.join(json_schema_path, "item.json")
-    resolver = RefResolver("file://" + json_schema_path + "/", None)
-    with open(schema_path) as fp_schema:
-        schema = json.load(fp_schema)
+    jsv = STACValidator(schema_filename="item.json")
 
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
 
@@ -428,26 +430,24 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
     output_filename = "test/CBERS_4_MUX_20170528_090_084_L2.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_MUX_20170528" "_090_084_L2_BAND6.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
+        "_090_084_L2_BAND6.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4mux = diff_files(ref_output_filename, output_filename)
 
     # AWFI, CB4
     output_filename = "test/CBERS_4_AWFI_20170409_167_123_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json"
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_AWFI_20170409" "_167_123_L4_BAND14.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_AWFI_20170409"
+        "_167_123_L4_BAND14.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4awfi = diff_files(ref_output_filename, output_filename)
 
     # PAN10M, CB4
@@ -456,13 +456,12 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
         "test/CBERS", "test/fixtures/ref_CBERS"
     )
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_PAN10M_" "20190201_180_125_L2_BAND2.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_"
+        "20190201_180_125_L2_BAND2.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4pan10 = diff_files(ref_output_filename, output_filename)
 
     # PAN5M, CB4
@@ -471,13 +470,12 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
         "test/CBERS", "test/fixtures/ref_CBERS"
     )
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_PAN5M_" "20161009_219_050_L2_BAND1.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_PAN5M_"
+        "20161009_219_050_L2_BAND1.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4pan5 = diff_files(ref_output_filename, output_filename)
 
     # PAN10M CB4, no gain
@@ -486,39 +484,35 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
         "test/CBERS", "test/fixtures/ref_CBERS"
     )
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4_PAN10M_" "NOGAIN.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_" "NOGAIN.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4pan10ng = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4A
     output_filename = "test/CBERS_4A_MUX_20200808_201_137_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4A_MUX_20200808_201_137_L4.json"
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4A_MUX_" "20200808_201_137_L4_BAND6.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4A_MUX_"
+        "20200808_201_137_L4_BAND6.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4amux = diff_files(ref_output_filename, output_filename)
 
     # WPM, CB4A
     output_filename = "test/CBERS_4A_WPM_20200730_209_139_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4A_WPM_20200730_209_139_L4.json"
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/CBERS_4A_WPM_" "20200730_209_139_L4_BAND2.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4A_WPM_"
+        "20200730_209_139_L4_BAND2.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    validate_json(output_filename)
-    with open(output_filename) as fp_in:
-        assert validate(json.load(fp_in), schema, resolver=resolver) is None
+    jsv.validate(output_filename)
     rescb4awpm = diff_files(ref_output_filename, output_filename)
 
     # Check all diffs here to make bulk update for reference jsons
@@ -535,13 +529,9 @@ def test_convert_inpe_to_stac():  # pylint: disable=too-many-statements
 def test_json_schema():
     """test_json_schema"""
 
-    schema_path = os.path.join(json_schema_path, "item.json")
-    resolver = RefResolver("file://" + json_schema_path + "/", None)
-    # assert schema_path, '')
-    with open(schema_path) as fp_schema:
-        schema = json.load(fp_schema)
+    # Check a fail from the schema validator
+    jsv = STACValidator(schema_filename="item.json")
     invalid_filename = "test/CBERS_4_MUX_20170528_090_084_L2_error.json"
-    with open(invalid_filename) as fp_in:
-        with pytest.raises(ValidationError) as context:
-            validate(json.load(fp_in), schema, resolver=resolver)
-            assert "'links' is a required property" in str(context.exception)
+    with pytest.raises(ValidationError) as context:
+        jsv.validate(invalid_filename)
+    assert "'links' is a required property" in str(context)

@@ -1,55 +1,24 @@
 """collection_test"""
 
 import json
-import os
+from test.stac_validator import STACValidator
 
 import pytest
-from jsonschema import RefResolver, validate
 from jsonschema.exceptions import ValidationError
 
-# from pystac.validation import validate_dict
-
-# Region is required for testing
-os.environ["AWS_DEFAULT_REGION"] = "us-east-1"
-
-# This import is here because the environment must be
-# set before importing. This may be changed by
-# using getters within base_stac_catalog
-from cbers2stac.update_catalog_tree.code import (  # pylint: disable=wrong-import-position
-    base_stac_catalog,
-)
-
-
-# See issue#47
-def validate_json(filename):
-    """
-    Validate STAC item using PySTAC
-    """
-    with open(filename) as fname:
-        jsd = json.load(fname)  # pylint: disable=unused-variable
-    # validate_dict(jsd)
+from cbers2stac.update_catalog_tree.code import base_stac_catalog
 
 
 def test_collection_json_schema():
     """test_collection_json_schema"""
 
-    json_schema_path = os.path.join(
-        os.path.dirname(os.path.abspath(__file__)),
-        "json_schema/collection-spec/json-schema",
-    )
-    schema_path = os.path.join(json_schema_path, "collection.json")
-    resolver = RefResolver("file://" + json_schema_path + "/", None)
-
-    # loads schema
-    with open(schema_path) as fp_schema:
-        schema = json.load(fp_schema)
+    jsv = STACValidator(schema_filename="collection.json")
 
     # Makes sure that a invalid file is flagged
     collection_filename = "test/CBERS_4_MUX_bogus_collection.json"
-    with open(collection_filename) as fp_in:
-        with pytest.raises(ValidationError) as context:
-            validate(json.load(fp_in), schema, resolver=resolver)
-        assert "'stac_version' is a required property" in context.value.message
+    with pytest.raises(ValidationError) as context:
+        jsv.validate(collection_filename)
+    assert "'stac_version' is a required property" in context.value.message
 
     # Checks all CBERS-4 collections
     collections = ["MUX", "AWFI", "PAN5M", "PAN10M"]
@@ -61,9 +30,7 @@ def test_collection_json_schema():
         )
         with open(collection_filename, "w") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
-        validate_json(collection_filename)
-        with open(collection_filename) as fp_in:
-            validate(json.load(fp_in), schema, resolver=resolver)
+        jsv.validate(collection_filename)
 
     # Checks all CBERS-4A collections
     collections = ["MUX", "WFI", "WPM"]
@@ -75,6 +42,4 @@ def test_collection_json_schema():
         )
         with open(collection_filename, "w") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
-        validate_json(collection_filename)
-        with open(collection_filename) as fp_in:
-            validate(json.load(fp_in), schema, resolver=resolver)
+        jsv.validate(collection_filename)
