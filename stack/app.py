@@ -134,6 +134,15 @@ class CBERS2STACStack(core.Stack):
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
 
+        # Subscription for CB4A (all cameras)
+        sns.Topic.from_topic_arn(
+            self,
+            id="CB4A",
+            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4AQuicklook",
+        ).add_subscription(
+            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+        )
+
         self.create_queue(
             id="catalog_prefix_update_queue",
             visibility_timeout=core.Duration.seconds(60),
