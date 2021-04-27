@@ -45,7 +45,7 @@
   "collection": "CBERS4A-WPM",
   "properties": {
     "datetime": "2020-07-30T13:51:24Z",
-    "platform": "CBERS-4A",
+    "platform": "cbers-4a",
     "instruments": [
       "WPM"
     ],

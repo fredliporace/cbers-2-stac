@@ -45,7 +45,7 @@
   "collection": "CBERS4-PAN5M",
   "properties": {
     "datetime": "2016-10-09T17:14:38Z",
-    "platform": "CBERS-4",
+    "platform": "cbers-4",
     "instruments": [
       "PAN5M"
     ],

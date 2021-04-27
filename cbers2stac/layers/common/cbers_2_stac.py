@@ -336,7 +336,7 @@ def build_stac_item_keys(cbers, buckets):
     stac_item["properties"]["datetime"] = datetime
 
     # Common metadata
-    stac_item["properties"]["platform"] = cbers["sat_number"]
+    stac_item["properties"]["platform"] = cbers["sat_number"].lower()
     stac_item["properties"]["instruments"] = [cbers["sensor"]]
     stac_item["properties"]["gsd"] = BASE_CAMERA[
         f"{cbers['mission']}{cbers['number']}"

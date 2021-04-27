@@ -45,7 +45,7 @@
   "collection": "CBERS4A-MUX",
   "properties": {
     "datetime": "2020-08-08T13:26:07Z",
-    "platform": "CBERS-4A",
+    "platform": "cbers-4a",
     "instruments": [
       "MUX"
     ],

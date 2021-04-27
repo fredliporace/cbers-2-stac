@@ -45,7 +45,7 @@
   "collection": "CBERS4-AWFI",
   "properties": {
     "datetime": "2017-04-09T14:09:23Z",
-    "platform": "CBERS-4",
+    "platform": "cbers-4",
     "instruments": [
       "AWFI"
     ],
