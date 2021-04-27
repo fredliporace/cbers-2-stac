@@ -3,7 +3,8 @@
   "stac_extensions": [
     "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
   ],
   "id": "CBERS_4_PAN10M_20160322_156_117_L2",
   "type": "Feature",
@@ -54,6 +55,8 @@
     "view:sun_elevation": 60.5691,
     "view:off_nadir": 0.00891637,
     "proj:epsg": 32723,
+    "sat:platform_international_designator": "2014-079A",
+    "sat:orbit_state": "descending",
     "cbers:data_type": "L2",
     "cbers:path": 156,
     "cbers:row": 117

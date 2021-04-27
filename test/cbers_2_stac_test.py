@@ -49,6 +49,7 @@ def test_get_keys_from_cbers4():
     assert meta["ct_lat"] == "14.423188"
     assert meta["ct_lon"] == "24.257145"
     assert meta["collection"] == "CBERS4-MUX"
+    assert meta["vz"] == "-7131.111624"
 
     # AWFI
     meta = get_keys_from_cbers(
@@ -108,6 +109,7 @@ def test_get_keys_from_cbers4a():
     assert meta["origin_longitude"] == "-45"
     assert meta["origin_latitude"] == "0"
     assert meta["collection"] == "CBERS4A-MUX"
+    assert meta["vz"] == "-7079.380000"
 
     # WPM
     meta = get_keys_from_cbers(

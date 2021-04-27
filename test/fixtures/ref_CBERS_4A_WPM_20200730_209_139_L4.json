@@ -3,7 +3,8 @@
   "stac_extensions": [
     "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
   ],
   "id": "CBERS_4A_WPM_20200730_209_139_L4",
   "type": "Feature",
@@ -54,6 +55,8 @@
     "view:sun_elevation": 44.3304,
     "view:off_nadir": 0.000453806,
     "proj:epsg": 32722,
+    "sat:platform_international_designator": "2019-093E",
+    "sat:orbit_state": "descending",
     "cbers:data_type": "L4",
     "cbers:path": 209,
     "cbers:row": 139

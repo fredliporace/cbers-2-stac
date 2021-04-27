@@ -3,7 +3,8 @@
   "stac_extensions": [
     "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
     "https://stac-extensions.github.io/view/v1.0.0/schema.json",
-    "https://stac-extensions.github.io/eo/v1.0.0/schema.json"
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
   ],
   "id": "CBERS_4_MUX_20170528_090_084_L2",
   "type": "Feature",
@@ -54,6 +55,8 @@
     "view:sun_elevation": 70.3079,
     "view:off_nadir": 0.00744884,
     "proj:epsg": 32635,
+    "sat:platform_international_designator": "2014-079A",
+    "sat:orbit_state": "descending",
     "cbers:data_type": "L2",
     "cbers:path": 90,
     "cbers:row": 84

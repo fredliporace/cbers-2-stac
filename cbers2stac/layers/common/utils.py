@@ -116,6 +116,7 @@ CBERS_MISSIONS: Dict[str, Any] = {
             "B15": {"common_name": "red"},
             "B16": {"common_name": "nir"},
         },
+        "international_designator": "2014-079A",
     },
     "CBERS-4A": {
         "interval": [["2019-12-20T00:00:00Z", None]],
@@ -141,6 +142,7 @@ CBERS_MISSIONS: Dict[str, Any] = {
             "B15": {"common_name": "red"},
             "B16": {"common_name": "nir"},
         },
+        "international_designator": "2019-093E",
     },
 }
 
@@ -182,7 +184,11 @@ BASE_COLLECTION = OrderedDict(
             "spatial": {"bbox": [[-180.0, -83.0, 180.0, 83.0]],},
             "temporal": {"interval": None},
         },
-        "summaries": {"gsd": None},
+        "summaries": {
+            "gsd": None,
+            "sat:platform_international_designator": None,
+            "sat:orbit_state": ["ascending", "descending"],
+        },
         "links": None,
         "item_assets": None,
     }
@@ -191,7 +197,12 @@ BASE_COLLECTION = OrderedDict(
 BASE_CAMERA = {
     "CBERS4": {
         "MUX": {
-            "summaries": {"gsd": [20.0]},
+            "summaries": {
+                "gsd": [20.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -214,7 +225,12 @@ BASE_CAMERA = {
             },
         },
         "AWFI": {
-            "summaries": {"gsd": [64.0],},
+            "summaries": {
+                "gsd": [64.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -237,7 +253,12 @@ BASE_CAMERA = {
             },
         },
         "PAN5M": {
-            "summaries": {"gsd": [5.0],},
+            "summaries": {
+                "gsd": [5.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -248,7 +269,12 @@ BASE_CAMERA = {
             },
         },
         "PAN10M": {
-            "summaries": {"gsd": [10.0],},
+            "summaries": {
+                "gsd": [10.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/jpeg"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -269,7 +295,12 @@ BASE_CAMERA = {
     },
     "CBERS4A": {
         "MUX": {
-            "summaries": {"gsd": [16.5],},
+            "summaries": {
+                "gsd": [16.5],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -292,7 +323,12 @@ BASE_CAMERA = {
             },
         },
         "WFI": {
-            "summaries": {"gsd": [55.0],},
+            "summaries": {
+                "gsd": [55.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},
@@ -316,7 +352,12 @@ BASE_CAMERA = {
         },
         "WPM": {
             # First GSD should be the smaller
-            "summaries": {"gsd": [2.0, 8.0],},
+            "summaries": {
+                "gsd": [2.0, 8.0],
+                "sat:platform_international_designator": [
+                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                ],
+            },
             "item_assets": {
                 "thumbnail": {"title": "Thumbnail", "type": "image/png"},
                 "metadata": {"title": "INPE original metadata", "type": "text/xml"},

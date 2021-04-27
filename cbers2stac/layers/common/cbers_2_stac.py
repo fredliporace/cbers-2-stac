@@ -199,6 +199,12 @@ def get_keys_from_cbers(
         metadata["roll"] = attitude.find("x:roll", nsp).text
         break
 
+    # ephemeris node information
+    ephemerides = image.find("x:ephemerides", nsp)
+    for ephemeris in ephemerides.findall("x:ephemeris", nsp):
+        metadata["vz"] = ephemeris.find("x:vz", nsp).text
+        break
+
     # availableBands node information
     available_bands = root.find("x:availableBands", nsp)
     metadata["bands"] = list()
@@ -293,6 +299,7 @@ def build_stac_item_keys(cbers, buckets):
         "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
         "https://stac-extensions.github.io/view/v1.0.0/schema.json",
         "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+        "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
     ]
     stac_item["id"] = "CBERS_%s_%s_%s_" "%03d_%03d_L%s" % (
         cbers["number"],
@@ -408,6 +415,14 @@ def build_stac_item_keys(cbers, buckets):
     if float(cbers["ct_lat"]) < 0.0:
         utm_zone *= -1
     stac_item["properties"]["proj:epsg"] = int(epsg_from_utm_zone(utm_zone))
+
+    # SATELLITE extension
+    stac_item["properties"]["sat:platform_international_designator"] = CBERS_MISSIONS[
+        cbers["sat_number"]
+    ]["international_designator"]
+    stac_item["properties"]["sat:orbit_state"] = (
+        "descending" if float(cbers["vz"]) < 0 else "ascending"
+    )
 
     # CBERS section
     stac_item["properties"]["cbers:data_type"] = "L" + cbers["processing_level"]

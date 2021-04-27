@@ -191,7 +191,7 @@ def get_base_collection(
 
     collection = deepcopy(BASE_CATALOG)
     collection.update(BASE_COLLECTION)
-    collection["summaries"] = BASE_CAMERA[sat_mission][camera]["summaries"]
+    collection["summaries"].update(BASE_CAMERA[sat_mission][camera]["summaries"])
     collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]
     collection["extent"]["temporal"]["interval"] = CBERS_MISSIONS[sat_mission][
         "interval"
