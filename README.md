@@ -2,13 +2,15 @@
 
 ![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=dev)
 
-Create and keep up-to-date a [STAC](https://github.com/radiantearth/stac-spec/tree/v0.7.0) static catalog for [CBERS-4 images on AWS](https://registry.opendata.aws/cbers/) and serve its contents through the STAC API.
+Create and keep up-to-date a [STAC](https://github.com/radiantearth/stac-spec) static catalog for [CBERS-4/4A images on AWS](https://registry.opendata.aws/cbers/).
+
+*NOTE* The dev branch is under major revamp to support STAC 1.0.0-rc-2. This documentation is not updated and should not be used for deployment.
 
 The mechanism to include new items into the archive as soon as they are ingested is described in [this AWS blog post](https://aws.amazon.com/blogs/publicsector/keeping-a-spatiotemporal-asset-catalog-stac-up-to-date-with-sns-sqs/).
 
 ## STAC version and extensions
 
-Supports STAC version 0.7.
+Supports STAC version 1.0.0-rc-2.
 
 The following extensions/features are available:
 
@@ -23,8 +25,6 @@ A live version of the stack is deployed to AWS and serve its contents in:
   * ```arn:aws:s3:::cbers-stac-0-7``` S3 bucket with static STAC content, including its [root catalog](https://cbers-stac-0-7.s3.amazonaws.com/catalog.json).
   * WFS3 [endpoint](https://stac.amskepler.com/v07/).
   * STAC [endpoint](https://stac.amskepler.com/v07/stac/).
-
-# Development
 
 # Development
 
