@@ -207,7 +207,7 @@ def base_root_catalog(bucket: str) -> Dict[Any, Any]:
     json_filename = "catalog.json"
     stac_catalog: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
     stac_catalog["id"] = "CBERS"
-    stac_catalog["description"] = "Catalogs from CBERS missions' imagery on AWS"
+    stac_catalog["description"] = "Catalogs from CBERS 4/4A missions' imagery on AWS"
     stac_catalog["title"] = "CBERS on AWS"
     stac_catalog["links"] = list()
 

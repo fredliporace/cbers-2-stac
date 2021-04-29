@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import Set
+from typing import List, Set
 
 from cbers2stac.layers.common.utils import get_client
 
@@ -12,7 +12,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 
-def get_catalog_levels(item):
+def get_catalog_levels(item: str) -> List[str]:
     """
     Return the levels to be updated given a STAC item key
     """
@@ -29,6 +29,8 @@ class GenerateCatalogLevelsToBeUpdated:
     and writes into output queue the catalog levels
     that must be updated.
     Items are removed input table after being processed.
+
+    iterations: number of table scans to be performed
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -47,7 +49,7 @@ class GenerateCatalogLevelsToBeUpdated:
         self._output_table = output_table
         self._queue: str = queue
         self._limit = limit
-        self._iterations = iterations
+        self._iterations: int = iterations
 
     @property
     def items(self):

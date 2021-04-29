@@ -4,10 +4,22 @@ import datetime
 
 import pytest
 
-from cbers2stac.generate_catalog_levels_to_be_updated.code import (  # pylint: disable=wrong-import-position
+from cbers2stac.generate_catalog_levels_to_be_updated.code import (
     GenerateCatalogLevelsToBeUpdated,
+    get_catalog_levels,
 )
 from cbers2stac.layers.common.dbtable import DBTable
+
+
+def test_get_catalog_levels():
+    """
+    test_get_catalog_levels
+    """
+
+    levels = get_catalog_levels(
+        "CBERS4/AWFI/141/123/CBERS_4_AWFI_20160506_141_123_L2.json"
+    )
+    assert levels == ["CBERS4/AWFI/141/123", "CBERS4/AWFI/141", "CBERS4/AWFI"]
 
 
 @pytest.mark.dynamodb_table_args({**(DBTable.schema())})
@@ -19,7 +31,9 @@ def test_process(dynamodb_table, sqs_queue):
     queue = sqs_queue
 
     stacitems = [
+        # 2 levels to be updated
         "CBERS4/AWFI/141/123/CBERS_4_AWFI_20160506_141_123_L2.json",
+        # ... +1 level(s) to be updated
         "CBERS4/AWFI/182/123/CBERS_4_AWFI_20170128_182_123_L4.json",
         "CBERS4/PAN10M/163/121/CBERS_4_PAN10M_20171020_163_121_L2.json",
         "CBERS4/PAN10M/163/122/CBERS_4_PAN10M_20171020_163_122_L2.json",
