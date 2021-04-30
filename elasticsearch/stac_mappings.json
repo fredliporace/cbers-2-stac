@@ -1,12 +1,10 @@
 {
     "mappings": {
-        "_doc": {
-            "properties": {
-                "geometry": {
-                    "type": "geo_shape",
-                    "tree": "quadtree",
-                    "precision": "100m"
-                }
+        "properties": {
+            "geometry": {
+                "type": "geo_shape",
+                "tree": "quadtree",
+                "precision": "100m"
             }
         }
     }

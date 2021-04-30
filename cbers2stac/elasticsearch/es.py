@@ -6,20 +6,19 @@ import json
 import os
 from typing import Dict
 
-import boto3
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
 
 from cbers2stac.layers.common.utils import (
+    get_client,
     get_collection_ids,
     get_collection_s3_key,
+    get_resource,
     static_to_api_collection,
 )
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
 
-SQS_CLIENT = boto3.client("sqs")
-S3 = boto3.resource("s3")
 ES_CLIENT = None
 
 
@@ -35,7 +34,7 @@ def sqs_messages(queue: str):
     """
 
     while True:
-        response = SQS_CLIENT.receive_message(QueueUrl=queue)
+        response = get_client("sqs").receive_message(QueueUrl=queue)
         if "Messages" not in response:
             break
         msg = json.loads(response["Messages"][0]["Body"])
@@ -55,7 +54,7 @@ def stac_item_from_s3_key(bucket: str, key: str):
     :return: stac item
     """
 
-    obj = S3.Object(bucket, key)
+    obj = get_resource("s3").Object(bucket, key)
     return json.loads(obj.get()["Body"].read().decode("utf-8"))
 
 
@@ -105,7 +104,7 @@ def process_insert_queue(
 
         # Remove message from queue
         if delete_messages:
-            SQS_CLIENT.delete_message(
+            get_client("sqs").delete_message(
                 QueueUrl=queue, ReceiptHandle=msg["ReceiptHandle"]
             )
 
@@ -150,7 +149,7 @@ def bulk_process_insert_queue(
     # Remove messages from queue
     if delete_messages:
         for receipt in receipts:
-            SQS_CLIENT.delete_message(QueueUrl=queue, ReceiptHandle=receipt)
+            get_client("sqs").delete_message(QueueUrl=queue, ReceiptHandle=receipt)
 
 
 def parse_datetime(dtime: str):
@@ -249,63 +248,45 @@ def create_stac_index(es_client, mapping_name: str = "whole", timeout: int = 30)
     # @todo this index selection turns out to be not necessary, remove
 
     mapping = dict()
-    mapping[
-        "whole"
-    ] = """
-{
-    "mappings": {
-        "_doc": {
-            "properties": {
-                "geometry": {
-                    "type": "geo_shape",
-                    "tree": "quadtree"
-                },
-                "collection": {
-                    "type": "keyword"
-                },
-                "assets": {
-                	"enabled": false
-                },
-                "bbox": {
-                	"enabled": false
-                },
-                "links": {
-        		"enabled": false
-          	}
+    mapping["whole"] = json.dumps(
+        {
+            # "mappings": {
+            #     "properties": {
+            #         "geometry": {
+            #             "type": "geo_shape",
+            #             "tree": "quadtree",
+            #             "precision": "100m"
+            #         }
+            #     }
+            # }
+            "mappings": {
+                "properties": {
+                    "stac_version": {"enabled": False},
+                    "stac_extensions": {"enabled": False},
+                    "type": {"enabled": False},
+                    "geometry": {"type": "geo_shape", "tree": "quadtree"},
+                    "collection": {"type": "keyword"},
+                    "assets": {"enabled": False},
+                    "bbox": {"enabled": False},
+                    "links": {"enabled": False},
+                }
             }
         }
-    }
-}
-"""
+    )
 
-    mapping[
-        "restricted"
-    ] = """
-{
-    "mappings": {
-        "_doc": {
-            "properties": {
-                "geometry": {
-                    "type": "geo_shape",
-                    "tree": "quadtree"
-                },
-                "collection": {
-                    "type": "keyword"
-                },
-                "assets": {
-                    "enabled": false
-                },
-                "bbox": {
-                    "enabled": false
-                },
-                "links": {
-                    "enabled": false
-          	}
+    mapping["restricted"] = json.dumps(
+        {
+            "mappings": {
+                "properties": {
+                    "geometry": {"type": "geo_shape", "tree": "quadtree"},
+                    "collection": {"type": "keyword"},
+                    "assets": {"enabled": False},
+                    "bbox": {"enabled": False},
+                    "links": {"enabled": False},
+                }
             }
         }
-    }
-}
-"""
+    )
 
     es_client.indices.create(
         index="stac", body=mapping[mapping_name], request_timeout=timeout

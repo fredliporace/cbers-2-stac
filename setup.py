@@ -28,8 +28,8 @@ extra_reqs = {
         # "elasticsearch==6.2.0",
         # "elasticsearch-dsl==6.2.0",
         # "aws-requests-auth==0.4.2",
-        "elasticsearch",
-        "elasticsearch-dsl",
+        "elasticsearch>=7.0.0,<8.0.0",
+        "elasticsearch-dsl>=7.0.0,<8.0.0",
         "aws-requests-auth",
         # Used in process_new_scene_queue
         "utm",
