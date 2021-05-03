@@ -25,9 +25,7 @@ extra_reqs = {
         "retry",
         # The packages below are used by lambdas and need to be installed locally
         # for testing to work
-        # "elasticsearch==6.2.0",
-        # "elasticsearch-dsl==6.2.0",
-        # "aws-requests-auth==0.4.2",
+        # Used in elasticsearch
         "elasticsearch>=7.0.0,<8.0.0",
         "elasticsearch-dsl>=7.0.0,<8.0.0",
         "aws-requests-auth",
@@ -44,12 +42,14 @@ extra_reqs = {
         "aws-cdk.aws-cloudwatch-actions",
         "aws-cdk.aws-lambda",
         "aws-cdk.aws-s3",
+        "aws-cdk.aws-s3-deployment",
+        "aws-cdk.aws-s3-assets",
         "aws-cdk.aws-iam",
         "aws-cdk.aws-dynamodb",
         "aws-cdk.aws-lambda-event-sources",
-        "aws-cdk.aws-s3-deployment",
         "aws-cdk.aws-events",
         "aws-cdk.aws-events-targets",
+        "aws-cdk.aws-apigateway",
     ],
 }
 

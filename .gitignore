@@ -17,3 +17,14 @@
 /test/catalog_structure/
 /test/fixtures/catalog_structure/
 /test/fixtures/test_update_catalog_or_collection/
+/cbers2stac/elasticsearch/aws_requests_auth/
+/cbers2stac/elasticsearch/bin/
+/cbers2stac/elasticsearch/certifi/
+/cbers2stac/elasticsearch/chardet/
+/cbers2stac/elasticsearch/dateutil/
+/cbers2stac/elasticsearch/elasticsearch/
+/cbers2stac/elasticsearch/elasticsearch_dsl/
+/cbers2stac/elasticsearch/idna/
+/cbers2stac/elasticsearch/requests/
+/cbers2stac/elasticsearch/six.py
+/cbers2stac/elasticsearch/urllib3/

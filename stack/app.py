@@ -6,6 +6,7 @@ from test.conftest import (  # pylint: disable=no-name-in-module, import-error
 from typing import Any, Dict, List
 
 # from aws_cdk import aws_s3_notifications as s3n
+from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
 from aws_cdk import aws_dynamodb as dynamodb
@@ -13,6 +14,7 @@ from aws_cdk import aws_events, aws_events_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
 from aws_cdk import aws_s3 as s3
+from aws_cdk import aws_s3_assets as s3_assets
 from aws_cdk import aws_s3_deployment as s3_deployment
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
@@ -54,12 +56,25 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_[kwargs["id"]] = lfun
         return lfun
 
+    def create_api_lambda(self, **kwargs: Any) -> aws_lambda.Function:
+        """
+        Create a lambda function that integrates with API gateway
+        These lambdas are kept in a separate list with separate permissions,
+        and its IDs are overridden to allow reference in the OpenAPI definition
+        file
+        """
+        assert "_" not in kwargs["id"]
+        lfun = aws_lambda.Function(self, **kwargs)
+        lel_id = lfun.node.default_child
+        lel_id.override_logical_id(kwargs["id"])
+        self.api_lambdas_[kwargs["id"]] = lfun
+
     def create_all_queues(self) -> None:
         """
         Create all STACK queues, attach subscriptions and alarms
         """
 
-        # General DLQs for lambdas
+        # General DLQs for lambdas (not API)
         self.create_queue(id="dead_letter_queue")
         general_dlq_alarm = cloudwatch.Alarm(
             self,
@@ -72,6 +87,22 @@ class CBERS2STACStack(core.Stack):
             comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
         )
         general_dlq_alarm.add_alarm_action(
+            cw_actions.SnsAction(self.topics_["alarm_topic"])
+        )
+
+        # DLQ for API lambdas
+        self.create_queue(id="api_dead_letter_queue")
+        api_dlq_alarm = cloudwatch.Alarm(
+            self,
+            "APIDLQAlarm",
+            metric=self.queues_["api_dead_letter_queue"].metric(
+                "ApproximateNumberOfMessagesVisible"
+            ),
+            evaluation_periods=1,
+            threshold=0.0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        api_dlq_alarm.add_alarm_action(
             cw_actions.SnsAction(self.topics_["alarm_topic"])
         )
 
@@ -375,6 +406,42 @@ class CBERS2STACStack(core.Stack):
             SqsEventSource(queue=self.queues_["reconcile_queue"], batch_size=5)
         )
 
+    def create_api_lambdas(self) -> None:
+        """
+        Create lambdas implementing the STAC API. The logical IDs for
+        lambdas created here are overriden to allow reference in the OpenAPI
+        file, see create_api_gateway
+        """
+
+        self.create_api_lambda(
+            id="LandingEndpointLambda",
+            code=aws_lambda.Code.from_asset(path="cbers2stac/stac_endpoint"),
+            handler="code.handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment={**self.lambdas_env_,},
+            layers=[self.layers_["common_layer"]],
+            timeout=core.Duration.seconds(30),
+            dead_letter_queue=self.queues_["api_dead_letter_queue"],
+            description="Implement / and /stac endpoints ",
+        )
+
+    def create_api_gateway(self) -> None:
+        """
+        Create API gateway and lambda integration
+        """
+
+        # api_stage = core.CfnParameter(self, id="ApiStage", type=str)
+        openapi_asset = s3_assets.Asset(
+            self,
+            "openapi_asset",
+            path="cbers2stac/openapi/openapi_compiled_integrated.yaml",
+        )
+        data = core.Fn.transform(
+            "AWS::Include", {"Location": openapi_asset.s3_object_url}
+        )
+        definition = apigateway.AssetApiDefinition.from_inline(data)
+        apigateway.SpecRestApi(self, id="stacapi", api_definition=definition)
+
     def __init__(
         self,
         scope: core.Construct,
@@ -395,9 +462,13 @@ class CBERS2STACStack(core.Stack):
         # All lambda layers
         self.layers_: Dict[str, aws_lambda.LayerVersion] = dict()
 
-        # All lambdas and permissions
+        # All lambdas and permissions (except API lambdas)
         self.lambdas_: Dict[str, aws_lambda.Function] = dict()
         self.lambdas_perms_: List[iam.PolicyStatement] = list()
+
+        # All API lambdas and permissions
+        self.api_lambdas_: Dict[str, aws_lambda.Function] = dict()
+        self.api_lambdas_perms_: List[iam.PolicyStatement] = list()
 
         # Parameters that will not typically change and thus
         # are defined as fixed ENVs
@@ -503,7 +574,7 @@ class CBERS2STACStack(core.Stack):
             ],
         )
 
-        # Common lambda permissions
+        # Common lambda (non API) permissions
         # Full access to all queues within stack
         self.lambdas_perms_.append(
             iam.PolicyStatement(
@@ -541,9 +612,18 @@ class CBERS2STACStack(core.Stack):
             )
         )
 
+        # Permissions for all (non API) lambdas
         for perm in self.lambdas_perms_:
             for lambda_f in self.lambdas_:
                 self.lambdas_[lambda_f].add_to_role_policy(perm)
+
+        # API
+        self.create_api_lambdas()
+        self.create_api_gateway()
+        for lambda_f in self.api_lambdas_:
+            self.api_lambdas_[lambda_f].grant_invoke(
+                iam.ServicePrincipal("apigateway.amazonaws.com")
+            )
 
 
 app = core.App()
