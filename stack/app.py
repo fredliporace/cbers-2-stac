@@ -434,7 +434,7 @@ class CBERS2STACStack(core.Stack):
         openapi_asset = s3_assets.Asset(
             self,
             "openapi_asset",
-            path="cbers2stac/openapi/openapi_compiled_integrated.yaml",
+            path="cbers2stac/openapi/core-item-search-integrated.yaml",
         )
         data = core.Fn.transform(
             "AWS::Include", {"Location": openapi_asset.s3_object_url}
