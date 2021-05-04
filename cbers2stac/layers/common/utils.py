@@ -3,7 +3,6 @@ utils.py
 Definitions for base item, catalog and collections
 """
 
-import copy
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List
@@ -68,18 +67,10 @@ COLLECTIONS = {
 
 STAC_VERSION = "1.0.0-rc.2"
 
+# Common items for catalog and collection documents.
 BASE_CATALOG = OrderedDict(
     {"stac_version": STAC_VERSION, "id": None, "description": None,}
 )
-
-# Base template for root documents
-STAC_DOC_TEMPLATE: Dict[str, Any] = {
-    "stac_version": None,
-    "id": "CBERS",
-    "description": "Catalogs of CBERS 4 & 4A mission's imagery on AWS",
-    "title": "CBERS 4 & CBERS 4A on AWS",
-    "links": [],
-}
 
 COG_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
@@ -453,7 +444,9 @@ def parse_api_gateway_event(event: dict):
     parsed["phost"] = "{protocol}://{host}".format(
         protocol=event["headers"]["X-Forwarded-Proto"], host=event["headers"]["Host"]
     )
-    parsed["ppath"] = "{phost}{path}".format(phost=parsed["phost"], path=event["path"])
+    parsed["ppath"] = "{phost}{path}".format(
+        phost=parsed["phost"], path=event["requestContext"]["path"]
+    )
     parsed["prefix"] = event["path"].split("/")[1]
     parsed["vpath"] = "{phost}/{prefix}".format(
         phost=parsed["phost"], prefix=parsed["prefix"]
@@ -473,20 +466,28 @@ def get_api_stac_root(event: dict):
     :return: STAC root document as dict
     """
 
-    doc = copy.deepcopy(STAC_DOC_TEMPLATE)
+    doc: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
+    doc["id"] = "CBERS"
+    doc["description"] = "Catalogs of CBERS 4 & 4A mission's imagery on AWS"
+    doc["title"] = "CBERS 4 & CBERS 4A on AWS"
+    doc["links"] = list()
+    doc["conformsTo"] = list()
+
     parsed = parse_api_gateway_event(event)
-    doc["stac_version"] = STAC_VERSION
-    doc["links"].append({"self": parsed["ppath"]})
-    for collection in COLLECTIONS:
-        doc["links"].append(
-            {
-                "child": "{phost}/{prefix}/collections/{collection}".format(
-                    phost=parsed["phost"],
-                    prefix=parsed["prefix"],
-                    collection=collection,
-                )
-            }
-        )
+    doc["links"].append({"rel": "self", "href": parsed["ppath"]})
+    # This is being commented out while the /collections endpoint
+    # is not implemented
+    # for collection in COLLECTIONS:
+    #     doc["links"].append(
+    #         {
+    #             "child": "{phost}/{prefix}/collections/{collection}".format(
+    #                 phost=parsed["phost"],
+    #                 prefix=parsed["prefix"],
+    #                 collection=collection,
+    #             )
+    #         }
+    #     )
+    doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/core")
     return doc
 
 

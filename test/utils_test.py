@@ -1,6 +1,7 @@
 """utils_test"""
 
 import json
+from test.stac_validator import STACValidator
 
 from cbers2stac.layers.common.utils import (
     build_collection_name,
@@ -57,29 +58,33 @@ def test_collection_utils():
 def test_get_api_stac_root():
     """test_get_api_stac_root"""
 
-    with open("test/api_event.json", "r") as jfile:
+    with open("test/fixtures/api_event.json", "r") as jfile:
         event = json.load(jfile)
 
     sroot = get_api_stac_root(event=event)
-    assert sroot["links"][0]["self"] == "https://stac.amskepler.com/v07/stac"
-    assert (
-        sroot["links"][1]["child"]
-        == "https://stac.amskepler.com/v07/collections/CBERS4-MUX"
-    )
-    assert (
-        sroot["links"][4]["child"]
-        == "https://stac.amskepler.com/v07/collections/CBERS4-PAN5M"
-    )
+    assert sroot["links"][0]["href"] == "https://stac.amskepler.com/v07/stac"
+    # Commented out while /collections endpoint is not implemented
+    # assert (
+    #     sroot["links"][1]["child"]
+    #     == "https://stac.amskepler.com/v07/collections/CBERS4-MUX"
+    # )
+    # assert (
+    #     sroot["links"][4]["child"]
+    #     == "https://stac.amskepler.com/v07/collections/CBERS4-PAN5M"
+    # )
 
     # Check correct number on second call
     sroot = get_api_stac_root(event=event)
-    assert len(sroot["links"]) == 8
+    assert len(sroot["links"]) == 1
+
+    val = STACValidator(schema_filename="catalog.json")
+    val.validate_dict(sroot)
 
 
 def test_parse_api_gateway_event():
     """test_parse_api_gateway_event"""
 
-    with open("test/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r") as cfile:
         event = json.load(cfile)
     parsed = parse_api_gateway_event(event)
     assert parsed["phost"] == "https://stac.amskepler.com"
@@ -94,7 +99,7 @@ def test_static_to_api_collection():
 
     with open("test/cbers4muxcollection.json", "r") as cfile:
         collection = json.load(cfile)
-    with open("test/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r") as cfile:
         event = json.load(cfile)
     # from nose.tools import set_trace; set_trace()
     api_collection = static_to_api_collection(collection=collection, event=event)

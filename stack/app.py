@@ -618,12 +618,13 @@ class CBERS2STACStack(core.Stack):
                 self.lambdas_[lambda_f].add_to_role_policy(perm)
 
         # API
-        self.create_api_lambdas()
-        self.create_api_gateway()
-        for lambda_f in self.api_lambdas_:
-            self.api_lambdas_[lambda_f].grant_invoke(
-                iam.ServicePrincipal("apigateway.amazonaws.com")
-            )
+        if settings.enable_api:
+            self.create_api_lambdas()
+            self.create_api_gateway()
+            for lambda_f in self.api_lambdas_:
+                self.api_lambdas_[lambda_f].grant_invoke(
+                    iam.ServicePrincipal("apigateway.amazonaws.com")
+                )
 
 
 app = core.App()

@@ -19,6 +19,8 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     stac_bucket_public_read: Optional[bool] = False
     stac_bucket_prune: bool = False
 
+    enable_api: Optional[bool] = False
+
     additional_env: Dict[str, str] = {}
 
     class Config:  # pylint: disable=too-few-public-methods
