@@ -50,6 +50,7 @@ extra_reqs = {
         "aws-cdk.aws-events",
         "aws-cdk.aws-events-targets",
         "aws-cdk.aws-apigateway",
+        "aws-cdk.aws-elasticsearch",
     ],
 }
 

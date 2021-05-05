@@ -10,6 +10,7 @@ from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
 from aws_cdk import aws_dynamodb as dynamodb
+from aws_cdk import aws_elasticsearch as elasticsearch
 from aws_cdk import aws_events, aws_events_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
@@ -429,6 +430,44 @@ class CBERS2STACStack(core.Stack):
             SqsEventSource(queue=self.queues_["reconcile_queue"], batch_size=5)
         )
 
+        # Section with lambdas used to support STAC API. Specific lambdas integrated
+        # with API GW are defined in create_api_lambdas()
+        if settings.enable_api:
+
+            self.create_lambda(
+                id="create_elastic_index_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                handler="es.create_stac_index_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment={**self.lambdas_env_,},
+                layers=[self.layers_["common_layer"]],
+                timeout=core.Duration.seconds(30),
+                dead_letter_queue=self.queues_["dead_letter_queue"],
+                description="Create Elasticsearch stac index",
+            )
+
+            self.create_lambda(
+                id="insert_into_elastic_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                handler="es.create_documents_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment={
+                    **self.lambdas_env_,
+                    **{"ES_STRIPPED": "YES", "BULK_CALLS": "1", "BULK_SIZE": "10"},
+                },
+                layers=[self.layers_["common_layer"]],
+                timeout=core.Duration.seconds(30),
+                dead_letter_queue=self.queues_["dead_letter_queue"],
+                # Concurrent executions tuned to work with t2.small.elasticsearch
+                reserved_concurrent_executions=5,
+                description="Consume STAC items from queue, inserting into ES",
+            )
+            self.lambdas_["insert_into_elastic_lambda"].add_event_source(
+                SqsEventSource(
+                    queue=self.queues_["insert_into_elasticsearch_queue"], batch_size=10
+                )
+            )
+
     def create_api_lambdas(self) -> None:
         """
         Create lambdas implementing the STAC API. The logical IDs for
@@ -436,6 +475,7 @@ class CBERS2STACStack(core.Stack):
         file, see create_api_gateway
         """
 
+        # Section with lambdas integrated with API GW
         self.create_api_lambda(
             id="LandingEndpointLambda",
             code=aws_lambda.Code.from_asset(path="cbers2stac/stac_endpoint"),
@@ -445,8 +485,13 @@ class CBERS2STACStack(core.Stack):
             layers=[self.layers_["common_layer"]],
             timeout=core.Duration.seconds(30),
             dead_letter_queue=self.queues_["api_dead_letter_queue"],
-            description="Implement / and /stac endpoints ",
+            description="Implement / and /stac endpoints",
         )
+
+        for lambda_f in self.api_lambdas_:
+            self.api_lambdas_[lambda_f].grant_invoke(
+                iam.ServicePrincipal("apigateway.amazonaws.com")
+            )
 
     def create_api_gateway(self) -> None:
         """
@@ -464,6 +509,43 @@ class CBERS2STACStack(core.Stack):
         )
         definition = apigateway.AssetApiDefinition.from_inline(data)
         apigateway.SpecRestApi(self, id="stacapi", api_definition=definition)
+
+    def create_es_domain(self) -> None:
+        """
+        Create Elasticsearch domain and complete configuration for lambdas
+        that uses it.
+        """
+
+        es_lambdas: List[str] = [
+            "create_elastic_index_lambda",
+            "insert_into_elastic_lambda",
+        ]
+
+        esd = elasticsearch.Domain(
+            self,
+            id="cbers2stac",
+            # This is the version currently used by localstack
+            version=elasticsearch.ElasticsearchVersion.V7_7,
+            ebs=elasticsearch.EbsOptions(enabled=True, volume_size=10),
+            capacity=elasticsearch.CapacityConfig(
+                data_node_instance_type="t2.small.elasticsearch", data_nodes=1,
+            ),
+            access_policies=[
+                iam.PolicyStatement(
+                    actions=["es:*"],
+                    principals=[
+                        self.lambdas_[lambda_f].grant_principal
+                        for lambda_f in es_lambdas
+                    ],
+                    # No need to specify resource, the domain is implicit
+                )
+            ],
+        )
+
+        # Add environment for lambdas
+        for lambda_f in es_lambdas:
+            self.lambdas_[lambda_f].add_environment("ES_ENDPOINT", esd.domain_endpoint)
+            self.lambdas_[lambda_f].add_environment("ES_PORT", "443")
 
     def __init__(
         self,
@@ -644,10 +726,7 @@ class CBERS2STACStack(core.Stack):
         if settings.enable_api:
             self.create_api_lambdas()
             self.create_api_gateway()
-            for lambda_f in self.api_lambdas_:
-                self.api_lambdas_[lambda_f].grant_invoke(
-                    iam.ServicePrincipal("apigateway.amazonaws.com")
-                )
+            self.create_es_domain()
 
 
 app = core.App()
