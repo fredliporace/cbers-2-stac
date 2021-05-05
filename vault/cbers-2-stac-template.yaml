@@ -376,33 +376,36 @@ Resources:
   #     EventSourceArn: !GetAtt [CatalogPrefixUpdateQueue, Arn]
   #     FunctionName: !Ref UpdateCatalogPrefixFunction
 
+  # CDK
   # This queue subscribes to the new STAC item SNS topic
   # and has a lambda trigger that inserts the item into
   # the search backend (Elasticsearch for now)
-  InsertIntoElasticsearchQueue:
-    Type: 'AWS::SQS::Queue'
-    Properties:
-      MessageRetentionPeriod: 1209600
-      # This needs to be updated when the timeout for
-      # ConsumeInsertIntoElasticsearchQueueFunction is
-      # chaged, use 5-6 times the timeout value
-      VisibilityTimeout: 180
+  # InsertIntoElasticsearchQueue:
+  #   Type: 'AWS::SQS::Queue'
+  #   Properties:
+  #     MessageRetentionPeriod: 1209600
+  #     # This needs to be updated when the timeout for
+  #     # ConsumeInsertIntoElasticsearchQueueFunction is
+  #     # chaged, use 5-6 times the timeout value
+  #     VisibilityTimeout: 180
 
+  # CDK
   # Subscription for updating with new STAC items
-  InsertIntoElasticsearchSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: !Ref CBERSSTACItemTopic
+  # InsertIntoElasticsearchSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: !Ref CBERSSTACItemTopic
 
+  # CDK
   # Subscription for updating with reconciling STAC items
-  InsertIntoElasticsearchReconcileSubscription:
-    Type: 'AWS::SNS::Subscription'
-    Properties:
-      Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
-      Protocol: 'sqs'
-      TopicArn: !Ref ReconcileCBERSSTACItemTopic
+  # InsertIntoElasticsearchReconcileSubscription:
+  #   Type: 'AWS::SNS::Subscription'
+  #   Properties:
+  #     Endpoint: !GetAtt InsertIntoElasticsearchQueue.Arn
+  #     Protocol: 'sqs'
+  #     TopicArn: !Ref ReconcileCBERSSTACItemTopic
 
   InsertIntoElasticsearchQueuePolicy:
     Type: 'AWS::SQS::QueuePolicy'
@@ -641,53 +644,55 @@ Resources:
         Type: 'SQS'
         TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  LandingEndpointFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: stac_endpoint
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        stac API endpoint
-      Timeout: 55
-      Events:
-        # This information is not injected in the swagger template,
-        # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
-        # If the lambda changes then the swagger file must be changed
-        StacEndpointApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref StacApi
-            Path: /
-            Method: ANY
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+  # CDK
+  # LandingEndpointFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: stac_endpoint
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: >
+  #       stac API endpoint
+  #     Timeout: 55
+  #     Events:
+  #       # This information is not injected in the swagger template,
+  #       # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+  #       # If the lambda changes then the swagger file must be changed
+  #       StacEndpointApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref StacApi
+  #           Path: /
+  #           Method: ANY
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
-  StacEndpointFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: stac_endpoint
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        stac API endpoint
-      Timeout: 55
-      Events:
-        # This information is not injected in the swagger template,
-        # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
-        # If the lambda changes then the swagger file must be changed
-        StacEndpointApi:
-          Type: Api
-          Properties:
-            RestApiId: !Ref StacApi
-            Path: /stac
-            Method: ANY
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt GeneralLambdaDLQ.Arn
+  # This endpoint is removed in 1-0
+  # StacEndpointFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: stac_endpoint
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: >
+  #       stac API endpoint
+  #     Timeout: 55
+  #     Events:
+  #       # This information is not injected in the swagger template,
+  #       # see https://github.com/awslabs/serverless-application-model/issues/8#issuecomment-290212883
+  #       # If the lambda changes then the swagger file must be changed
+  #       StacEndpointApi:
+  #         Type: Api
+  #         Properties:
+  #           RestApiId: !Ref StacApi
+  #           Path: /stac
+  #           Method: ANY
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt GeneralLambdaDLQ.Arn
 
   # See https://github.com/awslabs/serverless-application-model/issues/59
   # This does not seem to be needed aymore, keeping as reference just in case
@@ -840,26 +845,27 @@ Resources:
   #   Properties:
   #     MessageRetentionPeriod: 1209600
 
-  SQSKeepAliveFunction:
-    Type: 'AWS::Serverless::Function'
-    Properties:
-      CodeUri: sqs_keep_alive
-      Handler: code.handler
-      Role: !GetAtt LambdaRole.Arn
-      Policies:
-      Description: >
-        Iterates through SQS list to keep them active for
-        Cloudwatch alarms.
-        Not being used for the moment since the monitored
-        queues will be activated when new messages are written,
-        this is enough for the alarms to be generated.
-      Timeout: 15
-      Environment:
-        Variables:
-          QUEUES_URLS: !Join [',', [!Ref ConsumeReconcileQueueFunctionDLQ]]
-      DeadLetterQueue:
-        Type: 'SQS'
-        TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
+  # Will not be migrated
+  # SQSKeepAliveFunction:
+  #   Type: 'AWS::Serverless::Function'
+  #   Properties:
+  #     CodeUri: sqs_keep_alive
+  #     Handler: code.handler
+  #     Role: !GetAtt LambdaRole.Arn
+  #     Policies:
+  #     Description: >
+  #       Iterates through SQS list to keep them active for
+  #       Cloudwatch alarms.
+  #       Not being used for the moment since the monitored
+  #       queues will be activated when new messages are written,
+  #       this is enough for the alarms to be generated.
+  #     Timeout: 15
+  #     Environment:
+  #       Variables:
+  #         QUEUES_URLS: !Join [',', [!Ref ConsumeReconcileQueueFunctionDLQ]]
+  #     DeadLetterQueue:
+  #       Type: 'SQS'
+  #       TargetArn: !GetAtt ConsumeReconcileQueueFunctionDLQ.Arn
 
   #################################################
   # Lambda end
@@ -880,13 +886,14 @@ Resources:
   #     - Arn: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
   #       Id: "GCLTBU"
 
-  GenerateCatalogLevelsPermission:
-    Type: 'AWS::Lambda::Permission'
-    Properties:
-      FunctionName: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
-      Action: 'lambda:InvokeFunction'
-      Principal: 'events.amazonaws.com'
-      SourceArn: !GetAtt GenerateCatalogLevels.Arn
+  # CDK: not needed
+  # GenerateCatalogLevelsPermission:
+  #   Type: 'AWS::Lambda::Permission'
+  #   Properties:
+  #     FunctionName: !GetAtt GenerateCatalogLevelsToBeUpdatedFunction.Arn
+  #     Action: 'lambda:InvokeFunction'
+  #     Principal: 'events.amazonaws.com'
+  #     SourceArn: !GetAtt GenerateCatalogLevels.Arn
 
   #################################################
   # Rule end

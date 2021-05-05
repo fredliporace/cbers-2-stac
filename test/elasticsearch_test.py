@@ -117,7 +117,12 @@ def test_strip_stac_item():
         item = json.loads(fin.read())
     assert "bbox" in item
     strip = strip_stac_item(item)
+    assert "stac_version" not in strip
+    assert "stac_extensions" not in strip
+    assert "type" not in strip
+    assert "links" not in strip
     assert "bbox" not in strip
+    assert "assets" not in strip
     assert (
         strip["s3_key"] == "CBERS4/MUX/090/084/CBERS_4_MUX_20170528_" "090_084_L2.json"
     )

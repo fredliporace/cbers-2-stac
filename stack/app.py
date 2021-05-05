@@ -106,9 +106,11 @@ class CBERS2STACStack(core.Stack):
             cw_actions.SnsAction(self.topics_["alarm_topic"])
         )
 
-        # This queue subscribe to CBERS 4/4A quicklooks notifications. The
+        # The new_scenes_queue subscribe to CBERS 4/4A quicklooks notifications. The
         # STAC items are generated from the original INPE metadata file as
         # soon as the quicklooks are created in the PDS bucket
+        # This code fragment creates the queue, the associated dlq and
+        # subscribe to CBERS 4/4A quicklook notification topics
         self.create_queue(
             id="process_new_scenes_queue_dlq",
             retention_period=core.Duration.seconds(1209600),
@@ -126,7 +128,6 @@ class CBERS2STACStack(core.Stack):
         process_new_scenes_queue_alarm.add_alarm_action(
             cw_actions.SnsAction(self.topics_["alarm_topic"])
         )
-
         self.create_queue(
             id="new_scenes_queue",
             visibility_timeout=core.Duration.seconds(385),
@@ -164,7 +165,6 @@ class CBERS2STACStack(core.Stack):
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
-
         # Subscription for CB4A (all cameras)
         sns.Topic.from_topic_arn(
             self,
@@ -207,6 +207,29 @@ class CBERS2STACStack(core.Stack):
             dead_letter_queue=sqs.DeadLetterQueue(
                 max_receive_count=3, queue=self.queues_["consume_reconcile_queue_dlq"]
             ),
+        )
+
+        # Queue for STAC items to be inserted into Elasticsearch. Subscribe to the
+        # topic with new stac items
+        self.create_queue(
+            id="insert_into_elasticsearch_queue",
+            visibility_timeout=core.Duration.seconds(180),
+            retention_period=core.Duration.seconds(1209600),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3, queue=self.queues_["dead_letter_queue"]
+            ),
+        )
+        # Subscription for new item topics
+        self.topics_["stac_item_topic"].add_subscription(
+            sns_subscriptions.SqsSubscription(
+                self.queues_["insert_into_elasticsearch_queue"]
+            )
+        )
+        # Subscription for reconciled item topics
+        self.topics_["reconcile_stac_item_topic"].add_subscription(
+            sns_subscriptions.SqsSubscription(
+                self.queues_["insert_into_elasticsearch_queue"]
+            )
         )
 
     def create_all_topics(self) -> None:

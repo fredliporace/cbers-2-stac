@@ -58,7 +58,7 @@ def stac_item_from_s3_key(bucket: str, key: str):
     return json.loads(obj.get()["Body"].read().decode("utf-8"))
 
 
-def strip_stac_item(item: dict):
+def strip_stac_item(item: dict) -> dict:
     """
     Strips a stac item, removing not stored fields
 
@@ -68,13 +68,17 @@ def strip_stac_item(item: dict):
     """
 
     strip = item
-    strip.pop("bbox")
     s3_key = None
     for link in item["links"]:
         if link["rel"] == "self":
             s3_key = link["href"]
     assert s3_key is not None, "Can't find self key"
+    # Remove fields that will not be stored
+    strip.pop("stac_version")
+    strip.pop("stac_extensions")
+    strip.pop("type")
     strip.pop("links")
+    strip.pop("bbox")
     strip.pop("assets")
 
     # https://cbers-stac-0-6.s3.amazonaws.com/CBERS4/PAN5M/156/107/CBERS_4_PAN5M_20150610_156_107_L4.json
@@ -223,49 +227,40 @@ def es_connect(  # pylint: disable=too-many-arguments
     return es_client
 
 
-def create_stac_index(es_client, mapping_name: str = "whole", timeout: int = 30):
+def create_stac_index(es_client, timeout: int = 30):
     """
     Create STAC index.
 
     :param es_client: Elasticsearch client
-    :param mapping_name: Mapping to be created, the following options
-      are supported:
-        "whole": whole stac item is stored, geo and properties indexed
-        "restricted": only geometry, properties and id are stored and indexed.
-                      an additional field is included with the static item
-                      key in S3
     :param timeout int: timeout in seconds
     """
-
-    assert mapping_name in ("whole", "restricted"), (
-        "Unrecognized mapping name, " + mapping_name
-    )
 
     # Check for geometry precision and impact on indexing performance
     # http://teknosrc.com/elasticsearch-geo-shape-slow-indexing-performance-solved/
     # https://www.elastic.co/guide/en/elasticsearch/reference/6.2/geo-shape.html
+    # Old versions defined the geometry precision:
+    #         "geometry": {
+    #             "type": "geo_shape",
+    #             "tree": "quadtree",
+    #             "precision": "100m"
 
-    # @todo this index selection turns out to be not necessary, remove
-
-    mapping = dict()
-    mapping["whole"] = json.dumps(
+    # This mapping assumes as input a stripped stac item.
+    mapping = json.dumps(
         {
-            # "mappings": {
-            #     "properties": {
-            #         "geometry": {
-            #             "type": "geo_shape",
-            #             "tree": "quadtree",
-            #             "precision": "100m"
-            #         }
-            #     }
-            # }
             "mappings": {
                 "properties": {
+                    # Explicitly indexed fields
+                    "id": {"type": "keyword"},
+                    # Removing "tree" parameter since it is deprecated
+                    # "geometry": {"type": "geo_shape", "tree": "quadtree"},
+                    "geometry": {"type": "geo_shape"},
+                    "collection": {"type": "keyword"},
+                    "s3_key": {"type": "keyword"},
+                    # Field "properties" is indexed but not explicitly
+                    # Remaining fields are disabled
                     "stac_version": {"enabled": False},
                     "stac_extensions": {"enabled": False},
                     "type": {"enabled": False},
-                    "geometry": {"type": "geo_shape", "tree": "quadtree"},
-                    "collection": {"type": "keyword"},
                     "assets": {"enabled": False},
                     "bbox": {"enabled": False},
                     "links": {"enabled": False},
@@ -274,23 +269,7 @@ def create_stac_index(es_client, mapping_name: str = "whole", timeout: int = 30)
         }
     )
 
-    mapping["restricted"] = json.dumps(
-        {
-            "mappings": {
-                "properties": {
-                    "geometry": {"type": "geo_shape", "tree": "quadtree"},
-                    "collection": {"type": "keyword"},
-                    "assets": {"enabled": False},
-                    "bbox": {"enabled": False},
-                    "links": {"enabled": False},
-                }
-            }
-        }
-    )
-
-    es_client.indices.create(
-        index="stac", body=mapping[mapping_name], request_timeout=timeout
-    )
+    es_client.indices.create(index="stac", body=mapping, request_timeout=timeout)
 
 
 def bulk_create_document_in_index(
@@ -311,7 +290,8 @@ def bulk_create_document_in_index(
             dict_item = strip_stac_item(json.loads(item))
         if not update_if_exists:
             bulk_item = dict()
-            bulk_item["_type"] = "_doc"
+            # doc type is deprecated
+            # bulk_item["_type"] = "_doc"
             bulk_item["_id"] = dict_item["id"]
             bulk_item["_op_type"] = "create"
             bulk_item["_index"] = "stac"
@@ -319,7 +299,8 @@ def bulk_create_document_in_index(
             stac_updates.append(bulk_item)
         else:
             bulk_item = dict()
-            bulk_item["_type"] = "_doc"
+            # doc type is deprecated
+            # bulk_item["_type"] = "_doc"
             bulk_item["_id"] = dict_item["id"]
             bulk_item["_op_type"] = "update"
             bulk_item["_index"] = "stac"
@@ -357,7 +338,8 @@ def create_document_in_index(
             index="stac",
             id=item["id"],
             body=item,
-            doc_type="_doc",
+            # doc_type is deprecated
+            # doc_type="_doc",
             request_timeout=timeout,
         )
     else:
@@ -368,7 +350,8 @@ def create_document_in_index(
             index="stac",
             id=document["doc"]["id"],
             body=document,
-            doc_type="_doc",
+            # doc_type is deprecated
+            # doc_type="_doc",
             request_timeout=timeout,
         )
 
@@ -442,7 +425,8 @@ def stac_search(  # pylint: disable=too-many-arguments
             },
         )
 
-    query = query.sort("_id")
+    # Previously using "_id", deprecated
+    query = query.sort("id")
     # query = query.query(Q("multi_match",
     #                      query="aa",
     #                      fields=['properties.provider']))
