@@ -488,6 +488,7 @@ def get_api_stac_root(event: dict):
     #         }
     #     )
     doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/core")
+    doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/item-search")
     return doc
 
 

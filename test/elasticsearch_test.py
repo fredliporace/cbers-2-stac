@@ -328,6 +328,17 @@ def test_basic_search(es_client):
     assert res[0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
     # print(res[0].to_dict())
 
+    # Geo search for whole envelope, was raising error when
+    # update to ES 7.7
+    res = stac_search(
+        es_client=es_client,
+        start_date=None,
+        end_date=None,
+        bbox=[[-180.0, 90.0], [180.0, -90.0]],
+    )
+    res = res.execute()
+    assert res["hits"]["total"]["value"] == 2
+
     # Query extension (eq operator only)
     empty_query = stac_search(es_client=es_client)
     res = process_query_extension(dsl_query=empty_query, query_params={}).execute()

@@ -3,6 +3,7 @@
 # pylint: disable=too-many-lines
 
 import json
+import logging
 import os
 from typing import Dict
 
@@ -18,6 +19,11 @@ from cbers2stac.layers.common.utils import (
 )
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 from elasticsearch.helpers import bulk
+
+# Get rid of "Found credentials in environment variables" messages
+logging.getLogger("botocore.credentials").disabled = True
+LOGGER = logging.getLogger()
+LOGGER.setLevel(logging.INFO)
 
 ES_CLIENT = None
 
@@ -580,12 +586,12 @@ def query_from_event(es_client, event):
         qsp = event["queryStringParameters"]
         # @todo process query extension for GET
         if qsp:
-            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,-90,180,90"))
+            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
             document["time"] = qsp.get("time", None)
             document["limit"] = int(qsp.get("limit", "10"))
             document["page"] = int(qsp.get("page", "1"))
         else:
-            document["bbox"] = parse_bbox("-180,-90,180,90")
+            document["bbox"] = parse_bbox("-180,90,180,-90")
             document["time"] = None
             document["limit"] = 10
             document["page"] = 1
@@ -735,12 +741,12 @@ def stac_search_endpoint_handler(
         qsp = event["queryStringParameters"]
         # @todo process query extension for GET
         if qsp:
-            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,-90,180,90"))
+            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
             document["time"] = qsp.get("time", None)
             document["limit"] = int(qsp.get("limit", "10"))
             document["page"] = int(qsp.get("page", "1"))
         else:
-            document["bbox"] = parse_bbox("-180,-90,180,90")
+            document["bbox"] = parse_bbox("-180,90,180,-90")
             document["time"] = None
             document["limit"] = 10
             document["page"] = 1
@@ -789,6 +795,7 @@ def stac_search_endpoint_handler(
         )
 
     # Execute query
+    LOGGER.info(query.to_dict())
     res = query.execute()
     results = dict()
     results["type"] = "FeatureCollection"

@@ -485,7 +485,18 @@ class CBERS2STACStack(core.Stack):
             layers=[self.layers_["common_layer"]],
             timeout=core.Duration.seconds(30),
             dead_letter_queue=self.queues_["api_dead_letter_queue"],
-            description="Implement / and /stac endpoints",
+            description="Implement / endpoint (landing page)",
+        )
+        self.create_api_lambda(
+            id="SearchEndpointLambda",
+            code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+            handler="es.stac_search_endpoint_handler",
+            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            environment={**self.lambdas_env_,},
+            layers=[self.layers_["common_layer"]],
+            timeout=core.Duration.seconds(55),
+            dead_letter_queue=self.queues_["api_dead_letter_queue"],
+            description="Implement /search endpoint",
         )
 
         for lambda_f in self.api_lambdas_:
@@ -516,9 +527,10 @@ class CBERS2STACStack(core.Stack):
         that uses it.
         """
 
-        es_lambdas: List[str] = [
-            "create_elastic_index_lambda",
-            "insert_into_elastic_lambda",
+        es_lambdas: List[aws_lambda.Function] = [
+            self.lambdas_["create_elastic_index_lambda"],
+            self.lambdas_["insert_into_elastic_lambda"],
+            self.api_lambdas_["SearchEndpointLambda"],
         ]
 
         esd = elasticsearch.Domain(
@@ -533,10 +545,7 @@ class CBERS2STACStack(core.Stack):
             access_policies=[
                 iam.PolicyStatement(
                     actions=["es:*"],
-                    principals=[
-                        self.lambdas_[lambda_f].grant_principal
-                        for lambda_f in es_lambdas
-                    ],
+                    principals=[lambda_f.grant_principal for lambda_f in es_lambdas],
                     # No need to specify resource, the domain is implicit
                 )
             ],
@@ -544,8 +553,9 @@ class CBERS2STACStack(core.Stack):
 
         # Add environment for lambdas
         for lambda_f in es_lambdas:
-            self.lambdas_[lambda_f].add_environment("ES_ENDPOINT", esd.domain_endpoint)
-            self.lambdas_[lambda_f].add_environment("ES_PORT", "443")
+            lambda_f.add_environment("ES_ENDPOINT", esd.domain_endpoint)
+            lambda_f.add_environment("ES_PORT", "443")
+            lambda_f.add_environment("ES_SSL", "YES")
 
     def __init__(
         self,

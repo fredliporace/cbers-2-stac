@@ -1762,7 +1762,10 @@ paths:
       tags:
       - Item Search
       x-amazon-apigateway-integration:
-        type: mock
+        type: aws_proxy
+        httpMethod: post
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
     post:
       description: 'retrieve items matching filters. Intended as the standard, full-featured
 
@@ -2658,7 +2661,10 @@ paths:
       tags:
       - Item Search
       x-amazon-apigateway-integration:
-        type: mock
+        type: aws_proxy
+        httpMethod: post
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
 tags:
 - description: essential characteristics of a STAC API
   name: Item Search
