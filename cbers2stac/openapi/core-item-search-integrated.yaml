@@ -877,6 +877,14 @@ info:
   title: The SpatioTemporal Asset Catalog API - Item Search
   version: 1.0.0-beta.1
 openapi: 3.0.3
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params-only:
+    validateRequestBody: false
+    validateRequestParameters: true
+x-amazon-apigateway-request-validator: all
 paths:
   /:
     get:
