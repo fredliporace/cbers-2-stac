@@ -5,7 +5,7 @@
 import json
 import logging
 import os
-from typing import Dict
+from typing import Dict, Tuple
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
@@ -369,7 +369,7 @@ def stac_search(  # pylint: disable=too-many-arguments
     bbox: list = None,
     limit: int = 10,
     page: int = 1,
-):
+) -> Search:
     """
     Search STAC items
 
@@ -573,16 +573,16 @@ def process_query_extension(dsl_query, query_params: dict):
     return dsl_query
 
 
-def query_from_event(es_client, event):
+def query_from_event(es_client, event) -> Tuple[Search, dict]:
     """
     Build query from event
 
     :param event: event from lambda integration
-    :return: DSL query
+    :return: Tuple with DSL query and processed parameters as a dict
     """
 
+    document = dict()
     if event["httpMethod"] == "GET":
-        document = dict()
         qsp = event["queryStringParameters"]
         # @todo process query extension for GET
         if qsp:
@@ -596,7 +596,8 @@ def query_from_event(es_client, event):
             document["limit"] = 10
             document["page"] = 1
     else:  # POST
-        document = json.loads(event["body"])
+        if event.get("body"):
+            document = json.loads(event["body"])
         # bbox is not mandatory
         if document.get("bbox"):
             document["bbox"] = [
@@ -622,7 +623,7 @@ def query_from_event(es_client, event):
         limit=document["limit"],
         page=document["page"],
     )
-    return query
+    return query, document
 
 
 def create_stac_index_handler(event, context):  # pylint: disable=unused-argument
@@ -719,10 +720,6 @@ def stac_search_endpoint_handler(
     else:
         auth = None
 
-    # print(os.environ['ES_ENDPOINT'])
-    # print(os.environ['ES_PORT'])
-    # print(os.environ['ES_SSL'])
-    # print(auth)
     es_client = es_connect(
         endpoint=os.environ["ES_ENDPOINT"],
         port=int(os.environ["ES_PORT"]),
@@ -730,53 +727,8 @@ def stac_search_endpoint_handler(
         verify_certs=(auth is not None),
         http_auth=auth,
     )
-    # print(es_client)
-    # print("Checking ES connecion")
-    # print(es_client.ping())
-    # print("Checking ES connecion end")
 
-    # print(json.dumps(event, indent=2))
-    if event["httpMethod"] == "GET":
-        document = dict()
-        qsp = event["queryStringParameters"]
-        # @todo process query extension for GET
-        if qsp:
-            document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
-            document["time"] = qsp.get("time", None)
-            document["limit"] = int(qsp.get("limit", "10"))
-            document["page"] = int(qsp.get("page", "1"))
-        else:
-            document["bbox"] = parse_bbox("-180,90,180,-90")
-            document["time"] = None
-            document["limit"] = 10
-            document["page"] = 1
-    else:  # POST
-        document = json.loads(event["body"])
-        # bbox is not mandatory
-        if document.get("bbox"):
-            document["bbox"] = [
-                [document["bbox"][0], document["bbox"][1]],
-                [document["bbox"][2], document["bbox"][3]],
-            ]
-        else:
-            document["bbox"] = None
-        document["limit"] = int(document.get("limit", "10"))
-        document["page"] = int(document.get("page", "1"))
-        # print(document)
-
-    start, end = None, None
-    if document.get("time"):
-        start, end = parse_datetime(document["time"])
-
-    # Build basic query object
-    query = stac_search(
-        es_client=es_client,
-        start_date=start,
-        end_date=end,
-        bbox=document["bbox"],
-        limit=document["limit"],
-        page=document["page"],
-    )
+    query, document = query_from_event(es_client=es_client, event=event)
 
     # Process 'query' extension
     if document.get("query"):
@@ -900,8 +852,9 @@ def wfs3_collectionid_items_endpoint_handler(
     cid = event["pathParameters"]["collectionId"]
 
     # Build basic query object
-    query = query_from_event(es_client=es_client, event=event)
-
+    query, document = query_from_event(  # pylint: disable=unused-variable
+        es_client=es_client, event=event
+    )
     # Process 'collections' filter
     query = process_collections_filter(dsl_query=query, collections=[cid])
 
@@ -958,8 +911,9 @@ def wfs3_collectionid_featureid_endpoint_handler(
     fid = event["pathParameters"]["featureId"]
 
     # Build basic query object
-    query = query_from_event(es_client=es_client, event=event)
-
+    query, document = query_from_event(  # pylint: disable=unused-variable
+        es_client=es_client, event=event
+    )
     # Process filters
     query = process_collections_filter(dsl_query=query, collections=[cid])
     query = process_feature_filter(dsl_query=query, feature_ids=[fid])
