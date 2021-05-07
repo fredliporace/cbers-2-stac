@@ -58,11 +58,25 @@ def test_collection_utils():
 def test_get_api_stac_root():
     """test_get_api_stac_root"""
 
+    val = STACValidator(schema_filename="catalog.json")
+
     with open("test/fixtures/api_event.json", "r") as jfile:
         event = json.load(jfile)
 
+    # core only
     sroot = get_api_stac_root(event=event)
     assert sroot["links"][0]["href"] == "https://stac.amskepler.com/v07/stac"
+    assert len(sroot["links"]) == 1
+    val.validate_dict(sroot)
+
+    # item-search
+    sroot = get_api_stac_root(event=event, item_search=True)
+    assert len(sroot["links"]) == 3
+    assert sroot["links"][0]["href"] == "https://stac.amskepler.com/v07/stac"
+    assert sroot["links"][1]["href"] == "https://stac.amskepler.com/v07/stac/search"
+    assert sroot["links"][2]["href"] == "https://stac.amskepler.com/v07/stac/search"
+    val.validate_dict(sroot)
+
     # Commented out while /collections endpoint is not implemented
     # assert (
     #     sroot["links"][1]["child"]
@@ -72,13 +86,6 @@ def test_get_api_stac_root():
     #     sroot["links"][4]["child"]
     #     == "https://stac.amskepler.com/v07/collections/CBERS4-PAN5M"
     # )
-
-    # Check correct number on second call
-    sroot = get_api_stac_root(event=event)
-    assert len(sroot["links"]) == 1
-
-    val = STACValidator(schema_filename="catalog.json")
-    val.validate_dict(sroot)
 
 
 def test_parse_api_gateway_event():

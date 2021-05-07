@@ -457,7 +457,7 @@ def parse_api_gateway_event(event: dict):
     return parsed
 
 
-def get_api_stac_root(event: dict):
+def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
     """
     Return STAC api root document
 
@@ -474,7 +474,9 @@ def get_api_stac_root(event: dict):
     doc["conformsTo"] = list()
 
     parsed = parse_api_gateway_event(event)
+
     doc["links"].append({"rel": "self", "href": parsed["ppath"]})
+
     # This is being commented out while the /collections endpoint
     # is not implemented
     # for collection in COLLECTIONS:
@@ -488,7 +490,16 @@ def get_api_stac_root(event: dict):
     #         }
     #     )
     doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/core")
-    doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/item-search")
+    if item_search:
+        isl = {
+            "rel": "search",
+            "title": "Search",
+            "type": "application/geo+json",
+            "href": f"{parsed['ppath']}/search",
+        }
+        doc["links"].append({**isl, **{"method": "GET"}})
+        doc["links"].append({**isl, **{"method": "POST"}})
+        doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/item-search")
     return doc
 
 
