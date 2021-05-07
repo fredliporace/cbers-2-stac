@@ -28,3 +28,5 @@
 /cbers2stac/elasticsearch/requests/
 /cbers2stac/elasticsearch/six.py
 /cbers2stac/elasticsearch/urllib3/
+/test/common.zip
+/test/stac_endpoint.zip
