@@ -441,8 +441,14 @@ def parse_api_gateway_event(event: dict):
     """
 
     parsed = dict()
+    # Protocol now defaulting to https to work with localstack
+    # environment which does not have the "X-Forwarded-Proto"
+    # key
+    protocol = event["headers"].get("X-Forwarded-Proto")
+    if not protocol:
+        protocol = "http"
     parsed["phost"] = "{protocol}://{host}".format(
-        protocol=event["headers"]["X-Forwarded-Proto"], host=event["headers"]["Host"]
+        protocol=protocol, host=event["headers"]["Host"]
     )
     parsed["ppath"] = "{phost}{path}".format(
         phost=parsed["phost"], path=event["requestContext"]["path"]

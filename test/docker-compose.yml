@@ -12,7 +12,7 @@ services:
       - "4571:4571"
       #- "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
     environment:
-      - SERVICES=sqs,s3,sns,lambda,cloudwatch,dynamodb,es
+      - SERVICES=sqs,s3,sns,lambda,cloudwatch,dynamodb,es,apigateway
       - DEBUG=1
       - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=${PORT_WEB_UI- }

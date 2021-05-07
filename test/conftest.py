@@ -236,8 +236,8 @@ def lambda_function(request):  # pylint: disable=too-many-locals
             else:
                 create_lambda_layer_from_dir(**layer)
 
-    lambda_dir = f"cbers04aonaws/lambdas/{lambda_name}"
-    lambda_zip = "tests/" + pathlib.PurePath(lambda_dir).name + ".zip"
+    lambda_dir = f"cbers2stac/{lambda_name}"
+    lambda_zip = "test/" + pathlib.PurePath(lambda_dir).name + ".zip"
 
     # If there are layers then we include the sources
     # from the lambda dir. If not we zip the complete
@@ -292,7 +292,7 @@ def lambda_function(request):  # pylint: disable=too-many-locals
     lambda_func = lambda_client.create_function(
         FunctionName=lambda_name,
         Runtime="python3.7",
-        Handler=f"{lambda_name}.{lambda_handler}",
+        Handler=f"{lambda_handler}",
         Role="role",
         # See above (deploy from ZIP file)
         # Code=dict(ZipFile=zipped_code),
