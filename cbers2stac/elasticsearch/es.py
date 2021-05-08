@@ -709,6 +709,9 @@ def stac_search_endpoint_handler(
     """
 
     # @todo common code with WFS3 {collectionId/items} endpoint, unify
+    # Fix to work with localstack environment
+    if os.environ.get("LOCALSTACK_HOSTNAME"):
+        os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
 
     # Check for local development or production environment
     if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:

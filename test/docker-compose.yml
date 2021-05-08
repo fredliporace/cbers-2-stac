@@ -6,6 +6,8 @@ services:
     #image: localstack/localstack
     image: localstack/localstack-full
     network_mode: bridge
+    #networks:
+    #  - internal
     ports:
       - "4566:4566"
       # This is the Elasticsearch port
@@ -30,3 +32,9 @@ services:
     volumes:
       - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
+
+# Network used for lambda/es testing
+# https://github.com/localstack/localstack/issues/3814
+#networks:
+#  internal:
+#    name: internal

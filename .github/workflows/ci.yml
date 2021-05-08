@@ -49,11 +49,9 @@ jobs:
         if: matrix.python-version == 3.7
         run: pre-commit run --all-files
 
-      # This will be activated when the new CDK deploy
-      # is develped
       # Installs packages on lambdas directories
-      # - name: Install packages on lambdas
-      #   run: ./pip-on-lambdas.sh
+      - name: Install packages on lambdas
+        run: ./pip-on-lambdas.sh
 
       # Run tox using the version of Python in `PATH`
       # Always displays docker-compose logs for debugging
