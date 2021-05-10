@@ -105,10 +105,21 @@ def test_parse_datetime():
 def test_parse_bbox():
     """test_parse_bbox"""
 
+    bbox = parse_bbox("-170,70,160,-80")
+    assert len(bbox) == 2
+    assert bbox[0] == [-170, 70]
+    assert bbox[1] == [160, -80]
+
+    # Check inversion for ES convention
     bbox = parse_bbox("-180,-90,180,90")
     assert len(bbox) == 2
-    assert bbox[0] == [-180, -90]
-    assert bbox[1] == [180, 90]
+    assert bbox[0] == [-180, 90]
+    assert bbox[1] == [180, -90]
+
+    bbox = parse_bbox("-170,-80,160,70")
+    assert len(bbox) == 2
+    assert bbox[0] == [-170, 70]
+    assert bbox[1] == [160, -80]
 
 
 def test_strip_stac_item():

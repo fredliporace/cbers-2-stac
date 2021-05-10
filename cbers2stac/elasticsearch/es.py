@@ -5,7 +5,7 @@
 import json
 import logging
 import os
-from typing import Dict, Tuple
+from typing import Any, Dict, List, Tuple
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
@@ -187,19 +187,25 @@ def parse_datetime(dtime: str):
     return start, end
 
 
-def parse_bbox(bbox: str):
+def parse_bbox(bbox: str) -> List[List[float]]:
     """
     Parse a bbox in string format from a STAC request
 
     :param bbox str: input bbox
-    :return: List of floats
-    :rtype: list
+    :return: List of floats representing the (top left lon, top lef lat),
+             (bottom right lon, bottom right lat), following the
+             envelope definition for Elasticsearch 7
     """
 
-    els = bbox.split(",")
+    els = [float(coord) for coord in bbox.split(",")]
+    assert len(els) == 4, bbox
+    assert els[0] <= els[2], "First lon corner is not western"
+    # Make sure that output bbox is top - bottom
+    if els[1] < els[3]:
+        els[1], els[3] = els[3], els[1]
     bbox_l = list()
-    bbox_l.append([float(els[0]), float(els[1])])
-    bbox_l.append([float(els[2]), float(els[3])])
+    bbox_l.append([els[0], els[1]])
+    bbox_l.append([els[2], els[3]])
     return bbox_l
 
 
@@ -581,7 +587,7 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
     :return: Tuple with DSL query and processed parameters as a dict
     """
 
-    document = dict()
+    document: Dict[str, Any] = dict()
     if event["httpMethod"] == "GET":
         qsp = event["queryStringParameters"]
         # @todo process query extension for GET
