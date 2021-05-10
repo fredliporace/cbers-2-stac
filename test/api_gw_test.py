@@ -3,6 +3,7 @@
 # Remove warnings when using pytest fixtures
 # pylint: disable=redefined-outer-name
 
+import json
 from test.conftest import ENDPOINT_URL
 
 # warning disabled, this is used as a pylint fixture
@@ -16,7 +17,11 @@ from cbers2stac.elasticsearch.es import create_document_in_index
 
 
 def api_gw_lambda_integrate_deploy(
-    api_client, api: dict, api_resource: dict, lambda_func: dict
+    api_client,
+    api: dict,
+    api_resource: dict,
+    lambda_func: dict,
+    http_method: str = "GET",
 ) -> str:
     """
     Integrate lambda with api gw method and deploy api.
@@ -29,7 +34,7 @@ def api_gw_lambda_integrate_deploy(
     api_client.put_integration(
         restApiId=api["id"],
         resourceId=api_resource["id"],
-        httpMethod="GET",
+        httpMethod=http_method,
         type="AWS",
         integrationHttpMethod="POST",
         uri=lambda_integration_arn,
@@ -100,7 +105,7 @@ def api_gw_method(request):
         ),
     }
 )
-def test_root_endpoint(api_gw_method, lambda_function):
+def test_root(api_gw_method, lambda_function):
     """
     test_root_endpoint
     """
@@ -137,7 +142,7 @@ def test_root_endpoint(api_gw_method, lambda_function):
         ),
     }
 )
-def test_search_endpoint(api_gw_method, lambda_function, es_client):
+def test_item_search_empty_get(api_gw_method, lambda_function, es_client):
     """
     test_search_endpoint
     """
@@ -168,4 +173,71 @@ def test_search_endpoint(api_gw_method, lambda_function, es_client):
 
     url = api_gw_lambda_integrate_deploy(api_client, api, api_resource, lambda_func)
     req = requests.get(url)
+    assert req.status_code == 200, req.text
+
+
+@pytest.mark.api_gw_method_args(
+    {
+        "put_method_args": {"httpMethod": "POST",},
+        "put_method_response_args": {"httpMethod": "POST",},
+    }
+)
+@pytest.mark.lambda_function_args(
+    {
+        "name": "elasticsearch",
+        "handler": "es.stac_search_endpoint_handler",
+        "environment": {},
+        "timeout": 30,
+        "layers": (
+            {
+                "output_dir": "./test",
+                "layer_dir": "./cbers2stac/layers/common",
+                "tag": "common",
+            },
+        ),
+    }
+)
+def test_item_search_single_collection_post(api_gw_method, lambda_function, es_client):
+    """
+    test_item_search_endpoint_single_collection_post
+    """
+
+    api_client, api, api_resource = api_gw_method
+    lambda_client, lambda_func = lambda_function  # pylint: disable=unused-variable
+    # ES_ENDPOINT is set by lambda_function
+    lambda_client.update_function_configuration(
+        FunctionName=lambda_func["FunctionName"],
+        Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
+    )
+
+    stac_items = list()
+    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+        stac_items.append(fin.read())
+    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+        stac_items.append(fin.read())
+
+    for stac_item in stac_items:
+        create_document_in_index(es_client=es_client, stac_item=stac_item)
+
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
+    )
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
+    )
+
+    url = api_gw_lambda_integrate_deploy(
+        api_client, api, api_resource, lambda_func, http_method="POST"
+    )
+    req = requests.post(
+        url,
+        data=json.dumps(
+            {
+                "collections": ["mycollection"],
+                "bbox": [-170, -25.89, 160.6, -55.95],
+                "limit": 100,
+                "datetime": "2019-01-01T00:00:00Z/2019-01-01T23:59:59Z",
+            }
+        ),
+    )
     assert req.status_code == 200, req.text

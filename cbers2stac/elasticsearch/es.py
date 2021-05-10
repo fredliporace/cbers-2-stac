@@ -187,18 +187,13 @@ def parse_datetime(dtime: str):
     return start, end
 
 
-def parse_bbox(bbox: str) -> List[List[float]]:
+def bbox_to_es_envelope(els: List[float]) -> List[List[float]]:
     """
-    Parse a bbox in string format from a STAC request
-
-    :param bbox str: input bbox
-    :return: List of floats representing the (top left lon, top lef lat),
-             (bottom right lon, bottom right lat), following the
-             envelope definition for Elasticsearch 7
+    Receive a bbox using STAC representation and convert to
+    ES 7 envelope convention (top left lon, top lef lat),
+             (bottom right lon, bottom right lat)
     """
-
-    els = [float(coord) for coord in bbox.split(",")]
-    assert len(els) == 4, bbox
+    assert len(els) == 4, els
     assert els[0] <= els[2], "First lon corner is not western"
     # Make sure that output bbox is top - bottom
     if els[1] < els[3]:
@@ -207,6 +202,17 @@ def parse_bbox(bbox: str) -> List[List[float]]:
     bbox_l.append([els[0], els[1]])
     bbox_l.append([els[2], els[3]])
     return bbox_l
+
+
+def parse_bbox(bbox: str) -> List[List[float]]:
+    """
+    Parse a bbox in string format from a STAC request
+
+    :param bbox str: input bbox as CSV
+    """
+
+    els = [float(coord) for coord in bbox.split(",")]
+    return bbox_to_es_envelope(els)
 
 
 def es_connect(  # pylint: disable=too-many-arguments
@@ -593,7 +599,7 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
         # @todo process query extension for GET
         if qsp:
             document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
-            document["time"] = qsp.get("time", None)
+            document["time"] = qsp.get("datetime", None)
             document["limit"] = int(qsp.get("limit", "10"))
             document["page"] = int(qsp.get("page", "1"))
         else:
@@ -606,10 +612,7 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
             document = json.loads(event["body"])
         # bbox is not mandatory
         if document.get("bbox"):
-            document["bbox"] = [
-                [document["bbox"][0], document["bbox"][1]],
-                [document["bbox"][2], document["bbox"][3]],
-            ]
+            document["bbox"] = bbox_to_es_envelope(document["bbox"])
         else:
             document["bbox"] = None
         document["limit"] = int(document.get("limit", "10"))
@@ -617,8 +620,8 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
         # print(document)
 
     start, end = None, None
-    if document.get("time"):
-        start, end = parse_datetime(document["time"])
+    if document.get("datetime"):
+        start, end = parse_datetime(document["datetime"])
 
     # Build basic query object
     query = stac_search(
@@ -714,71 +717,83 @@ def stac_search_endpoint_handler(
     Lambda entry point
     """
 
-    # @todo common code with WFS3 {collectionId/items} endpoint, unify
-    # Fix to work with localstack environment
-    if os.environ.get("LOCALSTACK_HOSTNAME"):
-        os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
+    try:
 
-    # Check for local development or production environment
-    if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
-        auth = BotoAWSRequestsAuth(
-            aws_host=os.environ["ES_ENDPOINT"],
-            aws_region=os.environ["AWS_REGION"],
-            aws_service="es",
-        )
-    else:
-        auth = None
+        # @todo common code with WFS3 {collectionId/items} endpoint, unify
+        # Fix to work with localstack environment
+        if os.environ.get("LOCALSTACK_HOSTNAME"):
+            os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
 
-    es_client = es_connect(
-        endpoint=os.environ["ES_ENDPOINT"],
-        port=int(os.environ["ES_PORT"]),
-        use_ssl=(auth is not None),
-        verify_certs=(auth is not None),
-        http_auth=auth,
-    )
-
-    query, document = query_from_event(es_client=es_client, event=event)
-
-    # Process 'query' extension
-    if document.get("query"):
-        query = process_query_extension(dsl_query=query, query_params=document["query"])
-
-    # Process 'intersects' filter
-    if document.get("intersects"):
-        query = process_intersects_filter(
-            dsl_query=query, geometry=document["intersects"]
-        )
-
-    # Process 'collections' filter
-    if document.get("collections"):
-        query = process_collections_filter(
-            dsl_query=query, collections=document["collections"]
-        )
-
-    # Execute query
-    LOGGER.info(query.to_dict())
-    res = query.execute()
-    results = dict()
-    results["type"] = "FeatureCollection"
-    results["features"] = list()
-
-    for item in res:
-        item_dict = item.to_dict()
-        # If s3_key is present then we recover the original item from
-        # the STAC bucket
-        if "s3_key" in item_dict:
-            item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+        # Check for local development or production environment
+        if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
+            auth = BotoAWSRequestsAuth(
+                aws_host=os.environ["ES_ENDPOINT"],
+                aws_region=os.environ["AWS_REGION"],
+                aws_service="es",
             )
-        results["features"].append(item_dict)
+        else:
+            auth = None
 
-    retmsg = {
-        "statusCode": "200",
-        "body": json.dumps(results, indent=2),
-        "headers": {"Content-Type": "application/json",},
-    }
+        es_client = es_connect(
+            endpoint=os.environ["ES_ENDPOINT"],
+            port=int(os.environ["ES_PORT"]),
+            use_ssl=(auth is not None),
+            verify_certs=(auth is not None),
+            http_auth=auth,
+        )
 
-    return retmsg
+        query, document = query_from_event(es_client=es_client, event=event)
+
+        # Process 'query' extension
+        if document.get("query"):
+            query = process_query_extension(
+                dsl_query=query, query_params=document["query"]
+            )
+
+        # Process 'intersects' filter
+        if document.get("intersects"):
+            query = process_intersects_filter(
+                dsl_query=query, geometry=document["intersects"]
+            )
+
+        # Process 'collections' filter
+        if document.get("collections"):
+            query = process_collections_filter(
+                dsl_query=query, collections=document["collections"]
+            )
+
+        # Execute query
+        LOGGER.info(query.to_dict())
+        res = query.execute()
+        results = dict()
+        results["type"] = "FeatureCollection"
+        results["features"] = list()
+
+        for item in res:
+            item_dict = item.to_dict()
+            # If s3_key is present then we recover the original item from
+            # the STAC bucket
+            if "s3_key" in item_dict:
+                item_dict = stac_item_from_s3_key(
+                    bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                )
+            results["features"].append(item_dict)
+
+        retmsg = {
+            "statusCode": "200",
+            "body": json.dumps(results, indent=2),
+            "headers": {"Content-Type": "application/json",},
+        }
+
+        return retmsg
+
+    except Exception as excp:
+
+        raise Exception(
+            json.dumps(
+                {"isError": True, "type": excp.__class__.__name__, "message": str(excp)}
+            )
+        ) from excp
 
 
 def wfs3_collections_endpoint_handler(
