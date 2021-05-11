@@ -545,6 +545,21 @@ def test_collection_filter_search(es_client):
     res = q_dsl.execute()
     assert res["hits"]["total"]["value"] == 0
 
+    # Two collections, should return both items
+    q_dsl = process_collections_filter(
+        dsl_query=empty_query, collections=["CBERS4-MUX", "CBERS4-AWFI"]
+    )
+    res = q_dsl.execute()
+    assert res["hits"]["total"]["value"] == 2
+
+    # Two collections, only one MUX item returned
+    q_dsl = process_collections_filter(
+        dsl_query=empty_query, collections=["CBERS4-MUX", "NOCOLLECTION"]
+    )
+    res = q_dsl.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["instruments"][0] == "MUX"
+
 
 def test_feature_filter_search(es_client):
     """test_feature_filter_search"""

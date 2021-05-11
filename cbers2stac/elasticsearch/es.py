@@ -516,8 +516,12 @@ def process_collections_filter(dsl_query, collections: list):
     :return: DSL extended with query parameters
     """
 
-    for collection in collections:
-        dsl_query = dsl_query.query(Q("match", **{"collection": collection}))
+    collection_or = Q(
+        "bool",
+        should=[Q("match", **{"collection": collection}) for collection in collections],
+        minimum_should_match=1,
+    )
+    dsl_query = dsl_query.query(collection_or)
     return dsl_query
 
 
