@@ -28,6 +28,31 @@ LOGGER.setLevel(logging.INFO)
 ES_CLIENT = None
 
 
+def api_gw_lambda_integration(func):
+    """
+    Decorator to include stantard exception handling for API GW
+    lambda integration. Catches any exception and formats the message as JSON
+    content, with error code 400.
+    Also includes setup for localstack testing
+    """
+
+    def inner(event, context):
+        try:
+            # Fix to work with localstack environment
+            if os.environ.get("LOCALSTACK_HOSTNAME"):
+                os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
+            return func(event, context)
+        except Exception as excp:  # pylint: disable=broad-except
+            retmsg = {
+                "statusCode": "400",
+                "body": json.dumps({"error": str(excp)}, indent=2),
+                "headers": {"Content-Type": "application/json",},
+            }
+            return retmsg
+
+    return inner
+
+
 def sqs_messages(queue: str):
     """
     Generator for SQS messages.
@@ -635,6 +660,7 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
     return query, document
 
 
+@api_gw_lambda_integration
 def create_stac_index_handler(event, context):  # pylint: disable=unused-argument
     """
     Create STAC elasticsearch index
@@ -662,6 +688,7 @@ def create_stac_index_handler(event, context):  # pylint: disable=unused-argumen
     create_stac_index(es_client)
 
 
+@api_gw_lambda_integration
 def create_documents_handler(event, context):  # pylint: disable=unused-argument
     """
     Include document in index
@@ -710,6 +737,7 @@ def create_documents_handler(event, context):  # pylint: disable=unused-argument
     # create_document_in_index(es_client)
 
 
+@api_gw_lambda_integration
 def stac_search_endpoint_handler(
     event, context
 ):  # pylint: disable=unused-argument, too-many-branches
@@ -717,85 +745,71 @@ def stac_search_endpoint_handler(
     Lambda entry point
     """
 
-    try:
+    # @todo common code with WFS3 {collectionId/items} endpoint, unify
 
-        # @todo common code with WFS3 {collectionId/items} endpoint, unify
-        # Fix to work with localstack environment
-        if os.environ.get("LOCALSTACK_HOSTNAME"):
-            os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
+    # Check for local development or production environment
+    if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
+        auth = BotoAWSRequestsAuth(
+            aws_host=os.environ["ES_ENDPOINT"],
+            aws_region=os.environ["AWS_REGION"],
+            aws_service="es",
+        )
+    else:
+        auth = None
 
-        # Check for local development or production environment
-        if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
-            auth = BotoAWSRequestsAuth(
-                aws_host=os.environ["ES_ENDPOINT"],
-                aws_region=os.environ["AWS_REGION"],
-                aws_service="es",
-            )
-        else:
-            auth = None
+    es_client = es_connect(
+        endpoint=os.environ["ES_ENDPOINT"],
+        port=int(os.environ["ES_PORT"]),
+        use_ssl=(auth is not None),
+        verify_certs=(auth is not None),
+        http_auth=auth,
+    )
 
-        es_client = es_connect(
-            endpoint=os.environ["ES_ENDPOINT"],
-            port=int(os.environ["ES_PORT"]),
-            use_ssl=(auth is not None),
-            verify_certs=(auth is not None),
-            http_auth=auth,
+    query, document = query_from_event(es_client=es_client, event=event)
+
+    # Process 'query' extension
+    if document.get("query"):
+        query = process_query_extension(dsl_query=query, query_params=document["query"])
+
+    # Process 'intersects' filter
+    if document.get("intersects"):
+        query = process_intersects_filter(
+            dsl_query=query, geometry=document["intersects"]
         )
 
-        query, document = query_from_event(es_client=es_client, event=event)
+    # Process 'collections' filter
+    if document.get("collections"):
+        query = process_collections_filter(
+            dsl_query=query, collections=document["collections"]
+        )
 
-        # Process 'query' extension
-        if document.get("query"):
-            query = process_query_extension(
-                dsl_query=query, query_params=document["query"]
+    # Execute query
+    LOGGER.info(query.to_dict())
+    res = query.execute()
+    results = dict()
+    results["type"] = "FeatureCollection"
+    results["features"] = list()
+
+    for item in res:
+        item_dict = item.to_dict()
+        # If s3_key is present then we recover the original item from
+        # the STAC bucket
+        if "s3_key" in item_dict:
+            item_dict = stac_item_from_s3_key(
+                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
             )
+        results["features"].append(item_dict)
 
-        # Process 'intersects' filter
-        if document.get("intersects"):
-            query = process_intersects_filter(
-                dsl_query=query, geometry=document["intersects"]
-            )
+    retmsg = {
+        "statusCode": "200",
+        "body": json.dumps(results, indent=2),
+        "headers": {"Content-Type": "application/json",},
+    }
 
-        # Process 'collections' filter
-        if document.get("collections"):
-            query = process_collections_filter(
-                dsl_query=query, collections=document["collections"]
-            )
-
-        # Execute query
-        LOGGER.info(query.to_dict())
-        res = query.execute()
-        results = dict()
-        results["type"] = "FeatureCollection"
-        results["features"] = list()
-
-        for item in res:
-            item_dict = item.to_dict()
-            # If s3_key is present then we recover the original item from
-            # the STAC bucket
-            if "s3_key" in item_dict:
-                item_dict = stac_item_from_s3_key(
-                    bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
-                )
-            results["features"].append(item_dict)
-
-        retmsg = {
-            "statusCode": "200",
-            "body": json.dumps(results, indent=2),
-            "headers": {"Content-Type": "application/json",},
-        }
-
-        return retmsg
-
-    except Exception as excp:
-
-        raise Exception(
-            json.dumps(
-                {"isError": True, "type": excp.__class__.__name__, "message": str(excp)}
-            )
-        ) from excp
+    return retmsg
 
 
+@api_gw_lambda_integration
 def wfs3_collections_endpoint_handler(
     event, context
 ):  # pylint: disable=unused-argument
@@ -826,6 +840,7 @@ def wfs3_collections_endpoint_handler(
     return retmsg
 
 
+@api_gw_lambda_integration
 def wfs3_collectionid_endpoint_handler(
     event, context
 ):  # pylint: disable=unused-argument
@@ -848,6 +863,7 @@ def wfs3_collectionid_endpoint_handler(
     return retmsg
 
 
+@api_gw_lambda_integration
 def wfs3_collectionid_items_endpoint_handler(
     event, context
 ):  # pylint: disable=unused-argument
@@ -906,6 +922,7 @@ def wfs3_collectionid_items_endpoint_handler(
     return retmsg
 
 
+@api_gw_lambda_integration
 def wfs3_collectionid_featureid_endpoint_handler(
     event, context
 ):  # pylint: disable=unused-argument

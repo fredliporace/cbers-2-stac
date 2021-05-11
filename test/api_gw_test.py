@@ -229,6 +229,22 @@ def test_item_search_single_collection_post(api_gw_method, lambda_function, es_c
     url = api_gw_lambda_integrate_deploy(
         api_client, api, api_resource, lambda_func, http_method="POST"
     )
+    # POST with invalid bbox order, check error status code and message
+    req = requests.post(
+        url,
+        data=json.dumps(
+            {
+                "collections": ["mycollection"],
+                "bbox": [160.6, -55.95, -170, -25.89],
+                "limit": 100,
+                "datetime": "2019-01-01T00:00:00Z/2019-01-01T23:59:59Z",
+            }
+        ),
+    )
+    assert req.status_code == 400, req.text
+    assert "First lon corner is not western" in req.text
+
+    # Same as above with fixed bbox
     req = requests.post(
         url,
         data=json.dumps(
