@@ -6,6 +6,7 @@ Definitions for base item, catalog and collections
 import os
 from collections import OrderedDict
 from typing import Any, Dict, List
+from urllib.parse import urlencode
 
 import boto3
 
@@ -562,3 +563,17 @@ def get_satmissions(use_hyphen: bool) -> List[str]:
             mission = satmission.split("-")[1]
             ret.append(f"{satellite}{mission}")
     return ret
+
+
+def next_page_get_method_params(query_string_params: Dict[str, str]) -> str:
+    """
+    Build the GET method params from a given queryStringParameters
+    queryStringParameters example: {'limit': '1'}
+    """
+
+    if query_string_params is None:
+        query_string_params = dict()
+    next_page = int(query_string_params.get("page", "1"))
+    next_page += 1
+    query_string_params["page"] = str(next_page)
+    return urlencode(query_string_params)

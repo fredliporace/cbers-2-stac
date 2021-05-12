@@ -5,6 +5,7 @@
 import json
 import logging
 import os
+import traceback
 from typing import Any, Dict, List, Tuple
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
@@ -15,6 +16,8 @@ from cbers2stac.layers.common.utils import (
     get_collection_ids,
     get_collection_s3_key,
     get_resource,
+    next_page_get_method_params,
+    parse_api_gateway_event,
     static_to_api_collection,
 )
 from elasticsearch import Elasticsearch, RequestsHttpConnection
@@ -43,6 +46,7 @@ def api_gw_lambda_integration(func):
                 os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
             return func(event, context)
         except Exception as excp:  # pylint: disable=broad-except
+            LOGGER.error(traceback.format_exc())
             retmsg = {
                 "statusCode": "400",
                 "body": json.dumps({"error": str(excp)}, indent=2),
@@ -571,7 +575,9 @@ def process_query_extension(dsl_query, query_params: dict):
                 dsl_query = dsl_query.query(
                     Q(
                         "range",
-                        **{"properties." + key: {operator: query_params[key][operator]}}
+                        **{
+                            "properties." + key: {operator: query_params[key][operator]}
+                        },
                     )
                 )
             elif operator == "startsWith":
@@ -581,7 +587,7 @@ def process_query_extension(dsl_query, query_params: dict):
                         **{
                             "default_field": "properties." + key,
                             "query": query_params[key][operator] + "*",
-                        }
+                        },
                     )
                 )
             elif operator == "endsWith":
@@ -591,7 +597,7 @@ def process_query_extension(dsl_query, query_params: dict):
                         **{
                             "default_field": "properties." + key,
                             "query": "*" + query_params[key][operator],
-                        }
+                        },
                     )
                 )
             elif operator == "contains":
@@ -601,7 +607,7 @@ def process_query_extension(dsl_query, query_params: dict):
                         **{
                             "default_field": "properties." + key,
                             "query": "*" + query_params[key][operator] + "*",
-                        }
+                        },
                     )
                 )
             else:
@@ -628,14 +634,19 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
         # @todo process query extension for GET
         if qsp:
             document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
-            document["time"] = qsp.get("datetime", None)
+            document["datetime"] = qsp.get("datetime", None)
             document["limit"] = int(qsp.get("limit", "10"))
             document["page"] = int(qsp.get("page", "1"))
+            if qsp.get("collections"):
+                document["collections"] = qsp.get("collections").split(",")
+            else:
+                document["collections"] = list()
         else:
             document["bbox"] = parse_bbox("-180,90,180,-90")
-            document["time"] = None
+            document["datetime"] = None
             document["limit"] = 10
             document["page"] = 1
+            document["collections"] = list()
     else:  # POST
         if event.get("body"):
             document = json.loads(event["body"])
@@ -751,6 +762,8 @@ def stac_search_endpoint_handler(
 
     # @todo common code with WFS3 {collectionId/items} endpoint, unify
 
+    LOGGER.info(event)
+
     # Check for local development or production environment
     if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
         auth = BotoAWSRequestsAuth(
@@ -804,6 +817,15 @@ def stac_search_endpoint_handler(
             )
         results["features"].append(item_dict)
 
+    # Check need for rel=next object (paging)
+    if document["page"] * document["limit"] < res["hits"]["total"]["value"]:
+        parsed = parse_api_gateway_event(event)
+        results["links"] = list()
+        if event["httpMethod"] == "GET":
+            params = next_page_get_method_params(event["queryStringParameters"])
+            results["links"].append(
+                {"rel": "next", "href": f"{parsed['ppath']}?{params}"}
+            )
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(results, indent=2),

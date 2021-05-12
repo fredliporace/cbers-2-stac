@@ -142,9 +142,11 @@ def test_root(api_gw_method, lambda_function):
         ),
     }
 )
-def test_item_search_empty_get(api_gw_method, lambda_function, es_client):
+def test_item_search_get(
+    api_gw_method, lambda_function, es_client
+):  # pylint: disable=too-many-locals
     """
-    test_search_endpoint
+    test_item_search_get
     """
 
     api_client, api, api_resource = api_gw_method
@@ -171,9 +173,53 @@ def test_item_search_empty_get(api_gw_method, lambda_function, es_client):
         index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
     )
 
-    url = api_gw_lambda_integrate_deploy(api_client, api, api_resource, lambda_func)
+    # Empty GET, return all 2 items
+    original_url = api_gw_lambda_integrate_deploy(
+        api_client, api, api_resource, lambda_func
+    )
+    req = requests.get(original_url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 2
+
+    # Single collection, return single item
+    url = f"{original_url}?collections=CBERS4-MUX"
     req = requests.get(url)
     assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 1
+    assert fcol["features"][0]["collection"] == "CBERS4-MUX"
+
+    # Two collections, return all items
+    url = f"{original_url}?collections=CBERS4-MUX,CBERS4-AWFI"
+    req = requests.get(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 2
+
+    # Paging, no next case
+    url = f"{original_url}"
+    req = requests.get(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" not in fcol.keys()
+
+    # Paging, next page
+    url = f"{original_url}?limit=1"
+    req = requests.get(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" in fcol.keys()
+    assert len(fcol["links"]) == 1
+    next_href = fcol["links"][0]["href"]
+    next_href = next_href.replace("4566", f"4566/restapis/{api['id']}").replace(
+        "dev", "dev/_user_request_"
+    )
+    req = requests.get(next_href)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" not in fcol.keys()
+    assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
 
 
 @pytest.mark.api_gw_method_args(
@@ -197,9 +243,9 @@ def test_item_search_empty_get(api_gw_method, lambda_function, es_client):
         ),
     }
 )
-def test_item_search_single_collection_post(api_gw_method, lambda_function, es_client):
+def test_item_search_post(api_gw_method, lambda_function, es_client):
     """
-    test_item_search_endpoint_single_collection_post
+    test_item_search_post
     """
 
     api_client, api, api_resource = api_gw_method

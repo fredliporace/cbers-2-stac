@@ -10,6 +10,7 @@ from cbers2stac.layers.common.utils import (
     get_collection_s3_key,
     get_collections_for_satmission,
     get_satmissions,
+    next_page_get_method_params,
     parse_api_gateway_event,
     static_to_api_collection,
 )
@@ -126,3 +127,21 @@ def test_static_to_api_collection():
                 link["href"]
                 == "https://stac.amskepler.com/v07/collections/CBERS4-MUX/items"
             )
+
+
+def test_next_page_get_method_params():
+    """
+    test_next_page_get_method_params
+    """
+
+    params = next_page_get_method_params({})
+    assert params == "page=2"
+
+    params = next_page_get_method_params({"page": "1"})
+    assert params == "page=2"
+
+    params = next_page_get_method_params({"page": "2", "limit": "2"})
+    assert params == "page=3&limit=2"
+
+    params = next_page_get_method_params(None)
+    assert params == "page=2"
