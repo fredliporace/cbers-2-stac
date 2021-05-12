@@ -16,6 +16,15 @@ import requests
 from cbers2stac.elasticsearch.es import create_document_in_index
 
 
+def to_localstack_url(api_id: str, url: str):
+    """
+    Converts a API GW url to localstack
+    """
+    return url.replace("4566", f"4566/restapis/{api_id}").replace(
+        "dev", "dev/_user_request_"
+    )
+
+
 def api_gw_lambda_integrate_deploy(
     api_client,
     api: dict,
@@ -211,10 +220,7 @@ def test_item_search_get(
     fcol = json.loads(req.text)
     assert "links" in fcol.keys()
     assert len(fcol["links"]) == 1
-    next_href = fcol["links"][0]["href"]
-    next_href = next_href.replace("4566", f"4566/restapis/{api['id']}").replace(
-        "dev", "dev/_user_request_"
-    )
+    next_href = to_localstack_url(api["id"], fcol["links"][0]["href"])
     req = requests.get(next_href)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
@@ -243,7 +249,9 @@ def test_item_search_get(
         ),
     }
 )
-def test_item_search_post(api_gw_method, lambda_function, es_client):
+def test_item_search_post(
+    api_gw_method, lambda_function, es_client
+):  # pylint: disable=too-many-locals
     """
     test_item_search_post
     """
@@ -303,3 +311,25 @@ def test_item_search_post(api_gw_method, lambda_function, es_client):
         ),
     )
     assert req.status_code == 200, req.text
+
+    # Paging, no next case
+    req = requests.post(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" not in fcol.keys()
+
+    # Paging, next page
+    body = {"limit": 1}
+    req = requests.post(url, data=json.dumps(body))
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" in fcol.keys()
+    assert len(fcol["links"]) == 1
+    next_href = to_localstack_url(api["id"], fcol["links"][0]["href"])
+    req = requests.post(
+        next_href, data=json.dumps({**body, **fcol["links"][0]["body"]})
+    )
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert "links" not in fcol.keys()
+    assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"

@@ -826,6 +826,16 @@ def stac_search_endpoint_handler(
             results["links"].append(
                 {"rel": "next", "href": f"{parsed['ppath']}?{params}"}
             )
+        else:
+            results["links"].append(
+                {
+                    "rel": "next",
+                    "href": f"{parsed['ppath']}",
+                    "method": "POST",
+                    "body": {"page": document["page"] + 1,},
+                    "merge": True,
+                }
+            )
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(results, indent=2),
