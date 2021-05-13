@@ -1,0 +1,2963 @@
+# datetime_interval -> datetimeinterval
+components:
+  responses:
+    LandingPage:
+      content:
+        application/json:
+          example:
+            conformsTo:
+            - https://api.stacspec.org/v1.0.0-beta.1/core
+            description: Catalog of Copernicus Sentinel 1 and 2 imagery.
+            id: sentinel
+            links:
+            - href: http://data.example.org/
+              rel: self
+              title: this document
+              type: application/json
+            - href: http://data.example.org/api
+              rel: service-desc
+              title: the API definition
+              type: application/vnd.oai.openapi+json;version=3.0
+            - href: http://data.example.org/api.html
+              rel: service-doc
+              title: the API documentation
+              type: text/html
+            - href: http://data.example.org/sentinel-1
+              rel: child
+              title: Sentinel 1 Catalog
+              type: application/json
+            - href: http://data.example.org/sentinel-2
+              rel: child
+              title: Sentinel 2 Catalog
+              type: application/json
+            stac_version: 1.0.0-beta.1
+            title: Copernicus Sentinel Imagery
+          schema:
+            allOf:
+            - properties:
+                description:
+                  type: string
+                id:
+                  type: string
+                links:
+                  items:
+                    properties:
+                      body:
+                        description: For POST requests, the resource can specify the
+                          HTTP body as a JSON object.
+                        type: object
+                      headers:
+                        description: Object key values pairs they map to headers
+                        example:
+                          Accept: application/json
+                        type: object
+                      href:
+                        description: The location of the resource
+                        format: uri
+                        type: string
+                      merge:
+                        default: false
+                        description: 'This is only valid when the server is responding
+                          to POST request.
+
+
+                          If merge is true, the client is expected to merge the body
+                          value
+
+                          into the current request body before following the link.
+
+                          This avoids passing large post bodies back and forth when
+                          following
+
+                          links, particularly for navigating pages through the `POST
+                          /search`
+
+                          endpoint.
+
+
+                          NOTE: To support form encoding it is expected that a client
+                          be able
+
+                          to merge in the key value pairs specified as JSON
+
+                          `{"next": "token"}` will become `&next=token`.'
+                        type: boolean
+                      method:
+                        default: GET
+                        description: Specifies the HTTP method that the resource expects
+                        enum:
+                        - GET
+                        - POST
+                        type: string
+                      rel:
+                        description: Relation type of the link
+                        type: string
+                      title:
+                        description: Title of the resource
+                        type: string
+                      type:
+                        description: The media type of the resource
+                        type: string
+                    required:
+                    - href
+                    - rel
+                    title: Link
+                    type: object
+                  type: array
+                stac_extensions:
+                  items:
+                    anyOf:
+                    - format: uri
+                      title: Reference to a JSON Schema
+                      type: string
+                    - title: Reference to a core extension
+                      type: string
+                  title: STAC extensions
+                  type: array
+                  uniqueItems: true
+                stac_version:
+                  example: 1.0.0-beta.2
+                  title: STAC version
+                  type: string
+                title:
+                  type: string
+              required:
+              - stac_version
+              - id
+              - description
+              - links
+              type: object
+            - properties:
+                conformsTo:
+                  description: A list of all conformance classes implemented by the
+                    server. In addition to the STAC-specific conformance classes,
+                    all OGC-related conformance classes listed at `GET /conformances`
+                    must be listed here. This entry should mirror what `GET /conformances`
+                    returns, if implemented.
+                  items:
+                    type: string
+                  type: array
+              required:
+              - conformsTo
+              type: object
+      description: 'The landing page provides links to the API definition
+
+        (link relations `service-desc` and `service-doc`)
+
+        and the Feature Collections (path `/collections`, link relation
+
+        `data`).'
+  schemas:
+    landingPage:
+      allOf:
+      - properties:
+          description:
+            type: string
+          id:
+            type: string
+          links:
+            items:
+              properties:
+                body:
+                  description: For POST requests, the resource can specify the HTTP
+                    body as a JSON object.
+                  type: object
+                headers:
+                  description: Object key values pairs they map to headers
+                  example:
+                    Accept: application/json
+                  type: object
+                href:
+                  description: The location of the resource
+                  format: uri
+                  type: string
+                merge:
+                  default: false
+                  description: 'This is only valid when the server is responding to
+                    POST request.
+
+
+                    If merge is true, the client is expected to merge the body value
+
+                    into the current request body before following the link.
+
+                    This avoids passing large post bodies back and forth when following
+
+                    links, particularly for navigating pages through the `POST /search`
+
+                    endpoint.
+
+
+                    NOTE: To support form encoding it is expected that a client be
+                    able
+
+                    to merge in the key value pairs specified as JSON
+
+                    `{"next": "token"}` will become `&next=token`.'
+                  type: boolean
+                method:
+                  default: GET
+                  description: Specifies the HTTP method that the resource expects
+                  enum:
+                  - GET
+                  - POST
+                  type: string
+                rel:
+                  description: Relation type of the link
+                  type: string
+                title:
+                  description: Title of the resource
+                  type: string
+                type:
+                  description: The media type of the resource
+                  type: string
+              required:
+              - href
+              - rel
+              title: Link
+              type: object
+            type: array
+          stac_extensions:
+            items:
+              anyOf:
+              - format: uri
+                title: Reference to a JSON Schema
+                type: string
+              - title: Reference to a core extension
+                type: string
+            title: STAC extensions
+            type: array
+            uniqueItems: true
+          stac_version:
+            example: 1.0.0-beta.2
+            title: STAC version
+            type: string
+          title:
+            type: string
+        required:
+        - stac_version
+        - id
+        - description
+        - links
+        type: object
+      - properties:
+          conformsTo:
+            description: A list of all conformance classes implemented by the server.
+              In addition to the STAC-specific conformance classes, all OGC-related
+              conformance classes listed at `GET /conformances` must be listed here.
+              This entry should mirror what `GET /conformances` returns, if implemented.
+            items:
+              type: string
+            type: array
+        required:
+        - conformsTo
+        type: object
+    bboxFilter:
+      description: Only return items that intersect the provided bounding box.
+      properties:
+        bbox:
+          description: "Only features that have a geometry that intersects the bounding\
+            \ box are\nselected. The bounding box is provided as four or six numbers,\n\
+            depending on whether the coordinate reference system includes a\nvertical\
+            \ axis (elevation or depth):\n\n* Lower left corner, coordinate axis 1\n\
+            * Lower left corner, coordinate axis 2  \n* Lower left corner, coordinate\
+            \ axis 3 (optional) \n* Upper right corner, coordinate axis 1 \n* Upper\
+            \ right corner, coordinate axis 2 \n* Upper right corner, coordinate axis\
+            \ 3 (optional)\n\nThe coordinate reference system of the values is WGS84\n\
+            longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84) unless\n\
+            a different coordinate reference system is specified in the parameter\n\
+            `bbox-crs`.\n\nFor WGS84 longitude/latitude the values are in most cases\
+            \ the sequence\nof minimum longitude, minimum latitude, maximum longitude\
+            \ and maximum\nlatitude. However, in cases where the box spans the antimeridian\
+            \ the\nfirst value (west-most box edge) is larger than the third value\n\
+            (east-most box edge).\n\nIf a feature has multiple spatial geometry properties,\
+            \ it is the\ndecision of the server whether only a single spatial geometry\
+            \ property\nis used to determine the extent or all relevant geometries.\n\
+            \nExample: The bounding box of the New Zealand Exclusive Economic Zone\
+            \ in\nWGS 84 (from 160.6\xB0E to 170\xB0W and from 55.95\xB0S to 25.89\xB0\
+            S) would be\nrepresented in JSON as `[160.6, -55.95, -170, -25.89]` and\
+            \ in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+          example:
+          - -110
+          - 39.5
+          - -105
+          - 40.5
+          items:
+            type: number
+          maxItems: 6
+          minItems: 4
+          type: array
+      type: object
+    collectionsArray:
+      description: 'Array of Collection IDs to include in the search for items.
+
+        Only Items in one of the provided Collections will be searched.'
+      items:
+        type: string
+      type: array
+    collectionsFilter:
+      description: Only returns the collections specified
+      properties:
+        collections:
+          description: 'Array of Collection IDs to include in the search for items.
+
+            Only Items in one of the provided Collections will be searched.'
+          items:
+            type: string
+          type: array
+      type: object
+    datetimeFilter:
+      description: An object representing a date+time based filter.
+      properties:
+        datetime:
+          description: 'Either a date-time or an interval, open or closed. Date and
+            time expressions
+
+            adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+            Examples:
+
+
+            * A date-time: "2018-02-12T23:20:50Z"
+
+            * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+            * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+            Only features that have a temporal property that intersects the value
+            of
+
+            `datetime` are selected.
+
+
+            If a feature has multiple temporal properties, it is the decision of the
+
+            server whether only a single temporal property is used to determine
+
+            the extent or all relevant temporal properties.'
+          example: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+          type: string
+      type: object
+    datetimeinterval:
+      description: 'Either a date-time or an interval, open or closed. Date and time
+        expressions
+
+        adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+        Examples:
+
+
+        * A date-time: "2018-02-12T23:20:50Z"
+
+        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+        Only features that have a temporal property that intersects the value of
+
+        `datetime` are selected.
+
+
+        If a feature has multiple temporal properties, it is the decision of the
+
+        server whether only a single temporal property is used to determine
+
+        the extent or all relevant temporal properties.'
+      example: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+      type: string
+    ids:
+      description: 'Array of Item ids to return. All other filter parameters that
+        further
+
+        restrict the number of search results are ignored'
+      items:
+        type: string
+      type: array
+    idsFilter:
+      description: Only returns items that match the array of given ids
+      properties:
+        ids:
+          description: 'Array of Item ids to return. All other filter parameters that
+            further
+
+            restrict the number of search results are ignored'
+          items:
+            type: string
+          type: array
+      type: object
+    intersectsFilter:
+      description: Only returns items that intersect with the provided polygon.
+      properties:
+        intersects:
+          oneOf:
+          - properties:
+              coordinates:
+                items:
+                  type: number
+                minItems: 2
+                type: array
+              type:
+                enum:
+                - Point
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+          - properties:
+              coordinates:
+                items:
+                  items:
+                    type: number
+                  minItems: 2
+                  type: array
+                type: array
+              type:
+                enum:
+                - MultiPoint
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+          - properties:
+              coordinates:
+                items:
+                  items:
+                    type: number
+                  minItems: 2
+                  type: array
+                minItems: 2
+                type: array
+              type:
+                enum:
+                - LineString
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+          - properties:
+              coordinates:
+                items:
+                  items:
+                    items:
+                      type: number
+                    minItems: 2
+                    type: array
+                  minItems: 2
+                  type: array
+                type: array
+              type:
+                enum:
+                - MultiLineString
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+          - properties:
+              coordinates:
+                items:
+                  items:
+                    items:
+                      type: number
+                    minItems: 2
+                    type: array
+                  minItems: 4
+                  type: array
+                type: array
+              type:
+                enum:
+                - Polygon
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+          - properties:
+              coordinates:
+                items:
+                  items:
+                    items:
+                      items:
+                        type: number
+                      minItems: 2
+                      type: array
+                    minItems: 4
+                    type: array
+                  type: array
+                type: array
+              type:
+                enum:
+                - MultiPolygon
+                type: string
+            required:
+            - type
+            - coordinates
+            type: object
+      type: object
+    limit:
+      default: 10
+      description: The maximum number of results to return (page size). Defaults to
+        10
+      example: 10
+      maximum: 10000
+      minimum: 1
+      nullable: false
+      type: integer
+    limitFilter:
+      description: Only returns maximum number of results (page size)
+      properties:
+        limit:
+          default: 10
+          description: The maximum number of results to return (page size). Defaults
+            to 10
+          example: 10
+          maximum: 10000
+          minimum: 1
+          type: integer
+      type: object
+    searchBody:
+      allOf:
+      - description: Only return items that intersect the provided bounding box.
+        properties:
+          bbox:
+            description: "Only features that have a geometry that intersects the bounding\
+              \ box are\nselected. The bounding box is provided as four or six numbers,\n\
+              depending on whether the coordinate reference system includes a\nvertical\
+              \ axis (elevation or depth):\n\n* Lower left corner, coordinate axis\
+              \ 1\n* Lower left corner, coordinate axis 2  \n* Lower left corner,\
+              \ coordinate axis 3 (optional) \n* Upper right corner, coordinate axis\
+              \ 1 \n* Upper right corner, coordinate axis 2 \n* Upper right corner,\
+              \ coordinate axis 3 (optional)\n\nThe coordinate reference system of\
+              \ the values is WGS84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84)\
+              \ unless\na different coordinate reference system is specified in the\
+              \ parameter\n`bbox-crs`.\n\nFor WGS84 longitude/latitude the values\
+              \ are in most cases the sequence\nof minimum longitude, minimum latitude,\
+              \ maximum longitude and maximum\nlatitude. However, in cases where the\
+              \ box spans the antimeridian the\nfirst value (west-most box edge) is\
+              \ larger than the third value\n(east-most box edge).\n\nIf a feature\
+              \ has multiple spatial geometry properties, it is the\ndecision of the\
+              \ server whether only a single spatial geometry property\nis used to\
+              \ determine the extent or all relevant geometries.\n\nExample: The bounding\
+              \ box of the New Zealand Exclusive Economic Zone in\nWGS 84 (from 160.6\xB0\
+              E to 170\xB0W and from 55.95\xB0S to 25.89\xB0S) would be\nrepresented\
+              \ in JSON as `[160.6, -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+            example:
+            - -110
+            - 39.5
+            - -105
+            - 40.5
+            items:
+              type: number
+            maxItems: 6
+            minItems: 4
+            type: array
+        type: object
+      - description: An object representing a date+time based filter.
+        properties:
+          datetime:
+            description: 'Either a date-time or an interval, open or closed. Date
+              and time expressions
+
+              adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+              Examples:
+
+
+              * A date-time: "2018-02-12T23:20:50Z"
+
+              * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+              * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+              Only features that have a temporal property that intersects the value
+              of
+
+              `datetime` are selected.
+
+
+              If a feature has multiple temporal properties, it is the decision of
+              the
+
+              server whether only a single temporal property is used to determine
+
+              the extent or all relevant temporal properties.'
+            example: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+            type: string
+        type: object
+      - description: Only returns items that intersect with the provided polygon.
+        properties:
+          intersects:
+            oneOf:
+            - properties:
+                coordinates:
+                  items:
+                    type: number
+                  minItems: 2
+                  type: array
+                type:
+                  enum:
+                  - Point
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+            - properties:
+                coordinates:
+                  items:
+                    items:
+                      type: number
+                    minItems: 2
+                    type: array
+                  type: array
+                type:
+                  enum:
+                  - MultiPoint
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+            - properties:
+                coordinates:
+                  items:
+                    items:
+                      type: number
+                    minItems: 2
+                    type: array
+                  minItems: 2
+                  type: array
+                type:
+                  enum:
+                  - LineString
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+            - properties:
+                coordinates:
+                  items:
+                    items:
+                      items:
+                        type: number
+                      minItems: 2
+                      type: array
+                    minItems: 2
+                    type: array
+                  type: array
+                type:
+                  enum:
+                  - MultiLineString
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+            - properties:
+                coordinates:
+                  items:
+                    items:
+                      items:
+                        type: number
+                      minItems: 2
+                      type: array
+                    minItems: 4
+                    type: array
+                  type: array
+                type:
+                  enum:
+                  - Polygon
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+            - properties:
+                coordinates:
+                  items:
+                    items:
+                      items:
+                        items:
+                          type: number
+                        minItems: 2
+                        type: array
+                      minItems: 4
+                      type: array
+                    type: array
+                  type: array
+                type:
+                  enum:
+                  - MultiPolygon
+                  type: string
+              required:
+              - type
+              - coordinates
+              type: object
+        type: object
+      - description: Only returns the collections specified
+        properties:
+          collections:
+            description: 'Array of Collection IDs to include in the search for items.
+
+              Only Items in one of the provided Collections will be searched.'
+            items:
+              type: string
+            type: array
+        type: object
+      - description: Only returns items that match the array of given ids
+        properties:
+          ids:
+            description: 'Array of Item ids to return. All other filter parameters
+              that further
+
+              restrict the number of search results are ignored'
+            items:
+              type: string
+            type: array
+        type: object
+      - description: Only returns maximum number of results (page size)
+        properties:
+          limit:
+            default: 10
+            description: The maximum number of results to return (page size). Defaults
+              to 10
+            example: 10
+            maximum: 10000
+            minimum: 1
+            type: integer
+        type: object
+      description: '**Optional Extension:** Query
+
+
+        Allows users to query properties for specific values'
+      type: object
+      properties:
+        query:
+          additionalProperties:
+            anyOf:
+            - description: if the object doesn't contain any of the operators, it
+                is equivalent to using the equals operator
+            - description: Match using an operator
+              properties:
+                contains:
+                  description: Find items with a property that contains the specified
+                    literal string, e.g., matches ".*<STRING>.*". A case-insensitive
+                    comparison must be performed.
+                  type: string
+                endsWith:
+                  description: Find items with a property that ends with the specified
+                    string. A case-insensitive comparison must be performed.
+                  type: string
+                eq:
+                  description: Find items with a property that is equal to the specified
+                    value. For strings, a case-insensitive comparison must be performed.
+                  nullable: true
+                  oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                gt:
+                  description: Find items with a property value greater than the specified
+                    value.
+                  oneOf:
+                  - format: date-time
+                    type: string
+                  - type: number
+                gte:
+                  description: Find items with a property value greater than or equal
+                    the specified value.
+                  oneOf:
+                  - format: date-time
+                    type: string
+                  - type: number
+                in:
+                  description: Find items with a property that equals at least one
+                    entry in the specified array. A case-insensitive comparison must
+                    be performed.
+                  items:
+                    oneOf:
+                    - type: string
+                    - type: number
+                  type: array
+                lt:
+                  description: Find items with a property value less than the specified
+                    value.
+                  oneOf:
+                  - format: date-time
+                    type: string
+                  - type: number
+                lte:
+                  description: Find items with a property value less than or equal
+                    the specified value.
+                  oneOf:
+                  - format: date-time
+                    type: string
+                  - type: number
+                neq:
+                  description: Find items that *don't* contain the specified value.
+                    For strings, a case-insensitive comparison must be performed.
+                  nullable: true
+                  oneOf:
+                  - type: string
+                  - type: number
+                  - type: boolean
+                startsWith:
+                  description: Find items with a property that begins with the specified
+                    string. A case-insensitive comparison must be performed.
+                  type: string
+              type: object
+            description: Apply query operations to a specific property
+          description: Define which properties to query and the operations to apply
+          example:
+            datetime:
+              gte: '2018-02-12T00:00:00Z'
+              lte: '2018-03-18T12:31:12Z'
+            eo:cloud_cover:
+              gt: 8
+              lt: 50
+            eo:gsd:
+              in:
+              - 10
+              - 20
+            pl:item_type:
+              startsWith: PSScene
+            platform:
+              eq: landsat-8
+            product:
+              in:
+              - foo
+              - bar
+              - baz
+          type: object
+      x-stac-api-fragment: query
+    query:
+      additionalProperties:
+        anyOf:
+        - description: if the object doesn't contain any of the operators, it is equivalent
+            to using the equals operator
+        - description: Match using an operator
+          properties:
+            contains:
+              description: Find items with a property that contains the specified
+                literal string, e.g., matches ".*<STRING>.*". A case-insensitive comparison
+                must be performed.
+              type: string
+            endsWith:
+              description: Find items with a property that ends with the specified
+                string. A case-insensitive comparison must be performed.
+              type: string
+            eq:
+              description: Find items with a property that is equal to the specified
+                value. For strings, a case-insensitive comparison must be performed.
+              nullable: true
+              oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+            gt:
+              description: Find items with a property value greater than the specified
+                value.
+              oneOf:
+              - format: date-time
+                type: string
+              - type: number
+            gte:
+              description: Find items with a property value greater than or equal
+                the specified value.
+              oneOf:
+              - format: date-time
+                type: string
+              - type: number
+            in:
+              description: Find items with a property that equals at least one entry
+                in the specified array. A case-insensitive comparison must be performed.
+              items:
+                oneOf:
+                - type: string
+                - type: number
+              type: array
+            lt:
+              description: Find items with a property value less than the specified
+                value.
+              oneOf:
+              - format: date-time
+                type: string
+              - type: number
+            lte:
+              description: Find items with a property value less than or equal the
+                specified value.
+              oneOf:
+              - format: date-time
+                type: string
+              - type: number
+            neq:
+              description: Find items that *don't* contain the specified value. For
+                strings, a case-insensitive comparison must be performed.
+              nullable: true
+              oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+            startsWith:
+              description: Find items with a property that begins with the specified
+                string. A case-insensitive comparison must be performed.
+              type: string
+          type: object
+        description: Apply query operations to a specific property
+      description: Define which properties to query and the operations to apply
+      example:
+        datetime:
+          gte: '2018-02-12T00:00:00Z'
+          lte: '2018-03-18T12:31:12Z'
+        eo:cloud_cover:
+          gt: 8
+          lt: 50
+        eo:gsd:
+          in:
+          - 10
+          - 20
+        pl:item_type:
+          startsWith: PSScene
+        platform:
+          eq: landsat-8
+        product:
+          in:
+          - foo
+          - bar
+          - baz
+      type: object
+    queryProp:
+      anyOf:
+      - description: if the object doesn't contain any of the operators, it is equivalent
+          to using the equals operator
+      - description: Match using an operator
+        properties:
+          contains:
+            description: Find items with a property that contains the specified literal
+              string, e.g., matches ".*<STRING>.*". A case-insensitive comparison
+              must be performed.
+            type: string
+          endsWith:
+            description: Find items with a property that ends with the specified string.
+              A case-insensitive comparison must be performed.
+            type: string
+          eq:
+            description: Find items with a property that is equal to the specified
+              value. For strings, a case-insensitive comparison must be performed.
+            nullable: true
+            oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          gt:
+            description: Find items with a property value greater than the specified
+              value.
+            oneOf:
+            - format: date-time
+              type: string
+            - type: number
+          gte:
+            description: Find items with a property value greater than or equal the
+              specified value.
+            oneOf:
+            - format: date-time
+              type: string
+            - type: number
+          in:
+            description: Find items with a property that equals at least one entry
+              in the specified array. A case-insensitive comparison must be performed.
+            items:
+              oneOf:
+              - type: string
+              - type: number
+            type: array
+          lt:
+            description: Find items with a property value less than the specified
+              value.
+            oneOf:
+            - format: date-time
+              type: string
+            - type: number
+          lte:
+            description: Find items with a property value less than or equal the specified
+              value.
+            oneOf:
+            - format: date-time
+              type: string
+            - type: number
+          neq:
+            description: Find items that *don't* contain the specified value. For
+              strings, a case-insensitive comparison must be performed.
+            nullable: true
+            oneOf:
+            - type: string
+            - type: number
+            - type: boolean
+          startsWith:
+            description: Find items with a property that begins with the specified
+              string. A case-insensitive comparison must be performed.
+            type: string
+        type: object
+      description: Apply query operations to a specific property
+  parameters:
+    bbox:
+      description: "Only features that have a geometry that intersects the bounding\
+        \ box are selected.\nThe bounding box is provided as four or six numbers,\
+        \ depending on\nwhether the coordinate reference system includes a vertical\
+        \ axis (height\nor depth):\n\n* Lower left corner, coordinate axis 1\n* Lower\
+        \ left corner, coordinate axis 2\n* Minimum value, coordinate axis 3 (optional)\n\
+        * Upper right corner, coordinate axis 1\n* Upper right corner, coordinate\
+        \ axis 2\n* Maximum value, coordinate axis 3 (optional)\n\nThe coordinate\
+        \ reference system of the values is WGS 84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84).\n\
+        \nFor WGS 84 longitude/latitude the values are in most cases the sequence\n\
+        of minimum longitude, minimum latitude, maximum longitude and maximum\nlatitude.\
+        \ However, in cases where the box spans the antimeridian the\nfirst value\
+        \ (west-most box edge) is larger than the third value\n(east-most box edge).\n\
+        \nIf the vertical axis is included, the third and the sixth number are\nthe\
+        \ bottom and the top of the 3-dimensional bounding box.\n\nIf a feature has\
+        \ multiple spatial geometry properties, it is the\ndecision of the server\
+        \ whether only a single spatial geometry property\nis used to determine the\
+        \ extent or all relevant geometries.\n\nExample: The bounding box of the New\
+        \ Zealand Exclusive Economic Zone in\nWGS 84 (from 160.6\xB0E to 170\xB0W\
+        \ and from 55.95\xB0S to 25.89\xB0S) would be\nrepresented in JSON as `[160.6,\
+        \ -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+      explode: false
+      in: query
+      name: bbox
+      required: false
+      schema:
+        items:
+          type: number
+        oneOf:
+        - maxItems: 4
+          minItems: 4
+        - maxItems: 6
+          minItems: 6
+        type: array
+      style: form
+    collectionsArray:
+      description: 'Array of Collection IDs to include in the search for items.
+
+        Only Items in one of the provided Collections will be searched
+
+        '
+      explode: false
+      in: query
+      name: collections
+      required: false
+      schema:
+        description: 'Array of Collection IDs to include in the search for items.
+
+          Only Items in one of the provided Collections will be searched.'
+        items:
+          type: string
+        type: array
+    datetime:
+      description: 'Either a date-time or an interval, open or closed. Date and time
+        expressions
+
+        adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+        Examples:
+
+
+        * A date-time: "2018-02-12T23:20:50Z"
+
+        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+        Only features that have a temporal property that intersects the value of
+
+        `datetime` are selected.
+
+
+        If a feature has multiple temporal properties, it is the decision of the
+
+        server whether only a single temporal property is used to determine
+
+        the extent or all relevant temporal properties.'
+      explode: false
+      in: query
+      name: datetime
+      required: false
+      schema:
+        type: string
+      style: form
+    ids:
+      description: 'Array of Item ids to return. All other filter parameters that
+        further
+
+        restrict the number of search results are ignored'
+      explode: false
+      in: query
+      name: ids
+      required: false
+      schema:
+        description: 'Array of Item ids to return. All other filter parameters that
+          further
+
+          restrict the number of search results are ignored'
+        items:
+          type: string
+        type: array
+    limit:
+      description: 'The optional limit parameter limits the number of items that are
+        presented in the response document.
+
+
+        Only items are counted that are on the first level of the collection in the
+        response document.
+
+        Nested objects contained within the explicitly requested items shall not be
+        counted.
+
+
+        Minimum = 1. Maximum = 10000. Default = 10.'
+      explode: false
+      in: query
+      name: limit
+      required: false
+      schema:
+        default: 10
+        maximum: 10000
+        minimum: 1
+        type: integer
+      style: form
+    query:
+      description: '**Optional Extension:** Query
+
+
+        Query for properties in items.
+
+        Use the JSON form of the query used in POST.'
+      in: query
+      name: query
+      required: false
+      schema:
+        type: string
+      x-stac-api-fragment: query
+info:
+  contact:
+    name: STAC Specification
+    url: http://stacspec.org
+  description: Adds parameter to compare properties and only return the items that
+    match
+  license:
+    name: Apache License 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0
+  title: The SpatioTemporal Asset Catalog API - Query
+  version: 1.0.0-beta.1
+openapi: 3.0.3
+x-amazon-apigateway-request-validators:
+  all:
+    validateRequestBody: true
+    validateRequestParameters: true
+  params-only:
+    validateRequestBody: false
+    validateRequestParameters: true
+x-amazon-apigateway-request-validator: all
+paths:
+  /:
+    get:
+      description: 'Returns the root STAC Catalog or STAC Collection that is the entry
+        point
+
+        for users to browse with STAC Browser or for search engines to crawl.
+
+        This can either return a single STAC Collection or more commonly a STAC
+
+        catalog.
+
+
+        The landing page provides links to the
+
+        API definition (link relations `service-desc` and `service-doc`)
+
+        and the STAC records such as collections/catalogs (link relation `child`)
+
+        or items (link relation `item`).
+
+
+        Extensions may add additional links with new relation types.'
+      operationId: getLandingPage
+      responses:
+        '200':
+          content:
+            application/json:
+              example:
+                conformsTo:
+                - https://api.stacspec.org/v1.0.0-beta.1/core
+                description: Catalog of Copernicus Sentinel 1 and 2 imagery.
+                id: sentinel
+                links:
+                - href: http://data.example.org/
+                  rel: self
+                  title: this document
+                  type: application/json
+                - href: http://data.example.org/api
+                  rel: service-desc
+                  title: the API definition
+                  type: application/vnd.oai.openapi+json;version=3.0
+                - href: http://data.example.org/api.html
+                  rel: service-doc
+                  title: the API documentation
+                  type: text/html
+                - href: http://data.example.org/sentinel-1
+                  rel: child
+                  title: Sentinel 1 Catalog
+                  type: application/json
+                - href: http://data.example.org/sentinel-2
+                  rel: child
+                  title: Sentinel 2 Catalog
+                  type: application/json
+                stac_version: 1.0.0-beta.1
+                title: Copernicus Sentinel Imagery
+              schema:
+                allOf:
+                - properties:
+                    description:
+                      type: string
+                    id:
+                      type: string
+                    links:
+                      items:
+                        properties:
+                          body:
+                            description: For POST requests, the resource can specify
+                              the HTTP body as a JSON object.
+                            type: object
+                          headers:
+                            description: Object key values pairs they map to headers
+                            example:
+                              Accept: application/json
+                            type: object
+                          href:
+                            description: The location of the resource
+                            format: uri
+                            type: string
+                          merge:
+                            default: false
+                            description: 'This is only valid when the server is responding
+                              to POST request.
+
+
+                              If merge is true, the client is expected to merge the
+                              body value
+
+                              into the current request body before following the link.
+
+                              This avoids passing large post bodies back and forth
+                              when following
+
+                              links, particularly for navigating pages through the
+                              `POST /search`
+
+                              endpoint.
+
+
+                              NOTE: To support form encoding it is expected that a
+                              client be able
+
+                              to merge in the key value pairs specified as JSON
+
+                              `{"next": "token"}` will become `&next=token`.'
+                            type: boolean
+                          method:
+                            default: GET
+                            description: Specifies the HTTP method that the resource
+                              expects
+                            enum:
+                            - GET
+                            - POST
+                            type: string
+                          rel:
+                            description: Relation type of the link
+                            type: string
+                          title:
+                            description: Title of the resource
+                            type: string
+                          type:
+                            description: The media type of the resource
+                            type: string
+                        required:
+                        - href
+                        - rel
+                        title: Link
+                        type: object
+                      type: array
+                    stac_extensions:
+                      items:
+                        anyOf:
+                        - format: uri
+                          title: Reference to a JSON Schema
+                          type: string
+                        - title: Reference to a core extension
+                          type: string
+                      title: STAC extensions
+                      type: array
+                      uniqueItems: true
+                    stac_version:
+                      example: 1.0.0-beta.2
+                      title: STAC version
+                      type: string
+                    title:
+                      type: string
+                  required:
+                  - stac_version
+                  - id
+                  - description
+                  - links
+                  type: object
+                - properties:
+                    conformsTo:
+                      description: A list of all conformance classes implemented by
+                        the server. In addition to the STAC-specific conformance classes,
+                        all OGC-related conformance classes listed at `GET /conformances`
+                        must be listed here. This entry should mirror what `GET /conformances`
+                        returns, if implemented.
+                      items:
+                        type: string
+                      type: array
+                  required:
+                  - conformsTo
+                  type: object
+          description: 'The landing page provides links to the API definition
+
+            (link relations `service-desc` and `service-doc`)
+
+            and the Feature Collections (path `/collections`, link relation
+
+            `data`).'
+        '500':
+          content:
+            application/json:
+              schema:
+                description: 'Information about the exception: an error code plus
+                  an optional description.'
+                properties:
+                  code:
+                    type: string
+                  description:
+                    type: string
+                required:
+                - code
+                type: object
+          description: An error occurred.
+      summary: landing page
+      tags:
+      - Core
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: post
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LandingEndpointLambda.Arn}/invocations
+  /search:
+    get:
+      description: 'Retrieve Items matching filters. Intended as a shorthand API for
+        simple
+
+        queries.
+
+
+        This method is optional, but you MUST implement `POST /search` if you
+
+        want to implement this method.
+
+
+        If this endpoint is implemented on a server, it is required to add a
+
+        link referring to this endpoint with `rel` set to `search` to the
+
+        `links` array in `GET /`. As `GET` is the default method, the `method`
+
+        may not be set explicitly in the link.'
+      operationId: getItemSearch
+      parameters:
+      - description: "Only features that have a geometry that intersects the bounding\
+          \ box are selected.\nThe bounding box is provided as four or six numbers,\
+          \ depending on\nwhether the coordinate reference system includes a vertical\
+          \ axis (height\nor depth):\n\n* Lower left corner, coordinate axis 1\n*\
+          \ Lower left corner, coordinate axis 2\n* Minimum value, coordinate axis\
+          \ 3 (optional)\n* Upper right corner, coordinate axis 1\n* Upper right corner,\
+          \ coordinate axis 2\n* Maximum value, coordinate axis 3 (optional)\n\nThe\
+          \ coordinate reference system of the values is WGS 84\nlongitude/latitude\
+          \ (http://www.opengis.net/def/crs/OGC/1.3/CRS84).\n\nFor WGS 84 longitude/latitude\
+          \ the values are in most cases the sequence\nof minimum longitude, minimum\
+          \ latitude, maximum longitude and maximum\nlatitude. However, in cases where\
+          \ the box spans the antimeridian the\nfirst value (west-most box edge) is\
+          \ larger than the third value\n(east-most box edge).\n\nIf the vertical\
+          \ axis is included, the third and the sixth number are\nthe bottom and the\
+          \ top of the 3-dimensional bounding box.\n\nIf a feature has multiple spatial\
+          \ geometry properties, it is the\ndecision of the server whether only a\
+          \ single spatial geometry property\nis used to determine the extent or all\
+          \ relevant geometries.\n\nExample: The bounding box of the New Zealand Exclusive\
+          \ Economic Zone in\nWGS 84 (from 160.6\xB0E to 170\xB0W and from 55.95\xB0\
+          S to 25.89\xB0S) would be\nrepresented in JSON as `[160.6, -55.95, -170,\
+          \ -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+        explode: false
+        in: query
+        name: bbox
+        required: false
+        schema:
+          items:
+            type: number
+          oneOf:
+          - maxItems: 4
+            minItems: 4
+          - maxItems: 6
+            minItems: 6
+          type: array
+        style: form
+      - description: 'Either a date-time or an interval, open or closed. Date and
+          time expressions
+
+          adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+          Examples:
+
+
+          * A date-time: "2018-02-12T23:20:50Z"
+
+          * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+          * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+          Only features that have a temporal property that intersects the value of
+
+          `datetime` are selected.
+
+
+          If a feature has multiple temporal properties, it is the decision of the
+
+          server whether only a single temporal property is used to determine
+
+          the extent or all relevant temporal properties.'
+        explode: false
+        in: query
+        name: datetime
+        required: false
+        schema:
+          type: string
+        style: form
+      - description: 'The optional limit parameter limits the number of items that
+          are presented in the response document.
+
+
+          Only items are counted that are on the first level of the collection in
+          the response document.
+
+          Nested objects contained within the explicitly requested items shall not
+          be counted.
+
+
+          Minimum = 1. Maximum = 10000. Default = 10.'
+        explode: false
+        in: query
+        name: limit
+        required: false
+        schema:
+          default: 10
+          maximum: 10000
+          minimum: 1
+          nullable: false
+          type: integer
+        style: form
+      - description: 'Array of Item ids to return. All other filter parameters that
+          further
+
+          restrict the number of search results are ignored'
+        explode: false
+        in: query
+        name: ids
+        required: false
+        schema:
+          description: 'Array of Item ids to return. All other filter parameters that
+            further
+
+            restrict the number of search results are ignored'
+          items:
+            type: string
+          type: array
+      - description: 'Array of Collection IDs to include in the search for items.
+
+          Only Items in one of the provided Collections will be searched
+
+          '
+        explode: false
+        in: query
+        name: collections
+        required: false
+        schema:
+          description: 'Array of Collection IDs to include in the search for items.
+
+            Only Items in one of the provided Collections will be searched.'
+          items:
+            type: string
+          type: array
+      - description: '**Optional Extension:** Fields
+
+
+          Determines the shape of the features in the response'
+        explode: false
+        in: query
+        name: fields
+        required: false
+        schema:
+          example: id,type,-geometry,bbox,properties,-links,-assets
+          type: string
+        style: form
+        x-stac-api-fragment: fields
+      - description: '**Optional Extension:** Query
+
+
+          Query for properties in items.
+
+          Use the JSON form of the query used in POST.'
+        in: query
+        name: query
+        required: false
+        schema:
+          type: string
+        x-stac-api-fragment: query
+      - description: '**Optional Extension:** Sort
+
+
+          An array of property names, prefixed by either "+" for ascending or
+
+          "-" for descending. If no prefix is provided, "+" is assumed.'
+        explode: false
+        in: query
+        name: sortby
+        required: false
+        schema:
+          example: +id,-properties.eo:cloud_cover
+          type: string
+        style: form
+        x-stac-api-fragment: sort
+      responses:
+        '200':
+          content:
+            application/geo+json:
+              schema:
+                allOf:
+                - description: A GeoJSON FeatureCollection augmented with foreign
+                    members that contain values relevant to a STAC entity
+                  properties:
+                    features:
+                      items:
+                        description: A GeoJSON Feature augmented with foreign members
+                          that contain values relevant to a STAC entity
+                        example:
+                          assets:
+                            analytic:
+                              href: http://cool-sat.com/static-catalog/CS3/20160503_132130_04/analytic.tif
+                              title: 4-Band Analytic
+                            thumbnail:
+                              href: http://cool-sat.com/static-catalog/CS3/20160503_132130_04/thumbnail.png
+                              title: Thumbnail
+                          bbox:
+                          - -122.59750209
+                          - 37.48803556
+                          - -122.2880486
+                          - 37.613537207
+                          collection: CS3
+                          geometry:
+                            coordinates:
+                            - - - -122.308150179
+                                - 37.488035566
+                              - - -122.597502109
+                                - 37.538869539
+                              - - -122.576687533
+                                - 37.613537207
+                              - - -122.2880486
+                                - 37.562818007
+                              - - -122.308150179
+                                - 37.488035566
+                            type: Polygon
+                          id: CS3-20160503_132131_05
+                          links:
+                          - href: http://cool-sat.com/collections/CS3/items/20160503_132130_04
+                            rel: self
+                          - href: http://cool-sat.com/collections
+                            rel: root
+                          - href: http://cool-sat.com/collections/CS3
+                            rel: parent
+                          - href: http://cool-sat.com/collections/CS3
+                            rel: collection
+                          properties:
+                            datetime: '2016-05-03T13:22:30.040Z'
+                            eo:bands: []
+                            eo:cloud_cover: 0.12
+                            eo:gsd: 0.512
+                            instruments:
+                            - cool_sensor_v1
+                            license: PDDL-1.0
+                            platform: coolsat2
+                            providers:
+                            - name: CoolSat
+                              roles:
+                              - producer
+                              - licensor
+                              url: https://cool-sat.com/
+                            title: A CS3 item
+                            view:off_nadir: 1.4
+                            view:sun_azimuth: 168.7
+                            view:sun_elevation: 33.4
+                          stac_extensions:
+                          - eo
+                          - view
+                          - https://example.com/cs-extension/1.0/schema.json
+                          stac_version: 1.0.0
+                          type: Feature
+                        properties:
+                          assets:
+                            additionalProperties:
+                              properties:
+                                description:
+                                  description: 'Multi-line description to explain
+                                    the asset.
+
+
+                                    [CommonMark 0.29](http://commonmark.org/) syntax
+                                    MAY be used for rich text representation.'
+                                  example: Small 256x256px PNG thumbnail for a preview.
+                                  type: string
+                                href:
+                                  description: Link to the asset object
+                                  example: http://cool-sat.com/catalog/collections/cs/items/CS3-20160503_132130_04/thumb.png
+                                  format: url
+                                  type: string
+                                roles:
+                                  description: Purposes of the asset
+                                  example:
+                                  - thumbnail
+                                  items:
+                                    type: string
+                                  type: array
+                                title:
+                                  description: Displayed title
+                                  example: Thumbnail
+                                  type: string
+                                type:
+                                  description: Media type of the asset
+                                  example: image/png
+                                  type: string
+                              required:
+                              - href
+                              type: object
+                            type: object
+                          bbox:
+                            description: "Only features that have a geometry that\
+                              \ intersects the bounding box are\nselected. The bounding\
+                              \ box is provided as four or six numbers,\ndepending\
+                              \ on whether the coordinate reference system includes\
+                              \ a\nvertical axis (elevation or depth):\n\n* Lower\
+                              \ left corner, coordinate axis 1\n* Lower left corner,\
+                              \ coordinate axis 2  \n* Lower left corner, coordinate\
+                              \ axis 3 (optional) \n* Upper right corner, coordinate\
+                              \ axis 1 \n* Upper right corner, coordinate axis 2 \n\
+                              * Upper right corner, coordinate axis 3 (optional)\n\
+                              \nThe coordinate reference system of the values is WGS84\n\
+                              longitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84)\
+                              \ unless\na different coordinate reference system is\
+                              \ specified in the parameter\n`bbox-crs`.\n\nFor WGS84\
+                              \ longitude/latitude the values are in most cases the\
+                              \ sequence\nof minimum longitude, minimum latitude,\
+                              \ maximum longitude and maximum\nlatitude. However,\
+                              \ in cases where the box spans the antimeridian the\n\
+                              first value (west-most box edge) is larger than the\
+                              \ third value\n(east-most box edge).\n\nIf a feature\
+                              \ has multiple spatial geometry properties, it is the\n\
+                              decision of the server whether only a single spatial\
+                              \ geometry property\nis used to determine the extent\
+                              \ or all relevant geometries.\n\nExample: The bounding\
+                              \ box of the New Zealand Exclusive Economic Zone in\n\
+                              WGS 84 (from 160.6\xB0E to 170\xB0W and from 55.95\xB0\
+                              S to 25.89\xB0S) would be\nrepresented in JSON as `[160.6,\
+                              \ -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+                            example:
+                            - -110
+                            - 39.5
+                            - -105
+                            - 40.5
+                            items:
+                              type: number
+                            maxItems: 6
+                            minItems: 4
+                            type: array
+                          geometry:
+                            oneOf:
+                            - properties:
+                                coordinates:
+                                  items:
+                                    type: number
+                                  minItems: 2
+                                  type: array
+                                type:
+                                  enum:
+                                  - Point
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                            - properties:
+                                coordinates:
+                                  items:
+                                    items:
+                                      type: number
+                                    minItems: 2
+                                    type: array
+                                  type: array
+                                type:
+                                  enum:
+                                  - MultiPoint
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                            - properties:
+                                coordinates:
+                                  items:
+                                    items:
+                                      type: number
+                                    minItems: 2
+                                    type: array
+                                  minItems: 2
+                                  type: array
+                                type:
+                                  enum:
+                                  - LineString
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                            - properties:
+                                coordinates:
+                                  items:
+                                    items:
+                                      items:
+                                        type: number
+                                      minItems: 2
+                                      type: array
+                                    minItems: 2
+                                    type: array
+                                  type: array
+                                type:
+                                  enum:
+                                  - MultiLineString
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                            - properties:
+                                coordinates:
+                                  items:
+                                    items:
+                                      items:
+                                        type: number
+                                      minItems: 2
+                                      type: array
+                                    minItems: 4
+                                    type: array
+                                  type: array
+                                type:
+                                  enum:
+                                  - Polygon
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                            - properties:
+                                coordinates:
+                                  items:
+                                    items:
+                                      items:
+                                        items:
+                                          type: number
+                                        minItems: 2
+                                        type: array
+                                      minItems: 4
+                                      type: array
+                                    type: array
+                                  type: array
+                                type:
+                                  enum:
+                                  - MultiPolygon
+                                  type: string
+                              required:
+                              - type
+                              - coordinates
+                              type: object
+                          id:
+                            description: Provider identifier, a unique ID.
+                            type: string
+                          links:
+                            items:
+                              properties:
+                                body:
+                                  description: For POST requests, the resource can
+                                    specify the HTTP body as a JSON object.
+                                  type: object
+                                headers:
+                                  description: Object key values pairs they map to
+                                    headers
+                                  example:
+                                    Accept: application/json
+                                  type: object
+                                href:
+                                  description: The location of the resource
+                                  format: uri
+                                  type: string
+                                merge:
+                                  default: false
+                                  description: 'This is only valid when the server
+                                    is responding to POST request.
+
+
+                                    If merge is true, the client is expected to merge
+                                    the body value
+
+                                    into the current request body before following
+                                    the link.
+
+                                    This avoids passing large post bodies back and
+                                    forth when following
+
+                                    links, particularly for navigating pages through
+                                    the `POST /search`
+
+                                    endpoint.
+
+
+                                    NOTE: To support form encoding it is expected
+                                    that a client be able
+
+                                    to merge in the key value pairs specified as JSON
+
+                                    `{"next": "token"}` will become `&next=token`.'
+                                  type: boolean
+                                method:
+                                  default: GET
+                                  description: Specifies the HTTP method that the
+                                    resource expects
+                                  enum:
+                                  - GET
+                                  - POST
+                                  type: string
+                                rel:
+                                  description: Relation type of the link
+                                  type: string
+                                title:
+                                  description: Title of the resource
+                                  type: string
+                                type:
+                                  description: The media type of the resource
+                                  type: string
+                              required:
+                              - href
+                              - rel
+                              title: Link
+                              type: object
+                            type: array
+                          stac_extensions:
+                            items:
+                              anyOf:
+                              - format: uri
+                                title: Reference to a JSON Schema
+                                type: string
+                              - title: Reference to a core extension
+                                type: string
+                            title: STAC extensions
+                            type: array
+                            uniqueItems: true
+                          stac_version:
+                            example: 1.0.0-beta.2
+                            title: STAC version
+                            type: string
+                          type:
+                            description: The GeoJSON type
+                            enum:
+                            - Feature
+                            type: string
+                        required:
+                        - stac_version
+                        - id
+                        - type
+                        - geometry
+                        - bbox
+                        - links
+                        - properties
+                        - assets
+                        type: object
+                      type: array
+                    links:
+                      description: An array of links. Can be used for pagination,
+                        e.g. by providing a link with the `next` relation type.
+                      example:
+                      - href: http://api.cool-sat.com/search?next=ANsXtp9mrqN0yrKWhf-y2PUpHRLQb1GT-mtxNcXou8TwkXhi1Jbk
+                        rel: next
+                      items:
+                        properties:
+                          body:
+                            description: For POST requests, the resource can specify
+                              the HTTP body as a JSON object.
+                            type: object
+                          headers:
+                            description: Object key values pairs they map to headers
+                            example:
+                              Accept: application/json
+                            type: object
+                          href:
+                            description: The location of the resource
+                            format: uri
+                            type: string
+                          merge:
+                            default: false
+                            description: 'This is only valid when the server is responding
+                              to POST request.
+
+
+                              If merge is true, the client is expected to merge the
+                              body value
+
+                              into the current request body before following the link.
+
+                              This avoids passing large post bodies back and forth
+                              when following
+
+                              links, particularly for navigating pages through the
+                              `POST /search`
+
+                              endpoint.
+
+
+                              NOTE: To support form encoding it is expected that a
+                              client be able
+
+                              to merge in the key value pairs specified as JSON
+
+                              `{"next": "token"}` will become `&next=token`.'
+                            type: boolean
+                          method:
+                            default: GET
+                            description: Specifies the HTTP method that the resource
+                              expects
+                            enum:
+                            - GET
+                            - POST
+                            type: string
+                          rel:
+                            description: Relation type of the link
+                            type: string
+                          title:
+                            description: Title of the resource
+                            type: string
+                          type:
+                            description: The media type of the resource
+                            type: string
+                        required:
+                        - href
+                        - rel
+                        title: Link
+                        type: object
+                      type: array
+                    stac_extensions:
+                      items:
+                        anyOf:
+                        - format: uri
+                          title: Reference to a JSON Schema
+                          type: string
+                        - title: Reference to a core extension
+                          type: string
+                      title: STAC extensions
+                      type: array
+                      uniqueItems: true
+                    stac_version:
+                      example: 1.0.0-beta.2
+                      title: STAC version
+                      type: string
+                    type:
+                      enum:
+                      - FeatureCollection
+                      type: string
+                  required:
+                  - stac_version
+                  - features
+                  - type
+                  type: object
+                - description: '**Optional Extension:** Context
+
+
+                    Augments lists of resources with the number of returned and matches
+                    resource and the given limit for the request.'
+                  properties:
+                    context:
+                      properties:
+                        limit:
+                          example: 5
+                          minimum: 0
+                          nullable: true
+                          type: integer
+                        matched:
+                          example: 314159
+                          minimum: 0
+                          type: integer
+                        returned:
+                          example: 1
+                          minimum: 0
+                          type: integer
+                      required:
+                      - returned
+                      type: object
+                  type: object
+                  x-stac-api-fragment: context
+            text/html:
+              schema:
+                type: string
+          description: A feature collection.
+        default:
+          content:
+            application/json:
+              schema:
+                description: 'Information about the exception: an error code plus
+                  an optional description.'
+                properties:
+                  code:
+                    type: string
+                  description:
+                    type: string
+                required:
+                - code
+                type: object
+          description: An error occurred.
+      summary: Search STAC items with simple filtering.
+      tags:
+      - Item Search
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: post
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
+    post:
+      description: 'retrieve items matching filters. Intended as the standard, full-featured
+
+        query API.
+
+
+        This method is mandatory to implement if `GET /search` is implemented.
+
+        If this endpoint is implemented on a server, it is required to add a
+
+        link referring to this endpoint with `rel` set to `search` and `method`
+
+        set to `POST` to the `links` array in `GET /`.'
+      operationId: postItemSearch
+      requestBody:
+        content:
+          application/json:
+            schema:
+              allOf:
+              - allOf:
+                - description: Only return items that intersect the provided bounding
+                    box.
+                  properties:
+                    bbox:
+                      description: "Only features that have a geometry that intersects\
+                        \ the bounding box are\nselected. The bounding box is provided\
+                        \ as four or six numbers,\ndepending on whether the coordinate\
+                        \ reference system includes a\nvertical axis (elevation or\
+                        \ depth):\n\n* Lower left corner, coordinate axis 1\n* Lower\
+                        \ left corner, coordinate axis 2  \n* Lower left corner, coordinate\
+                        \ axis 3 (optional) \n* Upper right corner, coordinate axis\
+                        \ 1 \n* Upper right corner, coordinate axis 2 \n* Upper right\
+                        \ corner, coordinate axis 3 (optional)\n\nThe coordinate reference\
+                        \ system of the values is WGS84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84)\
+                        \ unless\na different coordinate reference system is specified\
+                        \ in the parameter\n`bbox-crs`.\n\nFor WGS84 longitude/latitude\
+                        \ the values are in most cases the sequence\nof minimum longitude,\
+                        \ minimum latitude, maximum longitude and maximum\nlatitude.\
+                        \ However, in cases where the box spans the antimeridian the\n\
+                        first value (west-most box edge) is larger than the third\
+                        \ value\n(east-most box edge).\n\nIf a feature has multiple\
+                        \ spatial geometry properties, it is the\ndecision of the\
+                        \ server whether only a single spatial geometry property\n\
+                        is used to determine the extent or all relevant geometries.\n\
+                        \nExample: The bounding box of the New Zealand Exclusive Economic\
+                        \ Zone in\nWGS 84 (from 160.6\xB0E to 170\xB0W and from 55.95\xB0\
+                        S to 25.89\xB0S) would be\nrepresented in JSON as `[160.6,\
+                        \ -55.95, -170, -25.89]` and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+                      example:
+                      - -110
+                      - 39.5
+                      - -105
+                      - 40.5
+                      items:
+                        type: number
+                      maxItems: 6
+                      minItems: 4
+                      type: array
+                  type: object
+                - description: An object representing a date+time based filter.
+                  properties:
+                    datetime:
+                      description: 'Either a date-time or an interval, open or closed.
+                        Date and time expressions
+
+                        adhere to RFC 3339. Open intervals are expressed using double-dots.
+
+
+                        Examples:
+
+
+                        * A date-time: "2018-02-12T23:20:50Z"
+
+                        * A closed interval: "2018-02-12T00:00:00Z/2018-03-18T12:31:12Z"
+
+                        * Open intervals: "2018-02-12T00:00:00Z/.." or "../2018-03-18T12:31:12Z"
+
+
+                        Only features that have a temporal property that intersects
+                        the value of
+
+                        `datetime` are selected.
+
+
+                        If a feature has multiple temporal properties, it is the decision
+                        of the
+
+                        server whether only a single temporal property is used to
+                        determine
+
+                        the extent or all relevant temporal properties.'
+                      example: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+                      type: string
+                  type: object
+                - description: Only returns items that intersect with the provided
+                    polygon.
+                  properties:
+                    intersects:
+                      oneOf:
+                      - properties:
+                          coordinates:
+                            items:
+                              type: number
+                            minItems: 2
+                            type: array
+                          type:
+                            enum:
+                            - Point
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                      - properties:
+                          coordinates:
+                            items:
+                              items:
+                                type: number
+                              minItems: 2
+                              type: array
+                            type: array
+                          type:
+                            enum:
+                            - MultiPoint
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                      - properties:
+                          coordinates:
+                            items:
+                              items:
+                                type: number
+                              minItems: 2
+                              type: array
+                            minItems: 2
+                            type: array
+                          type:
+                            enum:
+                            - LineString
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                      - properties:
+                          coordinates:
+                            items:
+                              items:
+                                items:
+                                  type: number
+                                minItems: 2
+                                type: array
+                              minItems: 2
+                              type: array
+                            type: array
+                          type:
+                            enum:
+                            - MultiLineString
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                      - properties:
+                          coordinates:
+                            items:
+                              items:
+                                items:
+                                  type: number
+                                minItems: 2
+                                type: array
+                              minItems: 4
+                              type: array
+                            type: array
+                          type:
+                            enum:
+                            - Polygon
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                      - properties:
+                          coordinates:
+                            items:
+                              items:
+                                items:
+                                  items:
+                                    type: number
+                                  minItems: 2
+                                  type: array
+                                minItems: 4
+                                type: array
+                              type: array
+                            type: array
+                          type:
+                            enum:
+                            - MultiPolygon
+                            type: string
+                        required:
+                        - type
+                        - coordinates
+                        type: object
+                  type: object
+                - description: Only returns the collections specified
+                  properties:
+                    collections:
+                      description: 'Array of Collection IDs to include in the search
+                        for items.
+
+                        Only Items in one of the provided Collections will be searched.'
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                - description: Only returns items that match the array of given ids
+                  properties:
+                    ids:
+                      description: 'Array of Item ids to return. All other filter
+                        parameters that further
+
+                        restrict the number of search results are ignored'
+                      items:
+                        type: string
+                      type: array
+                  type: object
+                - description: Only returns maximum number of results (page size)
+                  properties:
+                    limit:
+                      default: 10
+                      description: The maximum number of results to return (page size).
+                        Defaults to 10
+                      example: 10
+                      maximum: 10000
+                      minimum: 1
+                      type: integer
+                  type: object
+                description: The search criteria
+                type: object
+              - description: '**Optional Extension:** Fields
+
+
+                  Determines the shape of the features in the response'
+                properties:
+                  fields:
+                    description: 'The include and exclude members specify an array
+                      of
+
+                      property names that are either included or excluded
+
+                      from the result, respectively. If both include and
+
+                      exclude are specified, include takes precedence.
+
+                      Values should include the full JSON path of the property.
+
+                      '
+                    example:
+                      exclude:
+                      - geometry
+                      - properties.datetime
+                      include:
+                      - id
+                      - properties.eo:cloud_cover
+                    properties:
+                      exclude:
+                        items:
+                          type: string
+                        type: array
+                      include:
+                        items:
+                          type: string
+                        type: array
+                    type: object
+                type: object
+                x-stac-api-fragment: fields
+              - description: '**Optional Extension:** Query
+
+
+                  Allows users to query properties for specific values'
+                properties:
+                  query:
+                    additionalProperties:
+                      anyOf:
+                      - description: if the object doesn't contain any of the operators,
+                          it is equivalent to using the equals operator
+                      - description: Match using an operator
+                        properties:
+                          contains:
+                            description: Find items with a property that contains
+                              the specified literal string, e.g., matches ".*<STRING>.*".
+                              A case-insensitive comparison must be performed.
+                            type: string
+                          endsWith:
+                            description: Find items with a property that ends with
+                              the specified string. A case-insensitive comparison
+                              must be performed.
+                            type: string
+                          eq:
+                            description: Find items with a property that is equal
+                              to the specified value. For strings, a case-insensitive
+                              comparison must be performed.
+                            nullable: true
+                            oneOf:
+                            - type: string
+                            - type: number
+                            - type: boolean
+                          gt:
+                            description: Find items with a property value greater
+                              than the specified value.
+                            oneOf:
+                            - format: date-time
+                              type: string
+                            - type: number
+                          gte:
+                            description: Find items with a property value greater
+                              than or equal the specified value.
+                            oneOf:
+                            - format: date-time
+                              type: string
+                            - type: number
+                          in:
+                            description: Find items with a property that equals at
+                              least one entry in the specified array. A case-insensitive
+                              comparison must be performed.
+                            items:
+                              oneOf:
+                              - type: string
+                              - type: number
+                            type: array
+                          lt:
+                            description: Find items with a property value less than
+                              the specified value.
+                            oneOf:
+                            - format: date-time
+                              type: string
+                            - type: number
+                          lte:
+                            description: Find items with a property value less than
+                              or equal the specified value.
+                            oneOf:
+                            - format: date-time
+                              type: string
+                            - type: number
+                          neq:
+                            description: Find items that *don't* contain the specified
+                              value. For strings, a case-insensitive comparison must
+                              be performed.
+                            nullable: true
+                            oneOf:
+                            - type: string
+                            - type: number
+                            - type: boolean
+                          startsWith:
+                            description: Find items with a property that begins with
+                              the specified string. A case-insensitive comparison
+                              must be performed.
+                            type: string
+                        type: object
+                      description: Apply query operations to a specific property
+                    description: Define which properties to query and the operations
+                      to apply
+                    example:
+                      datetime:
+                        gte: '2018-02-12T00:00:00Z'
+                        lte: '2018-03-18T12:31:12Z'
+                      eo:cloud_cover:
+                        gt: 8
+                        lt: 50
+                      eo:gsd:
+                        in:
+                        - 10
+                        - 20
+                      pl:item_type:
+                        startsWith: PSScene
+                      platform:
+                        eq: landsat-8
+                      product:
+                        in:
+                        - foo
+                        - bar
+                        - baz
+                    type: object
+                type: object
+                x-stac-api-fragment: query
+              - description: '**Optional Extension:** Sort
+
+
+                  Sort the results.'
+                properties:
+                  sortby:
+                    description: 'An array of objects containing a property name and
+                      sort direction.
+
+                      '
+                    example:
+                    - direction: asc
+                      field: properties.eo:cloud_cover
+                    - direction: desc
+                      field: id
+                    items:
+                      properties:
+                        direction:
+                          default: asc
+                          enum:
+                          - asc
+                          - desc
+                          type: string
+                        field:
+                          type: string
+                      required:
+                      - field
+                      - direction
+                      type: object
+                    minItems: 1
+                    type: array
+                type: object
+                x-stac-api-fragment: sort
+      responses:
+        '200':
+          content:
+            application/geo+json:
+              schema:
+                description: A GeoJSON FeatureCollection augmented with foreign members
+                  that contain values relevant to a STAC entity
+                properties:
+                  features:
+                    items:
+                      description: A GeoJSON Feature augmented with foreign members
+                        that contain values relevant to a STAC entity
+                      example:
+                        assets:
+                          analytic:
+                            href: http://cool-sat.com/static-catalog/CS3/20160503_132130_04/analytic.tif
+                            title: 4-Band Analytic
+                          thumbnail:
+                            href: http://cool-sat.com/static-catalog/CS3/20160503_132130_04/thumbnail.png
+                            title: Thumbnail
+                        bbox:
+                        - -122.59750209
+                        - 37.48803556
+                        - -122.2880486
+                        - 37.613537207
+                        collection: CS3
+                        geometry:
+                          coordinates:
+                          - - - -122.308150179
+                              - 37.488035566
+                            - - -122.597502109
+                              - 37.538869539
+                            - - -122.576687533
+                              - 37.613537207
+                            - - -122.2880486
+                              - 37.562818007
+                            - - -122.308150179
+                              - 37.488035566
+                          type: Polygon
+                        id: CS3-20160503_132131_05
+                        links:
+                        - href: http://cool-sat.com/collections/CS3/items/20160503_132130_04
+                          rel: self
+                        - href: http://cool-sat.com/collections
+                          rel: root
+                        - href: http://cool-sat.com/collections/CS3
+                          rel: parent
+                        - href: http://cool-sat.com/collections/CS3
+                          rel: collection
+                        properties:
+                          datetime: '2016-05-03T13:22:30.040Z'
+                          eo:bands: []
+                          eo:cloud_cover: 0.12
+                          eo:gsd: 0.512
+                          instruments:
+                          - cool_sensor_v1
+                          license: PDDL-1.0
+                          platform: coolsat2
+                          providers:
+                          - name: CoolSat
+                            roles:
+                            - producer
+                            - licensor
+                            url: https://cool-sat.com/
+                          title: A CS3 item
+                          view:off_nadir: 1.4
+                          view:sun_azimuth: 168.7
+                          view:sun_elevation: 33.4
+                        stac_extensions:
+                        - eo
+                        - view
+                        - https://example.com/cs-extension/1.0/schema.json
+                        stac_version: 1.0.0
+                        type: Feature
+                      properties:
+                        assets:
+                          additionalProperties:
+                            properties:
+                              description:
+                                description: 'Multi-line description to explain the
+                                  asset.
+
+
+                                  [CommonMark 0.29](http://commonmark.org/) syntax
+                                  MAY be used for rich text representation.'
+                                example: Small 256x256px PNG thumbnail for a preview.
+                                type: string
+                              href:
+                                description: Link to the asset object
+                                example: http://cool-sat.com/catalog/collections/cs/items/CS3-20160503_132130_04/thumb.png
+                                format: url
+                                type: string
+                              roles:
+                                description: Purposes of the asset
+                                example:
+                                - thumbnail
+                                items:
+                                  type: string
+                                type: array
+                              title:
+                                description: Displayed title
+                                example: Thumbnail
+                                type: string
+                              type:
+                                description: Media type of the asset
+                                example: image/png
+                                type: string
+                            required:
+                            - href
+                            type: object
+                          type: object
+                        bbox:
+                          description: "Only features that have a geometry that intersects\
+                            \ the bounding box are\nselected. The bounding box is\
+                            \ provided as four or six numbers,\ndepending on whether\
+                            \ the coordinate reference system includes a\nvertical\
+                            \ axis (elevation or depth):\n\n* Lower left corner, coordinate\
+                            \ axis 1\n* Lower left corner, coordinate axis 2  \n*\
+                            \ Lower left corner, coordinate axis 3 (optional) \n*\
+                            \ Upper right corner, coordinate axis 1 \n* Upper right\
+                            \ corner, coordinate axis 2 \n* Upper right corner, coordinate\
+                            \ axis 3 (optional)\n\nThe coordinate reference system\
+                            \ of the values is WGS84\nlongitude/latitude (http://www.opengis.net/def/crs/OGC/1.3/CRS84)\
+                            \ unless\na different coordinate reference system is specified\
+                            \ in the parameter\n`bbox-crs`.\n\nFor WGS84 longitude/latitude\
+                            \ the values are in most cases the sequence\nof minimum\
+                            \ longitude, minimum latitude, maximum longitude and maximum\n\
+                            latitude. However, in cases where the box spans the antimeridian\
+                            \ the\nfirst value (west-most box edge) is larger than\
+                            \ the third value\n(east-most box edge).\n\nIf a feature\
+                            \ has multiple spatial geometry properties, it is the\n\
+                            decision of the server whether only a single spatial geometry\
+                            \ property\nis used to determine the extent or all relevant\
+                            \ geometries.\n\nExample: The bounding box of the New\
+                            \ Zealand Exclusive Economic Zone in\nWGS 84 (from 160.6\xB0\
+                            E to 170\xB0W and from 55.95\xB0S to 25.89\xB0S) would\
+                            \ be\nrepresented in JSON as `[160.6, -55.95, -170, -25.89]`\
+                            \ and in a query as\n`bbox=160.6,-55.95,-170,-25.89`."
+                          example:
+                          - -110
+                          - 39.5
+                          - -105
+                          - 40.5
+                          items:
+                            type: number
+                          maxItems: 6
+                          minItems: 4
+                          type: array
+                        geometry:
+                          oneOf:
+                          - properties:
+                              coordinates:
+                                items:
+                                  type: number
+                                minItems: 2
+                                type: array
+                              type:
+                                enum:
+                                - Point
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                          - properties:
+                              coordinates:
+                                items:
+                                  items:
+                                    type: number
+                                  minItems: 2
+                                  type: array
+                                type: array
+                              type:
+                                enum:
+                                - MultiPoint
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                          - properties:
+                              coordinates:
+                                items:
+                                  items:
+                                    type: number
+                                  minItems: 2
+                                  type: array
+                                minItems: 2
+                                type: array
+                              type:
+                                enum:
+                                - LineString
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                          - properties:
+                              coordinates:
+                                items:
+                                  items:
+                                    items:
+                                      type: number
+                                    minItems: 2
+                                    type: array
+                                  minItems: 2
+                                  type: array
+                                type: array
+                              type:
+                                enum:
+                                - MultiLineString
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                          - properties:
+                              coordinates:
+                                items:
+                                  items:
+                                    items:
+                                      type: number
+                                    minItems: 2
+                                    type: array
+                                  minItems: 4
+                                  type: array
+                                type: array
+                              type:
+                                enum:
+                                - Polygon
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                          - properties:
+                              coordinates:
+                                items:
+                                  items:
+                                    items:
+                                      items:
+                                        type: number
+                                      minItems: 2
+                                      type: array
+                                    minItems: 4
+                                    type: array
+                                  type: array
+                                type: array
+                              type:
+                                enum:
+                                - MultiPolygon
+                                type: string
+                            required:
+                            - type
+                            - coordinates
+                            type: object
+                        id:
+                          description: Provider identifier, a unique ID.
+                          type: string
+                        links:
+                          items:
+                            properties:
+                              body:
+                                description: For POST requests, the resource can specify
+                                  the HTTP body as a JSON object.
+                                type: object
+                              headers:
+                                description: Object key values pairs they map to headers
+                                example:
+                                  Accept: application/json
+                                type: object
+                              href:
+                                description: The location of the resource
+                                format: uri
+                                type: string
+                              merge:
+                                default: false
+                                description: 'This is only valid when the server is
+                                  responding to POST request.
+
+
+                                  If merge is true, the client is expected to merge
+                                  the body value
+
+                                  into the current request body before following the
+                                  link.
+
+                                  This avoids passing large post bodies back and forth
+                                  when following
+
+                                  links, particularly for navigating pages through
+                                  the `POST /search`
+
+                                  endpoint.
+
+
+                                  NOTE: To support form encoding it is expected that
+                                  a client be able
+
+                                  to merge in the key value pairs specified as JSON
+
+                                  `{"next": "token"}` will become `&next=token`.'
+                                type: boolean
+                              method:
+                                default: GET
+                                description: Specifies the HTTP method that the resource
+                                  expects
+                                enum:
+                                - GET
+                                - POST
+                                type: string
+                              rel:
+                                description: Relation type of the link
+                                type: string
+                              title:
+                                description: Title of the resource
+                                type: string
+                              type:
+                                description: The media type of the resource
+                                type: string
+                            required:
+                            - href
+                            - rel
+                            title: Link
+                            type: object
+                          type: array
+                        stac_extensions:
+                          items:
+                            anyOf:
+                            - format: uri
+                              title: Reference to a JSON Schema
+                              type: string
+                            - title: Reference to a core extension
+                              type: string
+                          title: STAC extensions
+                          type: array
+                          uniqueItems: true
+                        stac_version:
+                          example: 1.0.0-beta.2
+                          title: STAC version
+                          type: string
+                        type:
+                          description: The GeoJSON type
+                          enum:
+                          - Feature
+                          type: string
+                      required:
+                      - stac_version
+                      - id
+                      - type
+                      - geometry
+                      - bbox
+                      - links
+                      - properties
+                      - assets
+                      type: object
+                    type: array
+                  links:
+                    description: An array of links. Can be used for pagination, e.g.
+                      by providing a link with the `next` relation type.
+                    example:
+                    - href: http://api.cool-sat.com/search?next=ANsXtp9mrqN0yrKWhf-y2PUpHRLQb1GT-mtxNcXou8TwkXhi1Jbk
+                      rel: next
+                    items:
+                      properties:
+                        body:
+                          description: For POST requests, the resource can specify
+                            the HTTP body as a JSON object.
+                          type: object
+                        headers:
+                          description: Object key values pairs they map to headers
+                          example:
+                            Accept: application/json
+                          type: object
+                        href:
+                          description: The location of the resource
+                          format: uri
+                          type: string
+                        merge:
+                          default: false
+                          description: 'This is only valid when the server is responding
+                            to POST request.
+
+
+                            If merge is true, the client is expected to merge the
+                            body value
+
+                            into the current request body before following the link.
+
+                            This avoids passing large post bodies back and forth when
+                            following
+
+                            links, particularly for navigating pages through the `POST
+                            /search`
+
+                            endpoint.
+
+
+                            NOTE: To support form encoding it is expected that a client
+                            be able
+
+                            to merge in the key value pairs specified as JSON
+
+                            `{"next": "token"}` will become `&next=token`.'
+                          type: boolean
+                        method:
+                          default: GET
+                          description: Specifies the HTTP method that the resource
+                            expects
+                          enum:
+                          - GET
+                          - POST
+                          type: string
+                        rel:
+                          description: Relation type of the link
+                          type: string
+                        title:
+                          description: Title of the resource
+                          type: string
+                        type:
+                          description: The media type of the resource
+                          type: string
+                      required:
+                      - href
+                      - rel
+                      title: Link
+                      type: object
+                    type: array
+                  stac_extensions:
+                    items:
+                      anyOf:
+                      - format: uri
+                        title: Reference to a JSON Schema
+                        type: string
+                      - title: Reference to a core extension
+                        type: string
+                    title: STAC extensions
+                    type: array
+                    uniqueItems: true
+                  stac_version:
+                    example: 1.0.0-beta.2
+                    title: STAC version
+                    type: string
+                  type:
+                    enum:
+                    - FeatureCollection
+                    type: string
+                required:
+                - stac_version
+                - features
+                - type
+                type: object
+            text/html:
+              schema:
+                type: string
+          description: A feature collection.
+        default:
+          content:
+            application/json:
+              schema:
+                description: 'Information about the exception: an error code plus
+                  an optional description.'
+                properties:
+                  code:
+                    type: string
+                  description:
+                    type: string
+                required:
+                - code
+                type: object
+          description: An error occurred.
+      summary: Search STAC items with full-featured filtering.
+      tags:
+      - Item Search
+      x-amazon-apigateway-integration:
+        type: aws_proxy
+        httpMethod: post
+        uri:
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
+tags:
+- description: essential characteristics of a STAC API
+  name: Item Search
+
