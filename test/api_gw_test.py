@@ -11,6 +11,7 @@ from test.elasticsearch_test import (  # pylint: disable=unused-import
     es_client,
     populate_es_test_case_1,
 )
+from urllib.parse import urlencode
 
 import boto3
 import pytest
@@ -154,7 +155,7 @@ def test_root(api_gw_method, lambda_function):
 )
 def test_item_search_get(
     api_gw_method, lambda_function, es_client
-):  # pylint: disable=too-many-locals
+):  # pylint: disable=too-many-locals,too-many-statements
     """
     test_item_search_get
     """
@@ -221,6 +222,15 @@ def test_item_search_get(
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 1
     assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
+
+    # query extension
+    url = f"{original_url}?"
+    url += urlencode({"query": '{"cbers:data_type": {"eq":"L4"}}'})
+    req = requests.get(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 1
+    assert fcol["features"][0]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
 
 @pytest.mark.api_gw_method_args(

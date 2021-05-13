@@ -507,6 +507,9 @@ def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
         doc["links"].append({**isl, **{"method": "GET"}})
         doc["links"].append({**isl, **{"method": "POST"}})
         doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/item-search")
+        doc["conformsTo"].append(
+            "https://api.stacspec.org/v1.0.0-beta.1/item-search#query"
+        )
     return doc
 
 

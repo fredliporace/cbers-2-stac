@@ -547,7 +547,7 @@ def process_ids_filter(dsl_query: Search, ids: List[str]) -> Search:
     return dsl_query
 
 
-def process_feature_filter(dsl_query, feature_ids: list):
+def process_feature_filter(dsl_query: Search, feature_ids: list) -> Search:
     """
     Extends received query to filter only items with ids in
     the list
@@ -563,7 +563,7 @@ def process_feature_filter(dsl_query, feature_ids: list):
     return dsl_query
 
 
-def process_query_extension(dsl_query, query_params: dict):
+def process_query_extension(dsl_query: Search, query_params: dict) -> Search:
     """
     Extends received query to include query extension parameters
 
@@ -638,7 +638,9 @@ def process_query_extension(dsl_query, query_params: dict):
     return dsl_query
 
 
-def query_from_event(es_client, event) -> Tuple[Search, dict]:
+def query_from_event(  # pylint: disable=too-many-branches
+    es_client, event
+) -> Tuple[Search, dict]:
     """
     Build query from event
 
@@ -649,7 +651,6 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
     document: Dict[str, Any] = dict()
     if event["httpMethod"] == "GET":
         qsp = event["queryStringParameters"]
-        # @todo process query extension for GET
         if qsp:
             document["bbox"] = parse_bbox(qsp.get("bbox", "-180,90,180,-90"))
             document["datetime"] = qsp.get("datetime", None)
@@ -663,6 +664,8 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
                 document["ids"] = qsp.get("ids").split(",")
             else:
                 document["ids"] = list()
+            if qsp.get("query"):
+                document["query"] = json.loads(qsp.get("query"))
         else:
             document["bbox"] = parse_bbox("-180,90,180,-90")
             document["datetime"] = None
