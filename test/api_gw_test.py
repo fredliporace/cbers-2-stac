@@ -7,13 +7,14 @@ import json
 from test.conftest import ENDPOINT_URL
 
 # warning disabled, this is used as a pylint fixture
-from test.elasticsearch_test import es_client  # pylint: disable=unused-import
+from test.elasticsearch_test import (  # pylint: disable=unused-import
+    es_client,
+    populate_es_test_case_1,
+)
 
 import boto3
 import pytest
 import requests
-
-from cbers2stac.elasticsearch.es import create_document_in_index
 
 
 def to_localstack_url(api_id: str, url: str):
@@ -166,21 +167,7 @@ def test_item_search_get(
         Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
     )
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
-
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
-    )
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
-    )
+    populate_es_test_case_1(es_client)
 
     # Empty GET, return all 2 items
     original_url = api_gw_lambda_integrate_deploy(
@@ -227,6 +214,14 @@ def test_item_search_get(
     assert "links" not in fcol.keys()
     assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
 
+    # ids
+    url = f"{original_url}?ids=CBERS_4_MUX_20170528_090_084_L2"
+    req = requests.get(url)
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 1
+    assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
+
 
 @pytest.mark.api_gw_method_args(
     {
@@ -264,21 +259,7 @@ def test_item_search_post(
         Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
     )
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
-
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
-    )
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
-    )
+    populate_es_test_case_1(es_client)
 
     url = api_gw_lambda_integrate_deploy(
         api_client, api, api_resource, lambda_func, http_method="POST"
@@ -332,4 +313,12 @@ def test_item_search_post(
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" not in fcol.keys()
+    assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
+
+    # ids
+    body = {"ids": ["CBERS_4_MUX_20170528_090_084_L2"]}
+    req = requests.post(url, data=json.dumps(body))
+    assert req.status_code == 200, req.text
+    fcol = json.loads(req.text)
+    assert len(fcol["features"]) == 1
     assert fcol["features"][0]["id"] == "CBERS_4_MUX_20170528_090_084_L2"

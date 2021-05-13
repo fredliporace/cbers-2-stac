@@ -23,6 +23,7 @@ from cbers2stac.elasticsearch.es import (
     parse_datetime,
     process_collections_filter,
     process_feature_filter,
+    process_ids_filter,
     process_intersects_filter,
     process_query_extension,
     stac_search,
@@ -79,6 +80,27 @@ def es_client(request):
     create_stac_index(client, timeout=60)
 
     return client
+
+
+def populate_es_test_case_1(es_client):
+    """
+    Populate ES instance with two items, one CB4 MUX and other
+    CB4 AWFI
+    """
+    stac_items = list()
+    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+        stac_items.append(fin.read())
+    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+        stac_items.append(fin.read())
+
+    for stac_item in stac_items:
+        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
+    )
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
+    )
 
 
 def test_parse_datetime():
@@ -221,6 +243,8 @@ def test_bulk_create_document_in_index(es_client):
     )
 
     # Two distinct items, create
+    # Does not use populate_es_test_case_1 here since we are
+    # testing bulk insert
     stac_items = list()
     with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
         stac_items.append(fin.read())
@@ -285,21 +309,7 @@ def test_bulk_create_document_in_index(es_client):
 def test_basic_search(es_client):
     """test_basic_search"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
-
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
-    )
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
-    )
+    populate_es_test_case_1(es_client)
 
     # All items are returned for empty query, sleeps for 2 seconds
     # before searching to allow ES to index the documents.
@@ -386,21 +396,7 @@ def test_basic_search(es_client):
 def test_query_extension_search(es_client):  # pylint: disable=too-many-statements
     """test_query_extension_search"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
-
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
-    )
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
-    )
+    populate_es_test_case_1(es_client)
 
     empty_query = stac_search(es_client=es_client)
     q_dsl = process_query_extension(dsl_query=empty_query, query_params={})
@@ -497,14 +493,7 @@ def test_query_extension_search(es_client):  # pylint: disable=too-many-statemen
 def test_collection_filter_search(es_client):
     """test_collection_filter_search"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    populate_es_test_case_1(es_client)
 
     # Sleeps for 2 seconds
     # before searching to allow ES to index the documents.
@@ -564,14 +553,7 @@ def test_collection_filter_search(es_client):
 def test_feature_filter_search(es_client):
     """test_feature_filter_search"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    populate_es_test_case_1(es_client)
 
     # Sleeps for 2 seconds
     # before searching to allow ES to index the documents.
@@ -606,21 +588,7 @@ def test_feature_filter_search(es_client):
 def test_process_intersects_filter(es_client):
     """test_process_intersects_filter"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
-
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
-
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
-    )
-    assert es_client.exists(
-        index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
-    )
+    populate_es_test_case_1(es_client)
 
     empty_query = stac_search(es_client=es_client)
     geometry = {
@@ -659,17 +627,17 @@ def test_process_intersects_filter(es_client):
     assert res[0].to_dict()["properties"]["instruments"][0] == "MUX"
 
 
-def test_paging(es_client):
-    """test_paging"""
+def test_ids_filter_search(es_client):
+    """test_ids_filter_search"""
 
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
-        stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
-        stac_items.append(fin.read())
+    populate_es_test_case_1(es_client)
 
-    for stac_item in stac_items:
-        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    # Sleeps for 2 seconds
+    # before searching to allow ES to index the documents.
+    # See
+    # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+    # for a possibly better solution
+    time.sleep(2)
 
     assert es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
@@ -677,6 +645,39 @@ def test_paging(es_client):
     assert es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
     )
+
+    empty_query = stac_search(es_client=es_client)
+
+    # Only MUX item
+    q_dsl = process_ids_filter(
+        dsl_query=empty_query, ids=["CBERS_4_MUX_20170528_090_084_L2"]
+    )
+    res = q_dsl.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["instruments"][0] == "MUX"
+
+    # Two ids
+    q_dsl = process_ids_filter(
+        dsl_query=empty_query,
+        ids=["CBERS_4_MUX_20170528_090_084_L2", "CBERS_4_AWFI_20170409_167_123_L4"],
+    )
+    res = q_dsl.execute()
+    assert res["hits"]["total"]["value"] == 2
+
+    # Two ids, only one MUX item returned
+    q_dsl = process_ids_filter(
+        dsl_query=empty_query,
+        ids=["CBERS_4_MUX_20170528_090_084_L2", "CBERS_5_AWFI_20170409_167_123_L4"],
+    )
+    res = q_dsl.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["instruments"][0] == "MUX"
+
+
+def test_paging(es_client):
+    """test_paging"""
+
+    populate_es_test_case_1(es_client)
 
     # All items are returned for empty query, sleeps for 2 seconds
     # before searching to allow ES to index the documents.

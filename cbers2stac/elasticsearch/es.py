@@ -509,7 +509,7 @@ def process_intersects_filter(dsl_query, geometry: dict):
     return dsl_query
 
 
-def process_collections_filter(dsl_query, collections: list):
+def process_collections_filter(dsl_query: Search, collections: List[str]) -> Search:
     """
     Extends received query to filter only items belonging to the
     desired collection list
@@ -526,6 +526,24 @@ def process_collections_filter(dsl_query, collections: list):
         minimum_should_match=1,
     )
     dsl_query = dsl_query.query(collection_or)
+    return dsl_query
+
+
+def process_ids_filter(dsl_query: Search, ids: List[str]) -> Search:
+    """
+    Extends received query to filter only items belonging to the
+    desired collection list
+
+    :param dsl_query: ES DSL object
+    :param ids list: string list of ids
+    :rtype: ES DSL object
+    :return: DSL extended with query parameters
+    """
+
+    list_or = Q(
+        "bool", should=[Q("match", **{"id": id}) for id in ids], minimum_should_match=1,
+    )
+    dsl_query = dsl_query.query(list_or)
     return dsl_query
 
 
@@ -641,12 +659,16 @@ def query_from_event(es_client, event) -> Tuple[Search, dict]:
                 document["collections"] = qsp.get("collections").split(",")
             else:
                 document["collections"] = list()
+            if qsp.get("ids"):
+                document["ids"] = qsp.get("ids").split(",")
+            else:
+                document["ids"] = list()
         else:
             document["bbox"] = parse_bbox("-180,90,180,-90")
             document["datetime"] = None
             document["limit"] = 10
             document["page"] = 1
-            document["collections"] = list()
+            document["ids"] = list()
     else:  # POST
         if event.get("body"):
             document = json.loads(event["body"])
@@ -799,6 +821,10 @@ def stac_search_endpoint_handler(
         query = process_collections_filter(
             dsl_query=query, collections=document["collections"]
         )
+
+    # Process 'ids' filter
+    if document.get("ids"):
+        query = process_ids_filter(dsl_query=query, ids=document["ids"])
 
     # Execute query
     LOGGER.info(query.to_dict())
