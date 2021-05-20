@@ -20,7 +20,12 @@ def handler(event, context):  # pylint: disable=unused-argument
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(get_api_stac_root(event, item_search=True), indent=2),
-        "headers": {"Content-Type": "application/json",},
+        "headers": {
+            "Content-Type": "application/json",
+            "access-control-allow-origin": "*",
+            "access-control-allow-headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
+            "access-control-allow-methods": "GET,POST",
+        },
     }
 
     return retmsg

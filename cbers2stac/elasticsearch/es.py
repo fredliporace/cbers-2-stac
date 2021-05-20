@@ -33,10 +33,11 @@ ES_CLIENT = None
 
 def api_gw_lambda_integration(func):
     """
-    Decorator to include stantard exception handling for API GW
+    Decorator to include standard exception handling for API GW
     lambda integration. Catches any exception and formats the message as JSON
     content, with error code 400.
-    Also includes setup for localstack testing
+    Include CORS headers in all responses
+    Includes setup for localstack testing
     """
 
     def inner(event, context):
@@ -44,7 +45,14 @@ def api_gw_lambda_integration(func):
             # Fix to work with localstack environment
             if os.environ.get("LOCALSTACK_HOSTNAME"):
                 os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
-            return func(event, context)
+            retmsg = func(event, context)
+            retmsg["headers"] = {
+                "Content-Type": "application/json",
+                "access-control-allow-origin": "*",
+                "access-control-allow-headers": "Content-Type,X-Amz-Date,Authorization,X-Api-Key",
+                "access-control-allow-methods": "GET,POST",
+            }
+            return retmsg
         except Exception as excp:  # pylint: disable=broad-except
             LOGGER.error(traceback.format_exc())
             retmsg = {
@@ -865,10 +873,10 @@ def stac_search_endpoint_handler(
                     "merge": True,
                 }
             )
+    # Headers are now set by decorator
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(results, indent=2),
-        "headers": {"Content-Type": "application/json",},
     }
 
     return retmsg
