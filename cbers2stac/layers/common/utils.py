@@ -67,6 +67,9 @@ COLLECTIONS = {
 }
 
 STAC_VERSION = "1.0.0-rc.2"
+# See https://gitter.im/SpatioTemporal-Asset-Catalog/1.0-testing?at=60a668d9e4173528c6959318
+# for a discussion if this is needed
+STAC_API_VERSION = "1.0.0-beta.1"
 
 # Common items for catalog and collection documents.
 BASE_CATALOG = OrderedDict(

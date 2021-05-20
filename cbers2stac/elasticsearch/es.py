@@ -12,6 +12,7 @@ from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
 
 from cbers2stac.layers.common.utils import (
+    STAC_API_VERSION,
     get_client,
     get_collection_ids,
     get_collection_s3_key,
@@ -841,6 +842,7 @@ def stac_search_endpoint_handler(
     LOGGER.info(query.to_dict())
     res = query.execute()
     results = dict()
+    results["stac_version"] = STAC_API_VERSION
     results["type"] = "FeatureCollection"
     results["features"] = list()
 
