@@ -52,7 +52,7 @@ Requires localstack up to execute tests:
 $ cd test && docker-compose up # Starts localstack
 ```
 
-### Check CI integration testing before pushing*
+### Check CI integration testing before pushing
 
 [https://github.com/nektos/act](act) may be used to test github actions locally. At the project's root directory:
 
