@@ -709,7 +709,6 @@ def query_from_event(  # pylint: disable=too-many-branches
     return query, document
 
 
-@api_gw_lambda_integration
 def create_stac_index_handler(event, context):  # pylint: disable=unused-argument
     """
     Create STAC elasticsearch index
