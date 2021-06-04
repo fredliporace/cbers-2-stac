@@ -246,6 +246,12 @@ class CBERS2STACStack(core.Stack):
         )
         # Public STAC item topic for new STAC items
         self.topics_["stac_item_topic"] = sns.Topic(self, "stac_item_topic")
+        core.CfnOutput(
+            self,
+            "stac_item_topic_output",
+            value=self.topics_["stac_item_topic"].topic_arn,
+            description="STAC item topic",
+        )
         sit_policy = iam.PolicyDocument(
             assign_sids=True,
             statements=[
