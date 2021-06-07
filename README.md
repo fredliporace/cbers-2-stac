@@ -145,26 +145,3 @@ To index all CBERS-4A MUX scenes with path 120:
 ```
 
 The indexed documents are immediately available through the STAC API. The static catalogs are updated every 30 minutes. To update the static catalogs before that you may execute the ```generate_catalog_levels_to_be_updated_lambda``` lambda.
-
-<!---
-First you need to define two buckets:
-
-* STAC\_BUCKET, the bucket that will be populated with STAC files. This bucket currently needs to be named cbers-stac-VERSIONMAJOR-VERSIONMINOR, for instance, cbers-stac-1-0
-* DEPLOY\_BUCKET, the bucket that will be temporarily used for deployment files.
-
-Change the following parameters in ./sam/Makefile to reflect your environment:
-
-* OPERATOR_EMAIL: this e-mail will be used to notify problems in the stack execution
-
-Populate STAC\_BUCKET with the static STAC files by executing in the ./stac\_catalogs directory.
-```
-(export AWS_PROFILE=your_aws_profile && ./sync_to_aws.sh)
-```
-
-To deploy the stack execute in the ./sam directory:
-```
-(export AWS_PROFILE=your_aws_profile && export DEPLOY_BUCKET=deploy_bucket_created_above && make deploy)
-```
-
-After the first deployment it is required to create the Elasticseach index by executing the CreateElasticIndexFunction lambda with an empty payload input.
---->

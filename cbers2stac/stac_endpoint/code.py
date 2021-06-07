@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 
 from cbers2stac.layers.common.utils import get_api_stac_root
 
@@ -19,7 +20,15 @@ def handler(event, context):  # pylint: disable=unused-argument
     LOGGER.info(event)
     retmsg = {
         "statusCode": "200",
-        "body": json.dumps(get_api_stac_root(event, item_search=True), indent=2),
+        "body": json.dumps(
+            get_api_stac_root(
+                event,
+                item_search=True,
+                static_catalog=True,
+                static_bucket=os.environ["CBERS_STAC_BUCKET"],
+            ),
+            indent=2,
+        ),
         "headers": {
             "Content-Type": "application/json",
             "access-control-allow-origin": "*",

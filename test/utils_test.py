@@ -67,8 +67,8 @@ def test_get_api_stac_root():
     # core only
     sroot = get_api_stac_root(event=event)
     assert sroot["links"][0]["href"] == "https://stac.amskepler.com/v07/stac"
-    assert len(sroot["links"]) == 1
     val.validate_dict(sroot)
+    assert len(sroot["links"]) == 1
 
     # item-search
     sroot = get_api_stac_root(event=event, item_search=True)
@@ -77,6 +77,20 @@ def test_get_api_stac_root():
     assert sroot["links"][1]["href"] == "https://stac.amskepler.com/v07/stac/search"
     assert sroot["links"][2]["href"] == "https://stac.amskepler.com/v07/stac/search"
     val.validate_dict(sroot)
+
+    # include static collection links
+    sroot = get_api_stac_root(
+        event=event,
+        item_search=True,
+        static_catalog=True,
+        static_bucket="cbers-stac-1-0-0",
+    )
+    val.validate_dict(sroot)
+    assert len(sroot["links"]) == 4
+    assert (
+        sroot["links"][1]["href"]
+        == "https://cbers-stac-1-0-0.s3.amazonaws.com/catalog.json"
+    )
 
     # Commented out while /collections endpoint is not implemented
     # assert (

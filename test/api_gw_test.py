@@ -105,7 +105,7 @@ def api_gw_method(request):
     {
         "name": "stac_endpoint",
         "handler": "code.handler",
-        "environment": {},
+        "environment": {"CBERS_STAC_BUCKET": "bucket",},
         "timeout": 30,
         "layers": (
             {

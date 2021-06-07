@@ -720,13 +720,6 @@ def create_stac_index_handler(event, context):  # pylint: disable=unused-argumen
         aws_service="es",
     )
 
-    # es_client = Elasticsearch(hosts=[{'host':os.environ['ES_ENDPOINT'],
-    #                                'port':int(os.environ['ES_PORT'])}],
-    #                          connection_class=RequestsHttpConnection,
-    #                          use_ssl=True,
-    #                          http_auth=auth)
-    # print(es_client.info())
-
     es_client = es_connect(
         endpoint=os.environ["ES_ENDPOINT"],
         port=int(os.environ["ES_PORT"]),

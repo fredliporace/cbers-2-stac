@@ -5,7 +5,7 @@ Definitions for base item, catalog and collections
 
 import os
 from collections import OrderedDict
-from typing import Any, Dict, List
+from typing import Any, Dict, KeysView, List
 from urllib.parse import urlencode
 
 import boto3
@@ -467,7 +467,12 @@ def parse_api_gateway_event(event: dict):
     return parsed
 
 
-def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
+def get_api_stac_root(
+    event: dict,
+    item_search: bool = False,
+    static_catalog: bool = False,
+    static_bucket: str = None,
+) -> Dict[str, Any]:
     """
     Return STAC api root document
 
@@ -487,6 +492,17 @@ def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
 
     doc["links"].append({"rel": "self", "href": parsed["ppath"]})
 
+    # Include static links to collections
+    if static_catalog:
+        doc["links"].append(
+            {
+                "rel": "child",
+                "title": "CBERS 4 & 4A on AWS static catalog",
+                "href": build_absolute_prefix(bucket=static_bucket)  # type: ignore
+                + "catalog.json",
+            }
+        )
+
     # This is being commented out while the /collections endpoint
     # is not implemented
     # for collection in COLLECTIONS:
@@ -499,6 +515,7 @@ def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
     #             )
     #         }
     #     )
+
     doc["conformsTo"].append("https://api.stacspec.org/v1.0.0-beta.1/core")
     if item_search:
         isl = {
@@ -516,7 +533,9 @@ def get_api_stac_root(event: dict, item_search: bool = False) -> Dict[str, Any]:
     return doc
 
 
-def build_absolute_prefix(bucket, sat_sensor=None, path=None, row=None):
+def build_absolute_prefix(
+    bucket: str, sat_sensor: str = None, path: str = None, row: str = None
+) -> str:
     """Returns the absolute prefix given the bucket/satellite/path/row"""
 
     prefix = "https://%s.s3.amazonaws.com" % bucket
@@ -530,7 +549,7 @@ def build_absolute_prefix(bucket, sat_sensor=None, path=None, row=None):
     return prefix
 
 
-def get_collection_ids():
+def get_collection_ids() -> KeysView[str]:
     """Return list of collection ids"""
     return COLLECTIONS.keys()
 
@@ -546,7 +565,7 @@ def get_collection_s3_key(collection_id: str):
     return COLLECTIONS[collection_id]
 
 
-def get_collections_for_satmission(satellite: str, mission: str) -> List[str]:
+def get_collections_for_satmission(satellite: str, mission: str) -> KeysView[str]:
     """
     Returns all collections for a given satellite mission, e.g., CBERS-4
     """
