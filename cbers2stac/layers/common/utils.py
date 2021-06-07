@@ -484,7 +484,7 @@ def get_api_stac_root(
     doc: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
     doc["id"] = "CBERS"
     doc["description"] = "Catalogs of CBERS 4 & 4A mission's imagery on AWS"
-    doc["title"] = "CBERS 4 & CBERS 4A on AWS"
+    doc["title"] = "CBERS 4/4A on AWS"
     doc["links"] = list()
     doc["conformsTo"] = list()
 
@@ -497,7 +497,7 @@ def get_api_stac_root(
         doc["links"].append(
             {
                 "rel": "child",
-                "title": "CBERS 4 & 4A on AWS static catalog",
+                "title": "CBERS 4/4A on AWS static catalog",
                 "href": build_absolute_prefix(bucket=static_bucket)  # type: ignore
                 + "catalog.json",
             }
