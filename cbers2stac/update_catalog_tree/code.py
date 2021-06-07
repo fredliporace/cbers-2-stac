@@ -296,12 +296,9 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         stac_catalog["id"] = build_collection_name(
             satellite=satellite, mission=mission, camera=camera
         )
-        # if mission:
-        #     stac_catalog['id'] = satellite + mission + camera
-        # else:
-        #     stac_catalog['id'] = satellite + camera
     else:
         stac_catalog["id"] = name
+    stac_catalog["title"] = stac_catalog["id"]
     stac_catalog["description"] = description
 
     stac_catalog["links"] = list()
