@@ -25,7 +25,7 @@ def test_collection_json_schema():
     for collection in collections:
         col_dict = base_stac_catalog("cbers-stac", "CBERS", "4", collection)
         assert col_dict["id"] == "CBERS4-" + collection
-        collection_filename = "stac_catalogs/CBERS4/{col}/" "collection.json".format(
+        collection_filename = "test/output/{col}_" "collection.json".format(
             col=collection
         )
         with open(collection_filename, "w") as out_filename:
@@ -37,7 +37,7 @@ def test_collection_json_schema():
     for collection in collections:
         col_dict = base_stac_catalog("cbers-stac", "CBERS", "4A", collection)
         assert col_dict["id"] == "CBERS4A-" + collection
-        collection_filename = "stac_catalogs/CBERS4A/{col}/" "collection.json".format(
+        collection_filename = "test/output/{col}_" "collection.json".format(
             col=collection
         )
         with open(collection_filename, "w") as out_filename:
