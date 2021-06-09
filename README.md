@@ -107,6 +107,18 @@ To index all CBERS-4A MUX scenes with path 120:
 
 The indexed documents are immediately available through the STAC API. The static catalogs are updated every 30 minutes. To update the static catalogs before that you may execute the ```generate_catalog_levels_to_be_updated_lambda``` lambda.
 
+## Dead letter queues (DLQs)
+
+The system makes extensive use of the SQS-lambda integration pattern. DLQs are defined to store messages representing failed jobs:
+
+ * `reconcile-queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Failed jobs are sent to `consume-reconcile-queue-dlq`.
+ * `new-scenes-queue`: jobs representing a key for a scene to be converted to STAC and indexed. Failed jobs are sent to `process-new-scenes-queue-dlq`.
+
+A tool is provided to move messages from SQS queues, this may be used to requeue failed jobs:
+```bash
+./utils/redrive_sqs_queue.py --src-url=https://... --dst-url=https://... --messages-no=100
+```
+
 # Development
 
 ## Install
