@@ -1,0 +1,67 @@
+--- core-item-search.yaml	2021-05-04 17:34:45.904747300 -0300
++++ core-item-search-integrated.yaml	2021-05-06 19:39:26.723779018 -0300
+@@ -1,3 +1,4 @@
++# datetime_interval -> datetimeinterval
+ components:
+   responses:
+     LandingPage:
+@@ -339,7 +340,7 @@
+           example: 2018-02-12T00:00:00Z/2018-03-18T12:31:12Z
+           type: string
+       type: object
+-    datetime_interval:
++    datetimeinterval:
+       description: 'Either a date-time or an interval, open or closed. Date and time
+         expressions
+ 
+@@ -876,6 +877,14 @@
+   title: The SpatioTemporal Asset Catalog API - Item Search
+   version: 1.0.0-beta.1
+ openapi: 3.0.3
++x-amazon-apigateway-request-validators:
++  all:
++    validateRequestBody: true
++    validateRequestParameters: true
++  params-only:
++    validateRequestBody: false
++    validateRequestParameters: true
++x-amazon-apigateway-request-validator: all
+ paths:
+   /:
+     get:
+@@ -1066,6 +1075,11 @@
+       summary: landing page
+       tags:
+       - Core
++      x-amazon-apigateway-integration:
++        type: aws_proxy
++        httpMethod: post
++        uri:
++          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${LandingEndpointLambda.Arn}/invocations
+   /search:
+     get:
+       description: 'Retrieve Items matching filters. Intended as a shorthand API for
+@@ -1755,6 +1769,11 @@
+       summary: Search STAC items with simple filtering.
+       tags:
+       - Item Search
++      x-amazon-apigateway-integration:
++        type: aws_proxy
++        httpMethod: post
++        uri:
++          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
+     post:
+       description: 'retrieve items matching filters. Intended as the standard, full-featured
+ 
+@@ -2649,6 +2668,11 @@
+       summary: Search STAC items with full-featured filtering.
+       tags:
+       - Item Search
++      x-amazon-apigateway-integration:
++        type: aws_proxy
++        httpMethod: post
++        uri:
++          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${SearchEndpointLambda.Arn}/invocations
+ tags:
+ - description: essential characteristics of a STAC API
+   name: Item Search

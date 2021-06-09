@@ -9,7 +9,7 @@
                     "geometry": {
                         "shape": {
                             "type": "envelope",
-                            "coordinates" : [[-180.0, -90.0], [-170.0, -80.0]]
+                            "coordinates" : [[-180.0, -80.0], [-170.0, -90.0]]
                         },
                         "relation": "intersects"
                     }

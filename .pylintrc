@@ -1,0 +1,3 @@
+# https://github.com/samuelcolvin/pydantic/issues/1961#issuecomment-759522422
+[MASTER]
+extension-pkg-whitelist=pydantic

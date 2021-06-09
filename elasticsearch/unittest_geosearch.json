@@ -1,0 +1,26 @@
+{"query":{
+    "bool":{
+        "filter": [{
+            "geo_shape":{
+                "geometry": {
+                    "shape": {
+                        "type": "envelope",
+                        "coordinates": [[24.13, 14.34], [24.13, 14.34]]
+                    },
+                    "relation": "intersects"
+                }
+            }
+        }],
+        "must": [{
+            "range": {
+                "properties.datetime": {
+                    "gte": "2010-04-10T00:00:00.000",
+                    "lte": "2018-04-10T00:00:00.000"
+                }
+            }
+        }]
+    }
+},
+ "sort": ["_id"],
+ "from": 0,
+ "size": 10}

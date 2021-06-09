@@ -1,18 +1,44 @@
 Elasticsearch
 -------------
 
-- localstack start
+# Scripts
 
-Environment
-export SERVICES=es
-$ localstack start
+The test.sh script creates an index, includes one item and performs searches.
 
-- URLs for testing
+# URLs for status
 
 http://localhost:4571/
 http://localhost:4571/_cat/health?v
 http://localhost:4571/_cat/nodes?v
 http://localhost:4571/_cat/indices?v
+
+# Mappings
+
+## Create the index
+curl -X PUT -H "Content-Type: application/json" -d @./stac_mappings.json http://localhost:4571/stac
+
+## Get mappings for stac index
+http://localhost:4571/stac/_mapping?pretty
+
+## Delete the stac index
+curl -X DELETE "localhost:4571/stac?pretty"
+
+# CRUD
+
+## Include an item in the stac index
+curl -X PUT -H "Content-Type: application/json" -d @../test/CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/stac/_doc/1
+
+# Queries
+
+## Return a single document
+curl -X GET http://localhost:4571/stac/_doc/1
+
+## All documents in stac index
+curl -X GET -H "Content-Type: application/json" -d @search_all.json http://localhost:4571/stac/_search?pretty
+
+curl -X POST -H "Content-Type: application/json" -d @./CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/index/test/1
+
+# Other notes
 
 <HTTP Verb>/<Index>/<Type>/<ID>
 
@@ -22,13 +48,3 @@ curl -X PUT "localhost:4571/customer/_doc/1?pretty" -H 'Content-Type: applicatio
   "name": "John Doe"
 }
 '
-# Apaga o indice inteiro
-curl -X DELETE "localhost:4571/customer?pretty"
-
-curl -X PUT -H "Content-Type: application/json" -d @./stac_mappings.json http://localhost:4571/stac
-curl -X PUT -H "Content-Type: application/json" -d @./test/CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/stac/_doc/1
-curl -X GET -H "Content-Type: application/json" -d @search.json http://localhost:4571/stac/_search?pretty
-
-curl -X POST -H "Content-Type: application/json" -d @./CBERS_4_MUX_20170528_090_084_L2.json http://localhost:4571/index/test/1
-
-

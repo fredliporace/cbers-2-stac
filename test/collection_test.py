@@ -1,45 +1,45 @@
 """collection_test"""
 
-import os
-import unittest
 import json
+from test.stac_validator import STACValidator
 
-from jsonschema import validate, RefResolver
+import pytest
 from jsonschema.exceptions import ValidationError
 
-class CollectionTest(unittest.TestCase):
-    """CollectionTest"""
+from cbers2stac.update_catalog_tree.code import base_stac_catalog
 
-    def test_collection_json_schema(self):
-        """test_collection_json_schema"""
 
-        json_schema_path = os.path.join(os.path.dirname(os.path.\
-                                                        abspath(__file__)),
-                                        'json_schema/')
-        schema_path = os.path.join(json_schema_path,
-                                   'collection.json')
-        resolver = RefResolver('file://' + json_schema_path + '/',
-                               None)
+def test_collection_json_schema():
+    """test_collection_json_schema"""
 
-        # loads schema
-        with open(schema_path) as fp_schema:
-            schema = json.load(fp_schema)
+    jsv = STACValidator(schema_filename="collection.json")
 
-        # Makes sure that a invalid file is flagged
-        collection_filename = 'test/CBERS_4_MUX_bogus_collection.json'
-        with open(collection_filename) as fp_in:
-            with self.assertRaises(ValidationError) as context:
-                validate(json.load(fp_in), schema, resolver=resolver)
-            self.assertTrue("'stac_version' is a required property" \
-                            in str(context.exception))
+    # Makes sure that a invalid file is flagged
+    collection_filename = "test/CBERS_4_MUX_bogus_collection.json"
+    with pytest.raises(ValidationError) as context:
+        jsv.validate(collection_filename)
+    assert "'stac_version' is a required property" in context.value.message
 
-        # Checks all collections
-        collections = ['MUX', 'AWFI', 'PAN5M', 'PAN10M']
-        for collection in collections:
-            collection_filename = 'stac_catalogs/CBERS4/{col}/' \
-                                  'collection.json'.format(col=collection)
-            with open(collection_filename) as fp_in:
-                validate(json.load(fp_in), schema, resolver=resolver)
+    # Checks all CBERS-4 collections
+    collections = ["MUX", "AWFI", "PAN5M", "PAN10M"]
+    for collection in collections:
+        col_dict = base_stac_catalog("cbers-stac", "CBERS", "4", collection)
+        assert col_dict["id"] == "CBERS4-" + collection
+        collection_filename = "test/output/{col}_" "collection.json".format(
+            col=collection
+        )
+        with open(collection_filename, "w") as out_filename:
+            json.dump(col_dict, out_filename, indent=2)
+        jsv.validate(collection_filename)
 
-if __name__ == '__main__':
-    unittest.main()
+    # Checks all CBERS-4A collections
+    collections = ["MUX", "WFI", "WPM"]
+    for collection in collections:
+        col_dict = base_stac_catalog("cbers-stac", "CBERS", "4A", collection)
+        assert col_dict["id"] == "CBERS4A-" + collection
+        collection_filename = "test/output/{col}_" "collection.json".format(
+            col=collection
+        )
+        with open(collection_filename, "w") as out_filename:
+            json.dump(col_dict, out_filename, indent=2)
+        jsv.validate(collection_filename)
