@@ -114,7 +114,7 @@ The system makes extensive use of the SQS-lambda integration pattern. DLQs are d
  * `reconcile-queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Failed jobs are sent to `consume-reconcile-queue-dlq`.
  * `new-scenes-queue`: jobs representing a key for a scene to be converted to STAC and indexed. Failed jobs are sent to `process-new-scenes-queue-dlq`.
 
-A tool is provided to move messages from SQS queues, this may be used to requeue failed jobs:
+A tool is provided to move messages from SQS queues, this may be used to re-queue failed jobs:
 ```bash
 ./utils/redrive_sqs_queue.py --src-url=https://... --dst-url=https://... --messages-no=100
 ```
@@ -153,9 +153,13 @@ $ pytest
 
 ```bash
 $ act -j tests
-$ act -r -j tests # To keep docker containers' state
+$ act -r -j tests # To keep docker container's state
 ```
 
 # References
 
 The mechanism to include new items into the archive as soon as they are ingested is described in [this AWS blog post](https://aws.amazon.com/blogs/publicsector/keeping-a-spatiotemporal-asset-catalog-stac-up-to-date-with-sns-sqs/).
+
+# Acknowledgments
+
+[Radiant Earth Foundation](https://www.radiant.earth/) supported the migration to STAC 1.0.0 final.
