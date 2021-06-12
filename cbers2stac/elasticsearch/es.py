@@ -169,7 +169,7 @@ def bulk_process_insert_queue(
     stripped: bool = False,
 ):
     """
-    Read queue with itemsto be inserted and send the items
+    Read queue with items to be inserted and send the items
     to ES.
 
     :param es_client: Elasticsearch client
@@ -190,9 +190,10 @@ def bulk_process_insert_queue(
         if processed_messages == batch_size:
             break
 
-    bulk_create_document_in_index(
+    inserted_items = bulk_create_document_in_index(
         es_client=es_client, stac_items=items, update_if_exists=True, stripped=stripped
     )
+    assert inserted_items == len(items), f"Mismatch, {inserted_items} - {items}"
 
     # Remove messages from queue
     if delete_messages:
@@ -330,9 +331,10 @@ def create_stac_index(es_client, timeout: int = 30):
 
 def bulk_create_document_in_index(
     es_client, stac_items: list, update_if_exists: bool = False, stripped: bool = False,
-):
+) -> int:
     """
-    Create operation, bulk mode
+    Create operation, bulk mode.
+    Return the number of inserted items, raise exception one update fails
     """
 
     # @todo include timeout option
@@ -364,8 +366,9 @@ def bulk_create_document_in_index(
             bulk_item["upsert"] = dict_item
             stac_updates.append(bulk_item)
 
-    success, _ = bulk(es_client, stac_updates)
+    success, errors = bulk(es_client, stac_updates)
 
+    assert len(errors) == 0, errors
     return success
 
 
@@ -729,7 +732,6 @@ def create_stac_index_handler(event, context):  # pylint: disable=unused-argumen
     create_stac_index(es_client)
 
 
-@api_gw_lambda_integration
 def create_documents_handler(event, context):  # pylint: disable=unused-argument
     """
     Include document in index
@@ -737,7 +739,7 @@ def create_documents_handler(event, context):  # pylint: disable=unused-argument
 
     global ES_CLIENT  # pylint: disable=global-statement
     if not ES_CLIENT:
-        print("Creating ES connection")
+        # print("Creating ES connection")
         auth = BotoAWSRequestsAuth(
             aws_host=os.environ["ES_ENDPOINT"],
             aws_region=os.environ["AWS_REGION"],
