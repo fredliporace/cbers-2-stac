@@ -124,7 +124,7 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 ## Install
 
 ```bash
-$ git clone git@github.com:AMS-Kepler/cbers-2-stac.git
+$ git clone git@github.com:fredliporace/cbers-2-stac.git
 $ cd cbers-2-stac
 $ pip install -e .[dev,test]
 $ ./pip-on-lambdas.sh
