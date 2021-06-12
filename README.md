@@ -1,6 +1,6 @@
 # cbers-2-stac
 
-![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=dev)
+![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=master)
 
 Create and keep up-to-date a [STAC](https://github.com/radiantearth/stac-spec) static catalog and an API for [CBERS-4/4A images on AWS](https://registry.opendata.aws/cbers/).
 
