@@ -1,6 +1,7 @@
 """collection_test"""
 
 import json
+import pathlib
 from test.stac_validator import STACValidator
 
 import pytest
@@ -21,6 +22,7 @@ def test_collection_json_schema():
     assert "'stac_version' is a required property" in context.value.message
 
     # Checks all CBERS-4 collections
+    pathlib.Path("test/output").mkdir(parents=True, exist_ok=True)
     collections = ["MUX", "AWFI", "PAN5M", "PAN10M"]
     for collection in collections:
         col_dict = base_stac_catalog("cbers-stac", "CBERS", "4", collection)

@@ -525,7 +525,14 @@ class CBERS2STACStack(core.Stack):
             "AWS::Include", {"Location": openapi_asset.s3_object_url}
         )
         definition = apigateway.AssetApiDefinition.from_inline(data)
-        apigateway.SpecRestApi(self, id="stacapi", api_definition=definition)
+        apigateway.SpecRestApi(
+            self,
+            id="stacapi",
+            api_definition=definition,
+            deploy_options=apigateway.StageOptions(
+                logging_level=apigateway.MethodLoggingLevel.INFO
+            ),
+        )
 
     def create_es_domain(self) -> None:
         """

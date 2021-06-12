@@ -251,7 +251,10 @@ def test_bulk_create_document_in_index(es_client):
     with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
         stac_items.append(fin.read())
 
-    bulk_create_document_in_index(es_client=es_client, stac_items=stac_items)
+    inserted_items = bulk_create_document_in_index(
+        es_client=es_client, stac_items=stac_items
+    )
+    assert inserted_items == len(stac_items)
 
     doc = es_client.get(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
