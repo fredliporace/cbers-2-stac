@@ -66,8 +66,6 @@ Deploy the stack, replacing ```cbers2stac-dev``` with your configured stack name
 $ cdk deploy cbers2stac-dev
 ```
 
-If ```STACK_ENABLE_API``` is set in the configuration you should now create the Elasticsearch index. This needs to be executed only once, right after the first deploy that enables the API. The index is created by the lambda ```create_elastic_index_lambda```, which may be executed from the AWS console or awscli. The function requires no parameters.
-
 The e-mail configured in ```STACK_OPERATOR_EMAIL``` receives execution alarms and while the first deploy is made it should receive a message requesting confirmation for the alarm topic subscription. Accept the request to receive the alarms.
 
 The stack output shows the SNS topic for new scenes and the API endpoint, if configured:
@@ -79,6 +77,12 @@ cbers2stac-prod.stacapiEndpointBED73CCA = https://....
 cbers2stac-prod.stacitemtopicoutput = arn:aws:sns:us-east-1:...:...
 
 ```
+
+### Creating the Elasticsearch index
+
+If ```STACK_ENABLE_API``` is set in the configuration you should now create the Elasticsearch index. This needs to be executed only once, right after the first deploy that enables the API. The index is created by the lambda ```create_elastic_index_lambda```, which may be executed from the AWS console or awscli. The function requires no parameters.
+
+It is recommended to change the cluster configuration to disable the automatic creation of indices. AFAIK this can't be done through CDK options, you need to directly access the domain configuration endpoint, see [example](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation).
 
 ## Reconciliation
 
@@ -101,7 +105,7 @@ To index all CBERS-4A MUX scenes:
 To index all CBERS-4A MUX scenes with path 120:
 ```json
 {
-  "prefix": "CBERS4A/MUX/120"
+  "prefix": "CBERS4A/MUX/120/"
 }
 ```
 
