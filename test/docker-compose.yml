@@ -4,7 +4,7 @@ services:
   localstack:
     container_name: cbers2stac-localstack_main
     #image: localstack/localstack
-    image: localstack/localstack-full
+    image: localstack/localstack-full:0.12.9.1
     network_mode: bridge
     #networks:
     #  - internal
