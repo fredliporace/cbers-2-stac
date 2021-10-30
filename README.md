@@ -123,6 +123,16 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 ./utils/redrive_sqs_queue.py --src-url=https://... --dst-url=https://... --messages-no=100
 ```
 
+## Recovering from ElasticSearch (ES) cluster failures
+
+### Restore from ES snapshot
+
+TODO
+
+### Reingest items from backup queue
+
+TODO
+
 # Development
 
 ## Install

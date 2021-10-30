@@ -233,6 +233,26 @@ class CBERS2STACStack(core.Stack):
             )
         )
 
+        # Backup queue for STAC items inserted into Elasticsearch.
+        # This holds the same items received by "insert_into_elasticsearch_queue",
+        # simply holding them for some time to allow recover from ES
+        # cluster failures (see #78)
+        # This queue subscribe only to new item topics
+        self.create_queue(
+            id="backup_insert_into_elasticsearch_queue",
+            visibility_timeout=core.Duration.seconds(180),
+            retention_period=core.Duration.days(settings.backup_queue_retention_days),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3, queue=self.queues_["dead_letter_queue"]
+            ),
+        )
+        # Subscription for new item topics
+        self.topics_["stac_item_topic"].add_subscription(
+            sns_subscriptions.SqsSubscription(
+                self.queues_["backup_insert_into_elasticsearch_queue"]
+            )
+        )
+
     def create_all_topics(self) -> None:
         """
         Create all stack topics
