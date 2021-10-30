@@ -21,6 +21,10 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     stac_bucket_public_read: Optional[bool] = False
     stac_bucket_prune: bool = False
 
+    es_instance_type: str
+    es_volume_size: int
+    es_data_nodes: int
+
     enable_api: Optional[bool] = False
 
     additional_env: Dict[str, str] = {}

@@ -571,9 +571,12 @@ class CBERS2STACStack(core.Stack):
             id="cbers2stac",
             # This is the version currently used by localstack
             version=elasticsearch.ElasticsearchVersion.V7_7,
-            ebs=elasticsearch.EbsOptions(enabled=True, volume_size=15),
+            ebs=elasticsearch.EbsOptions(
+                enabled=True, volume_size=settings.es_volume_size
+            ),
             capacity=elasticsearch.CapacityConfig(
-                data_node_instance_type="t2.small.elasticsearch", data_nodes=1,
+                data_node_instance_type=settings.es_instance_type,
+                data_nodes=settings.es_data_nodes,
             ),
             access_policies=[
                 iam.PolicyStatement(
