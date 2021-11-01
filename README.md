@@ -1,6 +1,6 @@
 # cbers-2-stac
 
-![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=dev)
+![CI](https://github.com/fredliporace/cbers-2-stac/actions/workflows/ci.yml/badge.svg?branch=master)
 
 Create and keep up-to-date a [STAC](https://github.com/radiantearth/stac-spec) static catalog and an API for [CBERS-4/4A images on AWS](https://registry.opendata.aws/cbers/).
 
@@ -66,8 +66,6 @@ Deploy the stack, replacing ```cbers2stac-dev``` with your configured stack name
 $ cdk deploy cbers2stac-dev
 ```
 
-If ```STACK_ENABLE_API``` is set in the configuration you should now create the Elasticsearch index. This needs to be executed only once, right after the first deploy that enables the API. The index is created by the lambda ```create_elastic_index_lambda```, which may be executed from the AWS console or awscli. The function requires no parameters.
-
 The e-mail configured in ```STACK_OPERATOR_EMAIL``` receives execution alarms and while the first deploy is made it should receive a message requesting confirmation for the alarm topic subscription. Accept the request to receive the alarms.
 
 The stack output shows the SNS topic for new scenes and the API endpoint, if configured:
@@ -80,11 +78,22 @@ cbers2stac-prod.stacitemtopicoutput = arn:aws:sns:us-east-1:...:...
 
 ```
 
-## Reconciliation
+### Creating the Elasticsearch index
 
-The lambda ```populate_reconcile_queue_lambda``` may be used to reconcile the STAC catalog with the original CBERS metadata catalog. The lambda payload is a prefix, all scenes under the prefix are queued, converted to STAC and indexed again. Some examples are shown below.
+If ```STACK_ENABLE_API``` is set in the configuration you should now create the Elasticsearch index. This needs to be executed only once, right after the first deploy that enables the API. The index is created by the lambda ```create_elastic_index_lambda```, which may be executed from the AWS console or awscli. The function requires no parameters.
 
-To index all CBERS-4 MUX scenes with path 102 and row 83:
+It is recommended to change the cluster configuration to disable the automatic creation of indices. AFAIK this can't be done through CDK options, you need to directly access the domain configuration endpoint, see [example](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation).
+
+## Reconciliation from INPE's original metadata
+
+The lambda ```populate_reconcile_queue_lambda``` may be used to reconcile the STAC catalog with the original CBERS metadata catalog.
+
+The lambda payload is a prefix, all directories under the prefix are queued. Each directory is then scanned separately by a distinct lambda instance, all XMLs are converted to static STAC documents and indexed again, if the API is configured.
+
+Some examples are shown below.
+
+
+To index all CBERS-4 MUX scenes with path 102 and row 83.
 ```json
 {
   "prefix": "CBERS4/MUX/102/083/"
@@ -101,11 +110,23 @@ To index all CBERS-4A MUX scenes:
 To index all CBERS-4A MUX scenes with path 120:
 ```json
 {
-  "prefix": "CBERS4A/MUX/120"
+  "prefix": "CBERS4A/MUX/120/"
 }
 ```
 
 The indexed documents are immediately available through the STAC API. The static catalogs are updated every 30 minutes. To update the static catalogs before that you may execute the ```generate_catalog_levels_to_be_updated_lambda``` lambda.
+
+## Reconciliation from STAC static catalog
+
+The lambda ```reindex_stac_items_lambda``` may be used to reconcile the STAC API service with the static catalog. The lambda payload are the parameters to be passed to `list_objects_v2`, all STAC items under the prefix are queued and re-indexed. Some examples are shown below.
+
+To index all CBERS-4 AWFI scenes with path 1 and row 27:
+```json
+{
+  "prefix": "CBERS4/AWFI/001/"
+}
+```
+
 
 ## Dead letter queues (DLQs)
 
@@ -119,12 +140,22 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 ./utils/redrive_sqs_queue.py --src-url=https://... --dst-url=https://... --messages-no=100
 ```
 
+## Recovering from ElasticSearch (ES) cluster failures
+
+### Restore from ES snapshot
+
+TODO
+
+### Re-ingest items from backup queue
+
+TODO
+
 # Development
 
 ## Install
 
 ```bash
-$ git clone git@github.com:AMS-Kepler/cbers-2-stac.git
+$ git clone git@github.com:fredliporace/cbers-2-stac.git
 $ cd cbers-2-stac
 $ pip install -e .[dev,test]
 $ ./pip-on-lambdas.sh
@@ -141,6 +172,8 @@ $ pre-commit install
 ## Testing
 
 Requires localstack up to execute tests:
+
+Check before if `/tmp/localstack/es_backup` directory exists, this is required to start the ES service.
 
 ```bash
 $ cd test && docker-compose up # Starts localstack

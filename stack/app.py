@@ -184,6 +184,7 @@ class CBERS2STACStack(core.Stack):
             ),
         )
 
+        # Reconcile queue for INPE's XML metadata
         self.create_queue(
             id="consume_reconcile_queue_dlq",
             retention_period=core.Duration.seconds(1209600),
@@ -210,6 +211,34 @@ class CBERS2STACStack(core.Stack):
             ),
         )
 
+        # Reconcile queue for STAC items
+        self.create_queue(
+            id="consume_stac_reconcile_queue_dlq",
+            retention_period=core.Duration.seconds(1209600),
+        )
+        consume_stac_reconcile_queue_alarm = cloudwatch.Alarm(
+            self,
+            "ConsumeStacReconcileQueueAlarm",
+            metric=self.queues_["consume_stac_reconcile_queue_dlq"].metric(
+                "ApproximateNumberOfMessagesVisible"
+            ),
+            evaluation_periods=1,
+            threshold=0.0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        consume_stac_reconcile_queue_alarm.add_alarm_action(
+            cw_actions.SnsAction(self.topics_["alarm_topic"])
+        )
+        self.create_queue(
+            id="stac_reconcile_queue",
+            visibility_timeout=core.Duration.seconds(1000),
+            retention_period=core.Duration.seconds(1209600),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3,
+                queue=self.queues_["consume_stac_reconcile_queue_dlq"],
+            ),
+        )
+
         # Queue for STAC items to be inserted into Elasticsearch. Subscribe to the
         # topic with new stac items
         self.create_queue(
@@ -230,6 +259,26 @@ class CBERS2STACStack(core.Stack):
         self.topics_["reconcile_stac_item_topic"].add_subscription(
             sns_subscriptions.SqsSubscription(
                 self.queues_["insert_into_elasticsearch_queue"]
+            )
+        )
+
+        # Backup queue for STAC items inserted into Elasticsearch.
+        # This holds the same items received by "insert_into_elasticsearch_queue",
+        # simply holding them for some time to allow recover from ES
+        # cluster failures (see #78)
+        # This queue subscribe only to new item topics
+        self.create_queue(
+            id="backup_insert_into_elasticsearch_queue",
+            visibility_timeout=core.Duration.seconds(180),
+            retention_period=core.Duration.days(settings.backup_queue_retention_days),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3, queue=self.queues_["dead_letter_queue"]
+            ),
+        )
+        # Subscription for new item topics
+        self.topics_["stac_item_topic"].add_subscription(
+            sns_subscriptions.SqsSubscription(
+                self.queues_["backup_insert_into_elasticsearch_queue"]
             )
         )
 
@@ -402,6 +451,7 @@ class CBERS2STACStack(core.Stack):
             layers=[self.layers_["common_layer"]],
             description="Populates reconcile queue with S3 keys from a common prefix",
         )
+
         # I'm using the bucket ARN directly here just to make sure that I don't
         # mess with the cbers-pds bucket... creating it from_bucket_name should
         # be safe but I'll not take my chances
@@ -472,6 +522,34 @@ class CBERS2STACStack(core.Stack):
                 SqsEventSource(
                     queue=self.queues_["insert_into_elasticsearch_queue"], batch_size=10
                 )
+            )
+
+            self.create_lambda(
+                id="consume_stac_reconcile_queue_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                handler="code.consume_stac_reconcile_queue_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment=self.lambdas_env_,
+                layers=[self.layers_["common_layer"]],
+                timeout=core.Duration.seconds(900),
+                description="Reindex STAC items from a prefix",
+            )
+            # Batch size changed from 5 to 2 to reduce the lambda work and increase
+            # the chances to make it fit within the 900s limit.
+            self.lambdas_["consume_stac_reconcile_queue_lambda"].add_event_source(
+                SqsEventSource(queue=self.queues_["stac_reconcile_queue"], batch_size=2)
+            )
+
+            self.create_lambda(
+                id="populate_stac_reconcile_queue_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                handler="code.populate_stac_reconcile_queue_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment={**self.lambdas_env_,},
+                timeout=core.Duration.seconds(300),
+                dead_letter_queue=self.queues_["dead_letter_queue"],
+                layers=[self.layers_["common_layer"]],
+                description="Populates reconcile queue with STAC items from a common prefix",
             )
 
     def create_api_lambdas(self) -> None:
@@ -551,9 +629,12 @@ class CBERS2STACStack(core.Stack):
             id="cbers2stac",
             # This is the version currently used by localstack
             version=elasticsearch.ElasticsearchVersion.V7_7,
-            ebs=elasticsearch.EbsOptions(enabled=True, volume_size=20),
+            ebs=elasticsearch.EbsOptions(
+                enabled=True, volume_size=settings.es_volume_size
+            ),
             capacity=elasticsearch.CapacityConfig(
-                data_node_instance_type="t2.small.elasticsearch", data_nodes=1,
+                data_node_instance_type=settings.es_instance_type,
+                data_nodes=settings.es_data_nodes,
             ),
             access_policies=[
                 iam.PolicyStatement(
