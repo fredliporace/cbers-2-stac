@@ -531,11 +531,13 @@ class CBERS2STACStack(core.Stack):
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment=self.lambdas_env_,
                 layers=[self.layers_["common_layer"]],
-                timeout=core.Duration.seconds(600),
+                timeout=core.Duration.seconds(900),
                 description="Reindex STAC items from a prefix",
             )
+            # Batch size changed from 5 to 2 to reduce the lambda work and increase
+            # the chances to make it fit within the 900s limit.
             self.lambdas_["consume_stac_reconcile_queue_lambda"].add_event_source(
-                SqsEventSource(queue=self.queues_["stac_reconcile_queue"], batch_size=5)
+                SqsEventSource(queue=self.queues_["stac_reconcile_queue"], batch_size=2)
             )
 
             self.create_lambda(
