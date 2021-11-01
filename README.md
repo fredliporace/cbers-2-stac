@@ -84,11 +84,16 @@ If ```STACK_ENABLE_API``` is set in the configuration you should now create the 
 
 It is recommended to change the cluster configuration to disable the automatic creation of indices. AFAIK this can't be done through CDK options, you need to directly access the domain configuration endpoint, see [example](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-index_.html#index-creation).
 
-## Reconciliation
+## Reconciliation from INPE's original metadata
 
-The lambda ```populate_reconcile_queue_lambda``` may be used to reconcile the STAC catalog with the original CBERS metadata catalog. The lambda payload is a prefix, all scenes under the prefix are queued, converted to STAC and indexed again. Some examples are shown below.
+The lambda ```populate_reconcile_queue_lambda``` may be used to reconcile the STAC catalog with the original CBERS metadata catalog.
 
-To index all CBERS-4 MUX scenes with path 102 and row 83:
+The lambda payload is a prefix, all directories under the prefix are queued. Each directory is then scanned separately by a distinct lambda instance, all XMLs are converted to static STAC documents and indexed again, if the API is configured.
+
+Some examples are shown below.
+
+
+To index all CBERS-4 MUX scenes with path 102 and row 83.
 ```json
 {
   "prefix": "CBERS4/MUX/102/083/"
@@ -111,6 +116,18 @@ To index all CBERS-4A MUX scenes with path 120:
 
 The indexed documents are immediately available through the STAC API. The static catalogs are updated every 30 minutes. To update the static catalogs before that you may execute the ```generate_catalog_levels_to_be_updated_lambda``` lambda.
 
+## Reconciliation from STAC static catalog
+
+The lambda ```reindex_stac_items_lambda``` may be used to reconcile the STAC API service with the static catalog. The lambda payload are the parameters to be passed to `list_objects_v2`, all STAC items under the prefix are queued and re-indexed. Some examples are shown below.
+
+To index all CBERS-4 AWFI scenes with path 1 and row 27:
+```json
+{
+  "prefix": "CBERS4/AWFI/001/"
+}
+```
+
+
 ## Dead letter queues (DLQs)
 
 The system makes extensive use of the SQS-lambda integration pattern. DLQs are defined to store messages representing failed jobs:
@@ -129,7 +146,7 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 
 TODO
 
-### Reingest items from backup queue
+### Re-ingest items from backup queue
 
 TODO
 

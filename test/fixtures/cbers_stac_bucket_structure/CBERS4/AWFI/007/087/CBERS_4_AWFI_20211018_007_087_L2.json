@@ -1,0 +1,129 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
+  ],
+  "id": "CBERS_4_AWFI_20211018_007_087_L2",
+  "type": "Feature",
+  "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+      [
+        [
+          [
+            98.935893,
+            8.934793
+          ],
+          [
+            106.883523,
+            7.710776
+          ],
+          [
+            108.504253,
+            14.478588
+          ],
+          [
+            100.366115,
+            15.730227
+          ],
+          [
+            98.935893,
+            8.934793
+          ]
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    98.949476,
+    7.633759,
+    108.539887,
+    15.828972
+  ],
+  "collection": "CBERS4-AWFI",
+  "properties": {
+    "datetime": "2021-10-18T03:39:19Z",
+    "platform": "cbers-4",
+    "instruments": [
+      "AWFI"
+    ],
+    "gsd": 64.0,
+    "view:sun_azimuth": 141.863,
+    "view:sun_elevation": 62.3761,
+    "view:off_nadir": 0.00417989,
+    "proj:epsg": 32648,
+    "sat:platform_international_designator": "2014-079A",
+    "sat:orbit_state": "descending",
+    "cbers:data_type": "L2",
+    "cbers:path": 7,
+    "cbers:row": 87
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2.json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4/AWFI/007/087/catalog.json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4/AWFI/collection.json"
+    }
+  ],
+  "assets": {
+    "thumbnail": {
+      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087.jpg",
+      "type": "image/jpeg"
+    },
+    "metadata": {
+      "href": "s3://cbers-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087_L2_BAND14.xml",
+      "title": "INPE original metadata",
+      "type": "text/xml"
+    },
+    "B13": {
+      "href": "s3://cbers-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087_L2_BAND13.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B13",
+          "common_name": "blue"
+        }
+      ]
+    },
+    "B14": {
+      "href": "s3://cbers-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087_L2_BAND14.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B14",
+          "common_name": "green"
+        }
+      ]
+    },
+    "B15": {
+      "href": "s3://cbers-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087_L2_BAND15.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B15",
+          "common_name": "red"
+        }
+      ]
+    },
+    "B16": {
+      "href": "s3://cbers-pds/CBERS4/AWFI/007/087/CBERS_4_AWFI_20211018_007_087_L2/CBERS_4_AWFI_20211018_007_087_L2_BAND16.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B16",
+          "common_name": "nir"
+        }
+      ]
+    }
+  }
+}

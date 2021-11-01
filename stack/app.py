@@ -184,6 +184,7 @@ class CBERS2STACStack(core.Stack):
             ),
         )
 
+        # Reconcile queue for INPE's XML metadata
         self.create_queue(
             id="consume_reconcile_queue_dlq",
             retention_period=core.Duration.seconds(1209600),
@@ -207,6 +208,34 @@ class CBERS2STACStack(core.Stack):
             retention_period=core.Duration.seconds(1209600),
             dead_letter_queue=sqs.DeadLetterQueue(
                 max_receive_count=3, queue=self.queues_["consume_reconcile_queue_dlq"]
+            ),
+        )
+
+        # Reconcile queue for STAC items
+        self.create_queue(
+            id="consume_stac_reconcile_queue_dlq",
+            retention_period=core.Duration.seconds(1209600),
+        )
+        consume_stac_reconcile_queue_alarm = cloudwatch.Alarm(
+            self,
+            "ConsumeStacReconcileQueueAlarm",
+            metric=self.queues_["consume_stac_reconcile_queue_dlq"].metric(
+                "ApproximateNumberOfMessagesVisible"
+            ),
+            evaluation_periods=1,
+            threshold=0.0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        consume_stac_reconcile_queue_alarm.add_alarm_action(
+            cw_actions.SnsAction(self.topics_["alarm_topic"])
+        )
+        self.create_queue(
+            id="stac_reconcile_queue",
+            visibility_timeout=core.Duration.seconds(1000),
+            retention_period=core.Duration.seconds(1209600),
+            dead_letter_queue=sqs.DeadLetterQueue(
+                max_receive_count=3,
+                queue=self.queues_["consume_stac_reconcile_queue_dlq"],
             ),
         )
 
@@ -422,6 +451,7 @@ class CBERS2STACStack(core.Stack):
             layers=[self.layers_["common_layer"]],
             description="Populates reconcile queue with S3 keys from a common prefix",
         )
+
         # I'm using the bucket ARN directly here just to make sure that I don't
         # mess with the cbers-pds bucket... creating it from_bucket_name should
         # be safe but I'll not take my chances
@@ -492,6 +522,32 @@ class CBERS2STACStack(core.Stack):
                 SqsEventSource(
                     queue=self.queues_["insert_into_elasticsearch_queue"], batch_size=10
                 )
+            )
+
+            self.create_lambda(
+                id="consume_stac_reconcile_queue_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                handler="code.consume_stac_reconcile_queue_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment=self.lambdas_env_,
+                layers=[self.layers_["common_layer"]],
+                timeout=core.Duration.seconds(600),
+                description="Reindex STAC items from a prefix",
+            )
+            self.lambdas_["consume_stac_reconcile_queue_lambda"].add_event_source(
+                SqsEventSource(queue=self.queues_["stac_reconcile_queue"], batch_size=5)
+            )
+
+            self.create_lambda(
+                id="populate_stac_reconcile_queue_lambda",
+                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                handler="code.populate_stac_reconcile_queue_handler",
+                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                environment={**self.lambdas_env_,},
+                timeout=core.Duration.seconds(300),
+                dead_letter_queue=self.queues_["dead_letter_queue"],
+                layers=[self.layers_["common_layer"]],
+                description="Populates reconcile queue with STAC items from a common prefix",
             )
 
     def create_api_lambdas(self) -> None:

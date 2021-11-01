@@ -1,0 +1,29 @@
+{
+  "type": "Catalog",
+  "stac_version": "1.0.0",
+  "id": "CBERS4 AWFI 019",
+  "description": "CBERS4 AWFI camera path 019 catalog",
+  "title": "CBERS4 AWFI 019",
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://cbers-stac-1-0-0.s3.amazonaws.com/CBERS4/AWFI/019/catalog.json"
+    },
+    {
+      "rel": "root",
+      "href": "https://cbers-stac-1-0-0.s3.amazonaws.com/catalog.json"
+    },
+    {
+      "rel": "parent",
+      "href": "../collection.json"
+    },
+    {
+      "rel": "child",
+      "href": "033/catalog.json"
+    },
+    {
+      "rel": "child",
+      "href": "039/catalog.json"
+    }
+  ]
+}
