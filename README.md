@@ -132,8 +132,10 @@ To index all CBERS-4 AWFI scenes with path 1 and row 27:
 
 The system makes extensive use of the SQS-lambda integration pattern. DLQs are defined to store messages representing failed jobs:
 
- * `reconcile-queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Failed jobs are sent to `consume-reconcile-queue-dlq`.
- * `new-scenes-queue`: jobs representing a key for a scene to be converted to STAC and indexed. Failed jobs are sent to `process-new-scenes-queue-dlq`.
+ * `reconcile_queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Failed jobs are sent to `consume_reconcile_queue_dlq`.
+ * `new_scenes_queue`: jobs representing a key for a scene to be converted to STAC and indexed. Failed jobs are sent to `process_new_scenes_queue_dlq`.
+
+Failed lambda executions from other queues are sent to the general `dead_letter_queue`.
 
 A tool is provided to move messages from SQS queues, this may be used to re-queue failed jobs:
 ```bash
@@ -144,11 +146,11 @@ cb2stac-redrive-sqs --src-url=https://... --dst-url=https://... --messages-no=10
 
 ### Restore from ES snapshot
 
-TODO
+See [AWS documentation](https://docs.aws.amazon.com/opensearch-service/latest/developerguide/managedomains-snapshots.html#managedomains-snapshot-restore).
 
 ### Re-ingest items from backup queue
 
-TODO
+Use `cb2stac-redrive-sqs` to transfer messages from DLQ to `insert_into_elasticsearch_queue`.
 
 # Development
 
