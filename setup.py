@@ -54,6 +54,11 @@ extra_reqs = {
     ],
 }
 
+ENTRY_POINTS = """
+[console_scripts]
+cb2stac-redrive-sqs=utils.redrive_sqs_queue:main
+"""
+
 setup(
     name="cbers-2-stac",
     version="1.0.0",
@@ -68,4 +73,5 @@ setup(
     zip_safe=False,
     install_requires=inst_reqs,
     extras_require=extra_reqs,
+    entry_points=ENTRY_POINTS,
 )

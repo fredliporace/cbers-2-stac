@@ -137,7 +137,7 @@ The system makes extensive use of the SQS-lambda integration pattern. DLQs are d
 
 A tool is provided to move messages from SQS queues, this may be used to re-queue failed jobs:
 ```bash
-./utils/redrive_sqs_queue.py --src-url=https://... --dst-url=https://... --messages-no=100
+cb2stac-redrive-sqs --src-url=https://... --dst-url=https://... --messages-no=100
 ```
 
 ## Recovering from ElasticSearch (ES) cluster failures
