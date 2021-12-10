@@ -1,12 +1,7 @@
-#!/usr/bin/env python
 """
 Move all the messages from one SQS queue to another.
 
-Usage: redrive_sqs_queue.py --src-url=<SRC_QUEUE_URL> --dst-url=<DST_QUEUE_URL>
-                            --messages-no=<MAX_MESSAGES_NO>
-       redrive_sqs_queue.py -h | --help
-
-See https://alexwlchan.net/2020/05/moving-messages-between-sqs-queues/
+Credits to https://alexwlchan.net/2020/05/moving-messages-between-sqs-queues/
 
 """
 import argparse
@@ -70,7 +65,8 @@ def get_messages_from_queue(
             )
 
 
-if __name__ == "__main__":
+def main():
+    """Entry point."""
     args = parse_args()
 
     src_queue_url = args.src_url
