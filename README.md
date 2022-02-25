@@ -127,13 +127,13 @@ To index all CBERS-4 AWFI scenes with path 1 and row 27:
 }
 ```
 
-
-## Dead letter queues (DLQs)
+## SQS-Lambda and dead letter queues (DLQs)
 
 The system makes extensive use of the SQS-lambda integration pattern. DLQs are defined to store messages representing failed jobs:
 
- * `reconcile_queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Failed jobs are sent to `consume_reconcile_queue_dlq`.
- * `new_scenes_queue`: jobs representing a key for a scene to be converted to STAC and indexed. Failed jobs are sent to `process_new_scenes_queue_dlq`.
+ * `reconcile_queue`: jobs representing the S3 prefixes that will be reconciled are queued here. Consumed by `consume_reconcile_queue_lambda`. Failed jobs are sent to `consume_reconcile_queue_dlq`.
+ * `new_scenes_queue`: jobs representing a key for a scene to be converted to STAC and indexed. Consumed by `process_new_scene_lambda`. Failed jobs are sent to `process_new_scenes_queue_dlq`.
+ * `insert_into_elasticsearch_queue`: jobs representing a STAC item. This queue subscribes to `stac_item_topic` and `reconcile_stac_item_topic`, receiving the STAC itemas as notifications. Consumed by `insert_into_elastic_lambda`. Failed jobs (for now) are sent to `dead_letter_queue`.
 
 Failed lambda executions from other queues are sent to the general `dead_letter_queue`.
 
@@ -141,6 +141,8 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 ```bash
 cb2stac-redrive-sqs --src-url=https://... --dst-url=https://... --messages-no=100
 ```
+
+The jobs may also be re-queued using the new `Start DLQ redrive` available from the AWS console.
 
 ## Recovering from ElasticSearch (ES) cluster failures
 
@@ -150,7 +152,9 @@ See [AWS documentation](https://docs.aws.amazon.com/opensearch-service/latest/de
 
 ### Re-ingest items from backup queue
 
-Use `cb2stac-redrive-sqs` to transfer messages from DLQ to `insert_into_elasticsearch_queue`.
+The system keeps `backup_insert_into_elasticsearch_queue` with the STAC items ingested in the last days, see `STACK_BACKUP_QUEUE_RETENTION_DAYS` configuration parameter. The items may be re-ingested after a restore to make sure that the archive includes the items processed between the restored backup date and the failure.
+
+Use `cb2stac-redrive-sqs` (or `Start DLQ redrive` from AWS console) to transfer messages from DLQ to `insert_into_elasticsearch_queue`.
 
 # Development
 
