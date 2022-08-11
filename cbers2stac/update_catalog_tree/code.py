@@ -85,7 +85,7 @@ def get_catalog_info(key):
     key(string): 'directory' key
     """
 
-    ret = dict()
+    ret = {}
 
     # Level
     levels = key.split("/")
@@ -116,7 +116,7 @@ def get_catalogs_from_s3(bucket, prefix, response=None):
     prefix(string): key prefix
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
-    ret = list()
+    ret = []
     if not response:
         response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
@@ -138,7 +138,7 @@ def get_items_from_s3(bucket, prefix, response=None):
     prefix(string): key prefix
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
-    ret = list()
+    ret = []
     if not response:
         response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
@@ -169,7 +169,7 @@ def sqs_messages(queue):
         response = get_client("sqs").receive_message(QueueUrl=queue)
         if "Messages" not in response:
             break
-        retd = dict()
+        retd = {}
         retd["stac_item"] = response["Messages"][0]["Body"]
         retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
@@ -209,7 +209,7 @@ def base_root_catalog(bucket: str) -> Dict[Any, Any]:
     stac_catalog["id"] = "CBERS"
     stac_catalog["description"] = "Catalogs from CBERS 4/4A missions' imagery on AWS"
     stac_catalog["title"] = "CBERS on AWS"
-    stac_catalog["links"] = list()
+    stac_catalog["links"] = []
 
     self_link = OrderedDict()
     self_link["rel"] = "self"
@@ -247,7 +247,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         json_filename = "collection.json"
         # Deal with satellite including or not mission
         if mission:
-            sat_mission = "{}{}".format(satellite, mission)
+            sat_mission = f"{satellite}{mission}"
         else:
             sat_mission = satellite
         stac_catalog = get_base_collection(sat_mission, camera)
@@ -277,15 +277,15 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         description += mission
         sat_sensor += mission
     if camera:
-        name += " %s" % (camera)
-        description += " %s camera" % (camera)
-        sat_sensor += "/%s" % camera
+        name += f" {camera}"
+        description += f" {camera} camera"
+        sat_sensor += f"/{camera}"
     if path:
-        name += " %s" % (path)
-        description += " path %s" % (path)
+        name += f" {path}"
+        description += f" path {path}"
     if row:
-        name += "/%s" % (row)
-        description += " row %s" % (row)
+        name += f"/{row}"
+        description += f" row {row}"
     description += " catalog"
 
     # @todo the collection id is also built in the stac item,
@@ -301,7 +301,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     stac_catalog["title"] = stac_catalog["id"]
     stac_catalog["description"] = description
 
-    stac_catalog["links"] = list()
+    stac_catalog["links"] = []
 
     # Checks if on collection level
     if in_collection:

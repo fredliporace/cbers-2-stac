@@ -21,7 +21,7 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
         for file in files["Contents"]:
             if re.search(suffix, file["Key"]):
                 # print(file['Key'])
-                message = dict()
+                message = {}
                 message["Message"] = json.dumps(
                     {
                         "Records": [

@@ -12,8 +12,8 @@ import boto3
 
 # TODO: This is a singleton, check for more elegant, pythonic way # pylint: disable=fixme
 # Dictionary for aws clients, service is the key
-CLIENT = dict()  # type: dict
-RESOURCE = dict()  # type: dict
+CLIENT = {}  # type: dict
+RESOURCE = {}  # type: dict
 
 
 def get_client(service: str) -> boto3.client:
@@ -23,12 +23,12 @@ def get_client(service: str) -> boto3.client:
     service is the AWS service identification, "sqs", "s3", etc.
     """
 
-    global CLIENT  #  pylint: disable=global-statement
+    global CLIENT  #  pylint: disable=global-statement, global-variable-not-assigned
     if not CLIENT.get(service):
         if os.environ.get("LOCALSTACK_HOSTNAME"):
             CLIENT[service] = boto3.client(
                 service,
-                endpoint_url="http://{}:4566".format(os.environ["LOCALSTACK_HOSTNAME"]),
+                endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:4566",
             )
         else:
             CLIENT[service] = boto3.client(service)
@@ -42,12 +42,12 @@ def get_resource(service: str) -> boto3.client:
     service is the AWS service identification, "sqs", "s3", etc.
     """
 
-    global RESOURCE  #  pylint: disable=global-statement
+    global RESOURCE  #  pylint: disable=global-statement, global-variable-not-assigned
     if not RESOURCE.get(service):
         if os.environ.get("LOCALSTACK_HOSTNAME"):
             RESOURCE[service] = boto3.resource(
                 service,
-                endpoint_url="http://{}:4566".format(os.environ["LOCALSTACK_HOSTNAME"]),
+                endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:4566",
             )
         else:
             RESOURCE[service] = boto3.resource(service)
@@ -388,8 +388,8 @@ def build_collection_name(satellite: str, camera: str, mission: str = None):
     then we assume that it is already concatenated with satellite
     """
     if not mission:
-        return "{}-{}".format(satellite, camera)
-    return "{}{}-{}".format(satellite, mission, camera)
+        return f"{satellite}-{camera}"
+    return f"{satellite}{mission}-{camera}"
 
 
 def static_to_api_collection(collection: dict, event: dict):
@@ -406,11 +406,11 @@ def static_to_api_collection(collection: dict, event: dict):
     parsed = parse_api_gateway_event(event)
     # collection['links'] = [v for v in collection['links'] \
     #                       if v['rel'] != 'child' and v['rel'] != 'parent']
-    collection["links"] = list()
+    collection["links"] = []
     collection["links"].append(
         {
             "rel": "self",
-            "href": "{phost}/{prefix}/collections/{cid}".format(
+            "href": "{phost}/{prefix}/collections/{cid}".format(  # pylint: disable=consider-using-f-string
                 phost=parsed["phost"], prefix=parsed["prefix"], cid=collection["id"]
             ),
         }
@@ -420,7 +420,7 @@ def static_to_api_collection(collection: dict, event: dict):
     collection["links"].append(
         {
             "rel": "items",
-            "href": "{phost}/{prefix}/collections/{cid}/items".format(
+            "href": "{phost}/{prefix}/collections/{cid}/items".format(  # pylint: disable=consider-using-f-string
                 phost=parsed["phost"], prefix=parsed["prefix"], cid=collection["id"]
             ),
         }
@@ -444,24 +444,26 @@ def parse_api_gateway_event(event: dict):
              prefix: v07
     """
 
-    parsed = dict()
+    parsed = {}
     # Protocol now defaulting to https to work with localstack
     # environment which does not have the "X-Forwarded-Proto"
     # key
     protocol = event["headers"].get("X-Forwarded-Proto")
     if not protocol:
         protocol = "http"
-    parsed["phost"] = "{protocol}://{host}".format(
-        protocol=protocol, host=event["headers"]["Host"]
-    )
-    parsed["ppath"] = "{phost}{path}".format(
+    parsed["phost"] = f"{protocol}://{event['headers']['Host']}"
+    parsed["ppath"] = "{phost}{path}".format(  # pylint: disable=consider-using-f-string
         phost=parsed["phost"], path=event["requestContext"]["path"]
     )
     parsed["prefix"] = event["path"].split("/")[1]
-    parsed["vpath"] = "{phost}/{prefix}".format(
+    parsed[
+        "vpath"
+    ] = "{phost}/{prefix}".format(  # pylint: disable=consider-using-f-string
         phost=parsed["phost"], prefix=parsed["prefix"]
     )
-    parsed["spath"] = "{phost}/{prefix}/stac".format(
+    parsed[
+        "spath"
+    ] = "{phost}/{prefix}/stac".format(  # pylint: disable=consider-using-f-string
         phost=parsed["phost"], prefix=parsed["prefix"]
     )
     return parsed
@@ -485,8 +487,8 @@ def get_api_stac_root(
     doc["id"] = "CBERS"
     doc["description"] = "Catalogs of CBERS 4 & 4A mission's imagery on AWS"
     doc["title"] = "CBERS 4/4A on AWS"
-    doc["links"] = list()
-    doc["conformsTo"] = list()
+    doc["links"] = []
+    doc["conformsTo"] = []
 
     parsed = parse_api_gateway_event(event)
 
@@ -538,13 +540,13 @@ def build_absolute_prefix(
 ) -> str:
     """Returns the absolute prefix given the bucket/satellite/path/row"""
 
-    prefix = "https://%s.s3.amazonaws.com" % bucket
+    prefix = f"https://{bucket}.s3.amazonaws.com"
     if sat_sensor:
         prefix += "/" + sat_sensor
     if path:
-        prefix += "/%03d" % int(path)
+        prefix += "/%03d" % int(path)  # pylint: disable=consider-using-f-string
     if row:
-        prefix += "/%03d" % int(row)
+        prefix += "/%03d" % int(row)  # pylint: disable=consider-using-f-string
     prefix += "/"
     return prefix
 
@@ -577,7 +579,7 @@ def get_satmissions(use_hyphen: bool) -> List[str]:
     Return all supported satmissions.
     Hyphens are used or not depending on use_hyphen parameter
     """
-    ret: List[str] = list()
+    ret: List[str] = []
     for satmission in CBERS_MISSIONS:
         if "-" not in satmission:
             continue
@@ -597,7 +599,7 @@ def next_page_get_method_params(query_string_params: Dict[str, str]) -> str:
     """
 
     if query_string_params is None:
-        query_string_params = dict()
+        query_string_params = {}
     next_page = int(query_string_params.get("page", "1"))
     next_page += 1
     query_string_params["page"] = str(next_page)

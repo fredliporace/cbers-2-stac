@@ -28,7 +28,7 @@ def create_resolver_schema(entity: str) -> Tuple[RefResolver, Dict]:
     resolver = RefResolver("file://" + json_schema_path + "/", None)
 
     # Loads schema
-    with open(schema_path) as fp_schema:
+    with open(schema_path, encoding="utf-8") as fp_schema:
         schema = json.load(fp_schema)
     return resolver, schema
 
@@ -43,14 +43,14 @@ def update_catalog_or_collection(c_dict: Dict[Any, Any], filename: str) -> bool:
 
     if os.path.exists(filename):
         # Check if same
-        with open(filename, "r") as cfile:
+        with open(filename, "r", encoding="utf-8") as cfile:
             current_dict = json.load(cfile)
             if current_dict == c_dict:
                 return False
     else:
         # File does not exist, create dir
         Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
-    with open(filename, "w") as out_filename:
+    with open(filename, "w", encoding="utf-8") as out_filename:
         json.dump(c_dict, out_filename, indent=2)
     return True
 
@@ -71,7 +71,7 @@ def create_local_catalog_structure(root_directory: str, bucket_name: str) -> Non
     assert cat_dict["id"] == "CBERS"
     catalog_filename = f"{root_directory}/catalog.json"
     update_catalog_or_collection(c_dict=cat_dict, filename=catalog_filename)
-    with open(catalog_filename) as fp_in:
+    with open(catalog_filename, encoding="utf-8") as fp_in:
         validate(json.load(fp_in), cat_schema, resolver=cat_resolver)
 
     # Create catalogs and collections
@@ -83,7 +83,7 @@ def create_local_catalog_structure(root_directory: str, bucket_name: str) -> Non
         assert cat_dict["id"] == f"{satellite}{mission}"
         catalog_filename = f"{root_directory}/{satellite}{mission}/catalog.json"
         update_catalog_or_collection(c_dict=cat_dict, filename=catalog_filename)
-        with open(catalog_filename) as fp_in:
+        with open(catalog_filename, encoding="utf-8") as fp_in:
             validate(json.load(fp_in), cat_schema, resolver=cat_resolver)
         for collection in get_collections_for_satmission(satellite, mission):
             # Create collections
@@ -93,5 +93,5 @@ def create_local_catalog_structure(root_directory: str, bucket_name: str) -> Non
                 f"{root_directory}/{satellite}{mission}/{collection}" "/collection.json"
             )
             update_catalog_or_collection(c_dict=col_dict, filename=collection_filename)
-            with open(collection_filename) as fp_in:
+            with open(collection_filename, encoding="utf-8") as fp_in:
                 validate(json.load(fp_in), col_schema, resolver=col_resolver)

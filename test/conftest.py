@@ -77,17 +77,19 @@ def create_lambda_layer_from_docker(output_dir: str, dockerfile: str, tag: str) 
     # Copy layer from docker container using temporary tarfile
     container = client.containers.run(image=tag, command="echo", detach=True)
 
-    namedtarfile = tempfile.NamedTemporaryFile(delete=True)
-    # print(namedtarfile.name, file=sys.stderr)
-    bits, stat = container.get_archive(  # pylint: disable=unused-variable
-        "/tmp/package_localstack.zip"
-    )
-    for chunk in bits:
-        namedtarfile.write(chunk)
+    with tempfile.NamedTemporaryFile(delete=True) as namedtarfile:
+        # print(namedtarfile.name, file=sys.stderr)
+        bits, stat = container.get_archive(  # pylint: disable=unused-variable
+            "/tmp/package_localstack.zip"
+        )
+        for chunk in bits:
+            namedtarfile.write(chunk)
 
-    with tarfile.open(namedtarfile.name) as tfile:
-        tfile.extract(member="package_localstack.zip", path="./")
-    os.rename("./package_localstack.zip", f"{os.path.abspath(output_dir)}/{tag}.zip")
+        with tarfile.open(namedtarfile.name) as tfile:
+            tfile.extract(member="package_localstack.zip", path="./")
+        os.rename(
+            "./package_localstack.zip", f"{os.path.abspath(output_dir)}/{tag}.zip"
+        )
 
     # Original way to copy the layer file from docker container
     # This does not work within act, the mounted volume is from the host
@@ -260,11 +262,16 @@ def lambda_function(request):  # pylint: disable=too-many-locals
         # ... add the remaining layers ...
         with ZipFile(lambda_zip, "a") as zfile:
             for layer in lambda_layers[1:]:
-                zfl = ZipFile(layer["output_dir"] + "/" + layer["tag"] + ".zip", "r")
+                zfl = ZipFile(  # pylint: disable=consider-using-with
+                    layer["output_dir"] + "/" + layer["tag"] + ".zip", "r"
+                )
                 for fname in zfl.namelist():
                     zinfo = ZipInfo(filename=fname)
                     zinfo.external_attr = 0o755 << 16
-                    zfile.writestr(zinfo, zfl.open(fname).read())
+                    zfile.writestr(
+                        zinfo,
+                        zfl.open(fname).read(),  # pylint: disable=consider-using-with
+                    )
         # ... and then add the lambda function
         with ZipFile(lambda_zip, "a") as zfile:
             paths = lambda_filtered_paths(lambda_dir)

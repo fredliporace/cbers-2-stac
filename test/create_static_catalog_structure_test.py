@@ -54,7 +54,7 @@ def test_create():
         f"{prefix}/CBERS4/catalog.json",
         f"{prefix}/CBERS4A/catalog.json",
     ]
-    catalog_files = list()
+    catalog_files = []
     for c_file in catalog_files:
         catv.validate(c_file)
 

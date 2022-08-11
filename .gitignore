@@ -32,3 +32,4 @@
 /test/common.zip
 /test/stac_endpoint.zip
 /test/elasticsearch.zip
+/.dir-locals.el

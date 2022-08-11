@@ -1,3 +1,12 @@
 # https://github.com/samuelcolvin/pydantic/issues/1961#issuecomment-759522422
 [MASTER]
 extension-pkg-whitelist=pydantic
+
+[SIMILARITIES]
+# Minimum lines number of a similarity.
+# Issue #3
+# min-similarity-lines=100
+min-similarity-lines=6
+
+# Ignore comments when computing similarities.
+ignore-comments=yes

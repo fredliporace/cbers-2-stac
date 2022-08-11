@@ -27,10 +27,8 @@ def test_collection_json_schema():
     for collection in collections:
         col_dict = base_stac_catalog("cbers-stac", "CBERS", "4", collection)
         assert col_dict["id"] == "CBERS4-" + collection
-        collection_filename = "test/output/{col}_" "collection.json".format(
-            col=collection
-        )
-        with open(collection_filename, "w") as out_filename:
+        collection_filename = f"test/output/{collection}_collection.json"
+        with open(collection_filename, "w", encoding="utf-8") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
         jsv.validate(collection_filename)
 
@@ -39,9 +37,7 @@ def test_collection_json_schema():
     for collection in collections:
         col_dict = base_stac_catalog("cbers-stac", "CBERS", "4A", collection)
         assert col_dict["id"] == "CBERS4A-" + collection
-        collection_filename = "test/output/{col}_" "collection.json".format(
-            col=collection
-        )
-        with open(collection_filename, "w") as out_filename:
+        collection_filename = f"test/output/{collection}_collection.json"
+        with open(collection_filename, "w", encoding="utf-8") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
         jsv.validate(collection_filename)

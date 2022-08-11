@@ -63,7 +63,7 @@ def test_process(dynamodb_table, sqs_queue):
     # Table should be empty after call
     assert len(db_table.scan()["Items"]) == 0
 
-    all_messages = list()
+    all_messages = []
     while True:
         batch_size = 10
         messages = queue.receive_messages(MaxNumberOfMessages=batch_size)

@@ -18,8 +18,8 @@ def diff_files(filename1, filename2):
     """
     Return string with context diff, empty if files are equal
     """
-    with open(filename1) as file1:
-        with open(filename2) as file2:
+    with open(filename1, encoding="utf-8") as file1:
+        with open(filename2, encoding="utf-8") as file2:
             diff = difflib.context_diff(file1.readlines(), file2.readlines())
     res = ""
     for line in diff:
@@ -38,7 +38,7 @@ def test_get_keys_from_cbers4():
 
     # MUX
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_MUX_20170528_090_084_" "L2_BAND6.xml"
+        "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
     )
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -53,7 +53,7 @@ def test_get_keys_from_cbers4():
 
     # AWFI
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_AWFI_20170409_167_123" "_L4_BAND14.xml"
+        "test/fixtures/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml"
     )
     assert meta["sensor"] == "AWFI"
     assert meta["mission"] == "CBERS"
@@ -65,7 +65,7 @@ def test_get_keys_from_cbers4():
 
     # PAN10
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_PAN10M_20190201_180_" "125_L2_BAND2.xml"
+        "test/fixtures/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.xml"
     )
     assert meta["sensor"] == "PAN10M"
     assert meta["mission"] == "CBERS"
@@ -77,7 +77,7 @@ def test_get_keys_from_cbers4():
 
     # PAN5
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml"
+        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml"
     )
     assert meta["sensor"] == "PAN5M"
     assert meta["mission"] == "CBERS"
@@ -100,7 +100,7 @@ def test_get_keys_from_cbers4a():
 
     # MUX
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4A_MUX_20200808_201_137_" "L4_BAND6.xml"
+        "test/fixtures/CBERS_4A_MUX_20200808_201_137_L4_BAND6.xml"
     )
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4A"
@@ -113,7 +113,7 @@ def test_get_keys_from_cbers4a():
 
     # WPM
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4A_WPM_20200730_209_139_" "L4_BAND2.xml"
+        "test/fixtures/CBERS_4A_WPM_20200730_209_139_L4_BAND2.xml"
     )
     assert meta["sensor"] == "WPM"
     assert meta["mission"] == "CBERS"
@@ -125,7 +125,7 @@ def test_get_keys_from_cbers4a():
 
     # WFI
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml"
+        "test/fixtures/CBERS_4A_WFI_20200801_221_156_L4_BAND13.xml"
     )
     assert meta["sensor"] == "WFI"
     assert meta["mission"] == "CBERS"
@@ -150,7 +150,7 @@ def test_build_awfi_stac_item_keys():
     """test_awfi_build_stac_item_keys"""
 
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_AWFI_20170409_167_123_" "L4_BAND14.xml"
+        "test/fixtures/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
@@ -194,7 +194,7 @@ def test_build_mux_stac_item_keys():
     """test_mux_build_stac_item_keys"""
 
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_" "BAND6.xml"
+        "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
@@ -251,7 +251,7 @@ def test_build_mux_stac_item_keys():
                 "CBERS4/MUX/collection.json"
             )
         else:
-            pytest.fail("Unrecognized rel %s" % link["rel"])
+            pytest.fail(f"Unrecognized rel {link['rel']}")
 
     # assets
     # 4 bands, 1 metadata, 1 thumbnail
@@ -262,7 +262,7 @@ def test_build_pan10_stac_item_keys():
     """test_pan10_build_stac_item_keys"""
 
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_PAN10M_20190201_180_125_" "L2_BAND2.xml"
+        "test/fixtures/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
@@ -315,7 +315,7 @@ def test_build_pan10_stac_item_keys():
                 "CBERS4/PAN10M/collection.json"
             )
         else:
-            pytest.fail("Unrecognized rel %s" % link["rel"])
+            pytest.fail(f"Unrecognized rel {link['rel']}")
 
     # assets
     # 3 bands, 1 metadata, 1 thumbnail
@@ -326,7 +326,7 @@ def test_build_pan5_stac_item_keys():
     """test_pan5_build_stac_item_keys"""
 
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_" "L2_BAND1.xml"
+        "test/fixtures/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)
@@ -376,7 +376,7 @@ def test_build_pan5_stac_item_keys():
                 "CBERS4/PAN5M/collection.json"
             )
         else:
-            pytest.fail("Unrecognized rel %s" % link["rel"])
+            pytest.fail(f"Unrecognized rel {link['rel']}")
 
     # assets
     # 1 band, 1 metadata, 1 thumbnail
@@ -387,7 +387,7 @@ def test_build_wfi_stac_item_keys():
     """test_wfi_build_stac_item_keys"""
 
     meta = get_keys_from_cbers(
-        "test/fixtures/CBERS_4A_WFI_20200801_221_156_" "L4_BAND13.xml"
+        "test/fixtures/CBERS_4A_WFI_20200801_221_156_L4_BAND13.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
     smeta = build_stac_item_keys(meta, buckets)

@@ -48,7 +48,7 @@ def get_keys_from_cbers(
     """
 
     nsp = {"x": "http://www.gisplan.com.br/xmlsat"}
-    metadata = dict()
+    metadata = {}
 
     # match = re.match(r'.*_(?P<camera>\w+)_(?P<ymd>\d{8})_.*', cbers_metadata)
     # assert match
@@ -207,10 +207,10 @@ def get_keys_from_cbers(
 
     # availableBands node information
     available_bands = root.find("x:availableBands", nsp)
-    metadata["bands"] = list()
+    metadata["bands"] = []
     for band in available_bands.findall("x:band", nsp):
         metadata["bands"].append(band.text)
-        key = "band_%s_gain" % (band.text)
+        key = f"band_{band.text}_gain"
         metadata[key] = band.attrib.get("gain")
 
     # viewing node information
@@ -219,12 +219,16 @@ def get_keys_from_cbers(
     metadata["acquisition_day"] = metadata["acquisition_date"].split(" ")[0]
 
     # derived fields
-    metadata["no_level_id"] = "CBERS_%s_%s_%s_" "%03d_%03d" % (
-        metadata["number"],
-        metadata["sensor"],
-        metadata["acquisition_day"].replace("-", ""),
-        int(metadata["path"]),
-        int(metadata["row"]),
+    metadata["no_level_id"] = (
+        "CBERS_%s_%s_%s_"  # pylint: disable=consider-using-f-string
+        "%03d_%03d"
+        % (
+            metadata["number"],
+            metadata["sensor"],
+            metadata["acquisition_day"].replace("-", ""),
+            int(metadata["path"]),
+            int(metadata["row"]),
+        )
     )
 
     # example: CBERS4/MUX/071/092/CBERS_4_MUX_20171105_071_092_L2
@@ -241,8 +245,8 @@ def get_keys_from_cbers(
             re.sub(r"_BAND\d+.xml", "", os.path.basename(cbers_metadata)),
         )
     )
-    metadata["sat_sensor"] = "CBERS%s/%s" % (metadata["number"], metadata["sensor"])
-    metadata["sat_number"] = "{}-{}".format(metadata["mission"], metadata["number"])
+    metadata["sat_sensor"] = f"CBERS{metadata['number']}/{metadata['sensor']}"
+    metadata["sat_number"] = f"{metadata['mission']}-{metadata['number']}"
     metadata["meta_file"] = os.path.basename(cbers_metadata)
 
     return metadata
@@ -301,13 +305,17 @@ def build_stac_item_keys(cbers, buckets):
         "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
         "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
     ]
-    stac_item["id"] = "CBERS_%s_%s_%s_" "%03d_%03d_L%s" % (
-        cbers["number"],
-        cbers["sensor"],
-        cbers["acquisition_day"].replace("-", ""),
-        int(cbers["path"]),
-        int(cbers["row"]),
-        cbers["processing_level"],
+    stac_item["id"] = (
+        "CBERS_%s_%s_%s_"  # pylint: disable=consider-using-f-string
+        "%03d_%03d_L%s"
+        % (
+            cbers["number"],
+            cbers["sensor"],
+            cbers["acquisition_day"].replace("-", ""),
+            int(cbers["path"]),
+            int(cbers["row"]),
+            cbers["processing_level"],
+        )
     )
 
     stac_item["type"] = "Feature"
@@ -350,11 +358,11 @@ def build_stac_item_keys(cbers, buckets):
     ][cbers["sensor"]]["summaries"]["gsd"][0]
 
     # Links
-    meta_prefix = "https://s3.amazonaws.com/%s/" % (buckets["metadata"])
-    main_prefix = "s3://%s/" % (buckets["cog"])
-    stac_prefix = "https://%s.s3.amazonaws.com/" % (buckets["stac"])
+    meta_prefix = f"https://s3.amazonaws.com/{buckets['metadata']}/"
+    main_prefix = f"s3://{buckets['cog']}/"
+    stac_prefix = f"https://{buckets['stac']}.s3.amazonaws.com/"
     # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
-    stac_item["links"] = list()
+    stac_item["links"] = []
 
     # links, self
     stac_item["links"].append(
@@ -479,7 +487,7 @@ def create_json_item(stac_item, filename):
     filename(string): ditto
     """
 
-    with open(filename, "w") as outfile:
+    with open(filename, "w", encoding="utf-8") as outfile:
         json.dump(stac_item, outfile, indent=2)
 
 

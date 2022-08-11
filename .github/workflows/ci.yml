@@ -4,13 +4,15 @@ on: [push, pull_request_target]
 
 jobs:
   tests:
-    if: github.event_name == 'push' || github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
+    # if: github.event_name == 'push' || github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: [3.7.9]
 
     steps:
+
+      - uses: hmarr/debug-action@v2
 
       # Hacks (act, ES on localstack)
       - run: |
@@ -42,11 +44,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install tox codecov pre-commit
           # Needed to install pylint and all imported packages
-          python -m pip install .['dev','deploy','test']
+          python -m pip install .[dev,deploy,test] -c constraints.txt
 
-      # Run pre-commit (only for python-3.7)
       - name: run pre-commit
-        if: matrix.python-version == 3.7
         run: pre-commit run --all-files
 
       # Installs packages on lambdas directories

@@ -36,7 +36,7 @@ settings = StackSettings()
 class CBERS2STACStack(core.Stack):
     """CBERS2STACStack"""
 
-    lambdas_env_: Dict[str, str] = dict()
+    lambdas_env_: Dict[str, str] = {}
 
     def create_queue(self, **kwargs: Any) -> sqs.Queue:
         """
@@ -583,10 +583,8 @@ class CBERS2STACStack(core.Stack):
             description="Implement /search endpoint",
         )
 
-        for lambda_f in self.api_lambdas_:
-            self.api_lambdas_[lambda_f].grant_invoke(
-                iam.ServicePrincipal("apigateway.amazonaws.com")
-            )
+        for _, lambda_f in self.api_lambdas_.items():
+            lambda_f.grant_invoke(iam.ServicePrincipal("apigateway.amazonaws.com"))
 
     def create_api_gateway(self) -> None:
         """
@@ -663,21 +661,21 @@ class CBERS2STACStack(core.Stack):
         super().__init__(scope, stack_id, description=description, *kwargs)
 
         # All stack queues
-        self.queues_: Dict[str, sqs.Queue] = dict()
+        self.queues_: Dict[str, sqs.Queue] = {}
 
         # All stack topics
-        self.topics_: Dict[str, sns.Topic] = dict()
+        self.topics_: Dict[str, sns.Topic] = {}
 
         # All lambda layers
-        self.layers_: Dict[str, aws_lambda.LayerVersion] = dict()
+        self.layers_: Dict[str, aws_lambda.LayerVersion] = {}
 
         # All lambdas and permissions (except API lambdas)
-        self.lambdas_: Dict[str, aws_lambda.Function] = dict()
-        self.lambdas_perms_: List[iam.PolicyStatement] = list()
+        self.lambdas_: Dict[str, aws_lambda.Function] = {}
+        self.lambdas_perms_: List[iam.PolicyStatement] = []
 
         # All API lambdas and permissions
-        self.api_lambdas_: Dict[str, aws_lambda.Function] = dict()
-        self.api_lambdas_perms_: List[iam.PolicyStatement] = list()
+        self.api_lambdas_: Dict[str, aws_lambda.Function] = {}
+        self.api_lambdas_perms_: List[iam.PolicyStatement] = []
 
         # Parameters that will not typically change and thus
         # are defined as fixed ENVs
@@ -788,7 +786,7 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["sqs:*"],
-                resources=[self.queues_[queue].queue_arn for queue in self.queues_],
+                resources=[queue.queue_arn for _, queue in self.queues_.items()],
             )
         )
         # Full access to all buckets within stack
@@ -817,14 +815,14 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["sns:*"],
-                resources=[self.topics_[topic].topic_arn for topic in self.topics_],
+                resources=[topic.topic_arn for _, topic in self.topics_.items()],
             )
         )
 
         # Permissions for all (non API) lambdas
         for perm in self.lambdas_perms_:
-            for lambda_f in self.lambdas_:
-                self.lambdas_[lambda_f].add_to_role_policy(perm)
+            for _, lambda_f in self.lambdas_.items():
+                lambda_f.add_to_role_policy(perm)
 
         # API
         if settings.enable_api:

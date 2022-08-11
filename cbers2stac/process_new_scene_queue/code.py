@@ -128,21 +128,24 @@ def get_s3_keys(quicklook_key):
     """
 
     qdict = parse_quicklook_key(quicklook_key)
-    stac_key = "%s/%s/%s/%s/%s.json" % (
+    stac_key = "%s/%s/%s/%s/%s.json" % (  # pylint: disable=consider-using-f-string
         qdict["satellite"],
         qdict["camera"],
         qdict["path"],
         qdict["row"],
         qdict["scene_id"],
     )
-    inpe_metadata_key = "%s/%s/%s/%s/%s/%s_BAND%s.xml" % (
-        qdict["satellite"],
-        qdict["camera"],
-        qdict["path"],
-        qdict["row"],
-        qdict["scene_id"],
-        qdict["scene_id"],
-        CMETA[qdict["camera"]]["meta_band"],
+    inpe_metadata_key = (
+        "%s/%s/%s/%s/%s/%s_BAND%s.xml"  # pylint: disable=consider-using-f-string
+        % (
+            qdict["satellite"],
+            qdict["camera"],
+            qdict["path"],
+            qdict["row"],
+            qdict["scene_id"],
+            qdict["scene_id"],
+            CMETA[qdict["camera"]]["meta_band"],
+        )
     )
     return {
         "stac": stac_key,
@@ -170,7 +173,7 @@ def sqs_messages(queue):
             break
         msg = json.loads(response["Messages"][0]["Body"])
         records = json.loads(msg["Message"])
-        retd = dict()
+        retd = {}
         retd["key"] = records["Records"][0]["s3"]["object"]["key"]
         retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
@@ -189,9 +192,9 @@ def build_sns_topic_msg_attributes(stac_item):
         "bbox.ur_lat": {"DataType": "Number", "StringValue": str(stac_item["bbox"][3])},
         "links.self.href": {
             "DataType": "String",
-            "StringValue": (
+            "StringValue": next(
                 item["href"] for item in stac_item["links"] if item["rel"] == "self"
-            ).__next__(),
+            ),
         },
     }
     return message_attr

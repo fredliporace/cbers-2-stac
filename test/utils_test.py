@@ -61,7 +61,7 @@ def test_get_api_stac_root():
 
     val = STACValidator(schema_filename="catalog.json")
 
-    with open("test/fixtures/api_event.json", "r") as jfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as jfile:
         event = json.load(jfile)
 
     # core only
@@ -106,7 +106,7 @@ def test_get_api_stac_root():
 def test_parse_api_gateway_event():
     """test_parse_api_gateway_event"""
 
-    with open("test/fixtures/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as cfile:
         event = json.load(cfile)
     parsed = parse_api_gateway_event(event)
     assert parsed["phost"] == "https://stac.amskepler.com"
@@ -119,9 +119,9 @@ def test_parse_api_gateway_event():
 def test_static_to_api_collection():
     """test_static_to_api_collection"""
 
-    with open("test/cbers4muxcollection.json", "r") as cfile:
+    with open("test/cbers4muxcollection.json", "r", encoding="utf-8") as cfile:
         collection = json.load(cfile)
-    with open("test/fixtures/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as cfile:
         event = json.load(cfile)
     # from nose.tools import set_trace; set_trace()
     api_collection = static_to_api_collection(collection=collection, event=event)

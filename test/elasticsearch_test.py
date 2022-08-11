@@ -35,7 +35,7 @@ from cbers2stac.elasticsearch.es import (
 def es_client(request):
     """Elasticsarch client"""
 
-    domain_name = "es1"
+    domain_name = "my-domain"
 
     # boto3 ES client
     es_client = None
@@ -58,10 +58,11 @@ def es_client(request):
     # Create domain to start localstack's ES service
     es_client = boto3.client("es", endpoint_url=ENDPOINT_URL)
     result = es_client.create_elasticsearch_domain(
-        DomainName=domain_name, ElasticsearchVersion="7.7.0"
+        DomainName=domain_name, ElasticsearchVersion="7.7"
     )
     endpoint = result["DomainStatus"]["Endpoint"]
-    match = re.match(r"http://(?P<hostname>\w+):(?P<port>\d+)", endpoint)
+    match = re.match(r"(?P<hostname>[\w\.\-]+):(?P<port>\d+)", endpoint)
+    assert match
 
     client = es_connect(
         match.groupdict()["hostname"],
@@ -87,10 +88,14 @@ def populate_es_test_case_1(es_client):
     Populate ES instance with two items, one CB4 MUX and other
     CB4 AWFI
     """
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
 
     for stac_item in stac_items:
@@ -115,9 +120,7 @@ def test_parse_datetime():
     assert end == "2018-03-18T12:31:12Z"
 
     with pytest.raises(AssertionError):
-        start, end = parse_datetime(
-            "2018-02-12T00:00:00Z/2018-03-18T" "12:31:12Z/ERROR"
-        )
+        start, end = parse_datetime("2018-02-12T00:00:00Z/2018-03-18T12:31:12Z/ERROR")
 
     start, end = parse_datetime(None)
     assert start is None
@@ -146,7 +149,9 @@ def test_parse_bbox():
 
 def test_strip_stac_item():
     """test_strip_stac_item"""
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         item = json.loads(fin.read())
     assert "bbox" in item
     strip = strip_stac_item(item)
@@ -182,7 +187,9 @@ def test_create_document_in_index(es_client):
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_item = fin.read()
     create_document_in_index(es_client=es_client, stac_item=stac_item)
     doc = es_client.get(
@@ -224,7 +231,9 @@ def test_create_stripped_document_in_index(es_client):
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_item = json.loads(fin.read())
     create_document_in_index(
         es_client=es_client, stac_item=json.dumps(strip_stac_item(stac_item))
@@ -245,10 +254,14 @@ def test_bulk_create_document_in_index(es_client):
     # Two distinct items, create
     # Does not use populate_es_test_case_1 here since we are
     # testing bulk insert
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
 
     inserted_items = bulk_create_document_in_index(
@@ -285,11 +298,20 @@ def test_bulk_create_document_in_index(es_client):
     )
     assert doc["_source"]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
-    # Resets index and calls bulk with upsert from the start
-    es_client.indices.delete(index="stac")
-    create_stac_index(es_client, timeout=60)
 
-    es_client = es_connect("localhost", port=4571, use_ssl=False, verify_certs=False)
+def test_bulk_create_document_in_index_upsert(es_client):
+    """test_bulk_create_document_in_index_upsert"""
+
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
+        stac_items.append(fin.read())
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
+        stac_items.append(fin.read())
+
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )

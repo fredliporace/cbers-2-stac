@@ -5,6 +5,12 @@ repos:
       - id: black
         language_version: python3.7
         args: ["--safe"]
+        additional_dependencies:
+          # To avoid
+          # ImportError: cannot import name '_unicodefun' from 'click'
+          #   (/home/liporace/.cache/pre-commit/repoesurte4p/py_env-python3.7/
+          #   lib/python3.7/site-packages/click/__init__.py)
+          - "click==7.1.2"
 
   - repo: https://github.com/PyCQA/isort
     rev: 5.4.2
@@ -21,7 +27,8 @@ repos:
     hooks:
       - id: pylint
         name: pylint # added for local repo option
-        entry: pylint # added for local repo option
+        # Reference to .pylintrc to make sure it is being used.
+        entry: pylint --rcfile=.pylintrc # added for local repo option
         # This is used for remote repo
         #language_version: python3.7
         language: python

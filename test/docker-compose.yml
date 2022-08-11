@@ -3,13 +3,15 @@ version: '2.1'
 services:
   localstack:
     container_name: cbers2stac-localstack_main
-    #image: localstack/localstack
-    image: localstack/localstack-full:0.12.9.1
+    # image: localstack/localstack
+    # image: localstack/localstack-full:0.12.9.1
+    image: localstack/localstack-full:1.0.3
     network_mode: bridge
     #networks:
     #  - internal
     ports:
       - "4566:4566"
+      # todo: check, maybe this is not needed anymore
       # This is the Elasticsearch port
       - "4571:4571"
       #- "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
@@ -24,13 +26,14 @@ services:
       - LAMBDA_REMOVE_CONTAINERS=true
       - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - OPENSEARCH_ENDPOINT_STRATEGY=domain
       # HOSTNAME should not be changed
       # https://github.com/localstack/localstack/issues/808#issuecomment-670186448
       # - HOSTNAME=localhost
       # localhost is the default value for HOSTNAME_EXTERNAL
       # - HOSTNAME_EXTERNAL=localhost
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "${TMPDIR:-/tmp/localstack}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
 
 # Network used for lambda/es testing
