@@ -46,7 +46,7 @@ def api_gw_lambda_integrate_deploy(
         restApiId=api["id"],
         resourceId=api_resource["id"],
         httpMethod=http_method,
-        type="AWS",
+        type="AWS_PROXY",
         integrationHttpMethod="POST",
         uri=lambda_integration_arn,
     )
@@ -132,7 +132,6 @@ def test_root(api_gw_method, lambda_function):
     assert req.status_code == 200
 
 
-@pytest.mark.skip("Not working with latest localstack")
 @pytest.mark.api_gw_method_args(
     {
         "put_method_args": {"httpMethod": "GET",},
@@ -170,8 +169,9 @@ def test_item_search_get(
         FunctionName=lambda_func["FunctionName"],
         Environment={
             "Variables": {
-                "ES_ENDPOINT": "localhost",
-                "ES_PORT": "4566",
+                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                # ES_PORT not required if we are using complete URL as ES_ENDPOINT
+                # "ES_PORT": "4566",
                 "ES_SSL": "NO",
             }
         },
@@ -186,7 +186,6 @@ def test_item_search_get(
     req = requests.get(original_url)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
-    assert fcol["statusCode"] == "200"
     assert len(fcol["features"]) == 2
 
     # Single collection, return single item
@@ -243,7 +242,6 @@ def test_item_search_get(
     assert fcol["features"][0]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
 
-@pytest.mark.skip("Not working with latest localstack")
 @pytest.mark.api_gw_method_args(
     {
         "put_method_args": {"httpMethod": "POST",},
@@ -277,7 +275,12 @@ def test_item_search_post(
     # ES_ENDPOINT is set by lambda_function
     lambda_client.update_function_configuration(
         FunctionName=lambda_func["FunctionName"],
-        Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
+        Environment={
+            "Variables": {
+                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                "ES_SSL": "NO",
+            }
+        },
     )
 
     populate_es_test_case_1(es_client)

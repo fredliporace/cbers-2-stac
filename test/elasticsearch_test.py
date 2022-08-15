@@ -4,9 +4,6 @@
 # pylint: disable=redefined-outer-name
 
 import json
-
-# import os
-import re
 import time
 from test.conftest import ENDPOINT_URL
 
@@ -60,13 +57,15 @@ def es_client(request):
     result = es_client.create_elasticsearch_domain(
         DomainName=domain_name, ElasticsearchVersion="7.7"
     )
-    endpoint = result["DomainStatus"]["Endpoint"]
-    match = re.match(r"(?P<hostname>[\w\.\-]+):(?P<port>\d+)", endpoint)
-    assert match
+
+    # We do not need to split the endpoint anymore
+    # endpoint = result["DomainStatus"]["Endpoint"]
+    # match = re.match(r"(?P<hostname>[\w\.\-]+):(?P<port>\d+)", endpoint)
+    # assert match
 
     client = es_connect(
-        match.groupdict()["hostname"],
-        port=int(match.groupdict()["port"]),
+        endpoint=result["DomainStatus"]["Endpoint"],
+        # port=int(match.groupdict()["port"]),
         use_ssl=False,
         verify_certs=False,
     )

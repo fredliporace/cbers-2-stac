@@ -60,51 +60,11 @@ jobs:
         run: |
           tox -e py || (cd test && docker-compose logs && false)
 
-      # # Show localstack logs after testing
-      # - name: Show localstack logs
-      #   # logs are not shown in local testing using act
-      #   if: github.actor != 'nektos/act'
-      #   run: cd test && docker-compose logs
-
-      - name: Upload Results
-        if: success()
-        uses: codecov/codecov-action@v1
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: ${{ matrix.platform }}-${{ matrix.tox-env }}
-          fail_ci_if_error: false
-
-  # publish:
-  #   needs: [tests]
-  #   runs-on: ubuntu-latest
-  #   if: contains(github.ref, 'tags')
-  #   steps:
-  #     - uses: actions/checkout@v2
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v1
-  #       with:
-  #         python-version: "3.x"
-
-  #     - name: Install dependencies
-  #       run: |
-  #         python -m pip install --upgrade pip
-  #         python -m pip install tox
-
-  #     - name: Set tag version
-  #       id: tag
-  #       # https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions
-  #       run: echo ::set-output name=tag::${GITHUB_REF#refs/*/}
-
-  #     - name: Set module version
-  #       id: module
-  #       # https://stackoverflow.com/questions/58177786/get-the-current-pushed-tag-in-github-actions
-  #       run: echo ::set-output name=version::$(python setup.py --version)
-
-  #     - name: Build and publish
-  #       if: steps.tag.outputs.tag == steps.module.outputs.version
-  #       env:
-  #         TOXENV: release
-  #         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-  #         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-  #       run: tox
+      # - name: Upload Results
+      #   if: success()
+      #   uses: codecov/codecov-action@v1
+      #   with:
+      #     file: ./coverage.xml
+      #     flags: unittests
+      #     name: ${{ matrix.platform }}-${{ matrix.tox-env }}
+      #     fail_ci_if_error: false

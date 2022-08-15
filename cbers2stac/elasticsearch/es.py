@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import traceback
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
@@ -43,9 +43,6 @@ def api_gw_lambda_integration(func):
 
     def inner(event, context):
         try:
-            # Fix to work with localstack environment
-            if os.environ.get("LOCALSTACK_HOSTNAME"):
-                os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
             retmsg = func(event, context)
             retmsg["headers"] = {
                 "Content-Type": "application/json",
@@ -256,7 +253,7 @@ def parse_bbox(bbox: str) -> List[List[float]]:
 
 def es_connect(  # pylint: disable=too-many-arguments
     endpoint: str,
-    port: int,
+    port: int = None,
     use_ssl: bool = True,
     verify_certs: bool = True,
     http_auth=None,
@@ -266,15 +263,24 @@ def es_connect(  # pylint: disable=too-many-arguments
     Connects to ES endpoint, returns Elasticsarch
     low level client.
 
-    :param endpoint str: Elastic endpoint
-    :param port int: endpoint TCP port
-    :param timeout int: timeout in seconds
-    :return: Elastic low level client
-    :rtype: class Elasticsearch
+    Args:
+      endpoint: Elastic endpoint. If port is None then this is assumed
+                to be a RFC-1738 format URL, otherwise it is assumed
+                to be the host part of the endpoint.
+      port: endpoint TCP port
+      timeout: timeout in seconds
+
+    Returns:
+      class Elasticsearch
     """
 
+    hosts: List[Union[str, Dict[str, Union[str, int]]]]
+    if port is not None:
+        hosts = [{"host": endpoint, "port": port}]
+    else:
+        hosts = [endpoint]
     es_client = Elasticsearch(
-        hosts=[{"host": endpoint, "port": port}],
+        hosts=hosts,
         use_ssl=use_ssl,
         verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
@@ -803,7 +809,11 @@ def stac_search_endpoint_handler(
     # LOGGER.info(os.environ["ES_ENDPOINT"])
     es_client = es_connect(
         endpoint=os.environ["ES_ENDPOINT"],
-        port=int(os.environ["ES_PORT"]),
+        # This is just to make sure we convert to int only if ES_PORT
+        # is defined.
+        port=int(os.environ.get("ES_PORT"))
+        if os.environ.get("ES_PORT")
+        else os.environ.get("ES_PORT"),
         use_ssl=(auth is not None),
         verify_certs=(auth is not None),
         http_auth=auth,
@@ -831,23 +841,11 @@ def stac_search_endpoint_handler(
     if document.get("ids"):
         query = process_ids_filter(dsl_query=query, ids=document["ids"])
 
-    # Early interrupt code
-    # return {
-    #     "statusCode": "200",
-    #     "body": {},
-    # }
-
-    # todo: debug code, remove  pylint: disable=fixme
-    # url = f"http://{os.environ['ES_ENDPOINT']}:{os.environ['ES_PORT']}/stac/_search"
-    # LOGGER.info(url)
-    # req = requests.get(url)
-    # LOGGER.info(req)
-
     # Execute query
     LOGGER.info(query.to_dict())
     res = query.execute()
-    LOGGER.info(type(res))
-    LOGGER.info(res.to_dict())
+    # LOGGER.info(type(res))
+    # LOGGER.info(res.to_dict())
     results = {}
     results["stac_version"] = STAC_API_VERSION
     results["type"] = "FeatureCollection"
