@@ -30,10 +30,10 @@ def test_get_satmissions():
     test_get_satmissions
     """
     smi = get_satmissions(use_hyphen=False)
-    assert set(smi) == set(["CBERS4", "CBERS4A"])
+    assert set(smi) == set(["AMAZONIA1", "CBERS4", "CBERS4A"])
 
     smi = get_satmissions(use_hyphen=True)
-    assert set(smi) == set(["CBERS-4", "CBERS-4A"])
+    assert set(smi) == set(["AMAZONIA1", "CBERS-4", "CBERS-4A"])
 
 
 def test_build_collection_name():

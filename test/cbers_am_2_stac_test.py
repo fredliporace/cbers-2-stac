@@ -1,4 +1,4 @@
-"""cbers_to_stac_test"""
+"""cbers_am_2_stac_test."""
 
 import difflib
 from test.stac_validator import STACValidator
@@ -10,7 +10,7 @@ from cbers2stac.layers.common.cbers_2_stac import (
     build_stac_item_keys,
     convert_inpe_to_stac,
     epsg_from_utm_zone,
-    get_keys_from_cbers,
+    get_keys_from_cbers_am,
 )
 
 
@@ -37,7 +37,7 @@ def test_get_keys_from_cbers4():
     """test_get_keys_from_cbers"""
 
     # MUX
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
     )
     assert meta["mission"] == "CBERS"
@@ -50,9 +50,10 @@ def test_get_keys_from_cbers4():
     assert meta["ct_lon"] == "24.257145"
     assert meta["collection"] == "CBERS4-MUX"
     assert meta["vz"] == "-7131.111624"
+    assert meta["band_5_gain"] == "2"
 
     # AWFI
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml"
     )
     assert meta["sensor"] == "AWFI"
@@ -62,9 +63,10 @@ def test_get_keys_from_cbers4():
     assert meta["origin_longitude"] == "-57"
     assert meta["origin_latitude"] == "0"
     assert meta["collection"] == "CBERS4-AWFI"
+    assert meta["band_13_gain"] == "2"
 
     # PAN10
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.xml"
     )
     assert meta["sensor"] == "PAN10M"
@@ -76,7 +78,7 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-PAN10M"
 
     # PAN5
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml"
     )
     assert meta["sensor"] == "PAN5M"
@@ -88,7 +90,9 @@ def test_get_keys_from_cbers4():
     assert meta["collection"] == "CBERS4-PAN5M"
 
     # PAN10, no gain attribute for each band
-    meta = get_keys_from_cbers("test/fixtures/CBERS_4_PAN10M_NOGAIN.xml")
+    meta = get_keys_from_cbers_am(
+        "test/fixtures/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.xml"
+    )
     assert meta["sensor"] == "PAN10M"
     assert meta["mission"] == "CBERS"
     assert meta["number"] == "4"
@@ -99,7 +103,7 @@ def test_get_keys_from_cbers4a():
     """test_get_keys_from_cbers4a"""
 
     # MUX
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4A_MUX_20200808_201_137_L4_BAND6.xml"
     )
     assert meta["mission"] == "CBERS"
@@ -112,7 +116,7 @@ def test_get_keys_from_cbers4a():
     assert meta["vz"] == "-7079.380000"
 
     # WPM
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4A_WPM_20200730_209_139_L4_BAND2.xml"
     )
     assert meta["sensor"] == "WPM"
@@ -124,7 +128,7 @@ def test_get_keys_from_cbers4a():
     assert meta["collection"] == "CBERS4A-WPM"
 
     # WFI
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4A_WFI_20200801_221_156_L4_BAND13.xml"
     )
     assert meta["sensor"] == "WFI"
@@ -146,10 +150,68 @@ def test_get_keys_from_cbers4a():
     assert meta["bb_ur_lon"] == "-59.245969"
 
 
+def test_get_keys_from_amazonia1():
+    """test_get_keys_from_amazonia1."""
+
+    # WFI, both optics
+    meta = get_keys_from_cbers_am(
+        "test/fixtures/AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml"
+    )
+    assert meta["mission"] == "AMAZONIA"
+    assert meta["number"] == "1"
+    assert meta["sensor"] == "WFI"
+    assert meta["projection_name"] == "UTM"
+    assert meta["origin_longitude"] == "-51"
+    assert meta["origin_latitude"] == "0"
+    assert meta["collection"] == "AMAZONIA1-WFI"
+    assert meta["vz"] == "-7159.006657"
+    assert meta["vertical_pixel_size"] == "64.000000"
+    assert meta["horizontal_pixel_size"] == "64.000000"
+    assert meta["no_level_id"] == "AMAZONIA_1_WFI_20220811_036_018"
+    assert (
+        meta["download_url"]
+        == "AMAZONIA1/WFI/036/018/AMAZONIA_1_WFI_20220811_036_018_L4"
+    )
+    assert meta["sat_sensor"] == "AMAZONIA1/WFI"
+    assert meta["sat_number"] == "AMAZONIA-1"
+    assert meta["meta_file"] == "AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml"
+    # Gain information is not used
+    assert meta["band_1_gain"] is None
+    assert meta["band_4_gain"] is None
+    assert meta["optics"] == ""
+
+    # WFI, single optics
+    meta = get_keys_from_cbers_am(
+        "test/fixtures/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml"
+    )
+    assert meta["mission"] == "AMAZONIA"
+    assert meta["number"] == "1"
+    assert meta["sensor"] == "WFI"
+    assert meta["projection_name"] == "UTM"
+    assert meta["origin_longitude"] == "-39"
+    assert meta["origin_latitude"] == "0"
+    assert meta["collection"] == "AMAZONIA1-WFI"
+    assert meta["vz"] == "-7158.599571"
+    assert meta["vertical_pixel_size"] == "64.000000"
+    assert meta["horizontal_pixel_size"] == "64.000000"
+    assert meta["no_level_id"] == "AMAZONIA_1_WFI_20220810_033_018"
+    assert (
+        meta["download_url"]
+        == "AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4"
+    )
+    assert meta["sat_sensor"] == "AMAZONIA1/WFI"
+    assert meta["sat_number"] == "AMAZONIA-1"
+    assert meta["meta_file"] == "AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml"
+    # Gain information is not used
+    assert meta["band_1_gain"] is None
+    assert meta["band_4_gain"] is None
+    assert meta["optics"] == "_LEFT"
+
+
 def test_build_awfi_stac_item_keys():
     """test_awfi_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
@@ -189,11 +251,27 @@ def test_build_awfi_stac_item_keys():
     assert smeta["properties"]["cbers:path"] == 167
     assert smeta["properties"]["cbers:row"] == 123
 
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/AWFI/167/123/"
+        "CBERS_4_AWFI_20170409_167_123_L4/CBERS_4_AWFI_20170409_167_123.jpg"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/CBERS4/AWFI/167/123/CBERS_4_AWFI_20170409_167_123_L4/"
+        "CBERS_4_AWFI_20170409_167_123_L4_BAND14.xml"
+    )
+    assert (
+        smeta["assets"]["B13"]["href"]
+        == "s3://cbers-pds/CBERS4/AWFI/167/123/CBERS_4_AWFI_20170409_167_123_L4/"
+        "CBERS_4_AWFI_20170409_167_123_L4_BAND13.tif"
+    )
+
 
 def test_build_mux_stac_item_keys():
     """test_mux_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
@@ -257,11 +335,27 @@ def test_build_mux_stac_item_keys():
     # 4 bands, 1 metadata, 1 thumbnail
     assert len(smeta["assets"]) == 6
 
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/090/084/"
+        "CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084.jpg"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/"
+        "CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
+    )
+    assert (
+        smeta["assets"]["B5"]["href"]
+        == "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/"
+        "CBERS_4_MUX_20170528_090_084_L2_BAND5.tif"
+    )
+
 
 def test_build_pan10_stac_item_keys():
     """test_pan10_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_PAN10M_20190201_180_125_L2_BAND2.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
@@ -321,11 +415,27 @@ def test_build_pan10_stac_item_keys():
     # 3 bands, 1 metadata, 1 thumbnail
     assert len(smeta["assets"]) == 5
 
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN10M/180/125/"
+        "CBERS_4_PAN10M_20190201_180_125_L2/CBERS_4_PAN10M_20190201_180_125.jpg"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/CBERS4/PAN10M/180/125/CBERS_4_PAN10M_20190201_180_125_L2/"
+        "CBERS_4_PAN10M_20190201_180_125_L2_BAND2.xml"
+    )
+    assert (
+        smeta["assets"]["B2"]["href"]
+        == "s3://cbers-pds/CBERS4/PAN10M/180/125/CBERS_4_PAN10M_20190201_180_125_L2/"
+        "CBERS_4_PAN10M_20190201_180_125_L2_BAND2.tif"
+    )
+
 
 def test_build_pan5_stac_item_keys():
     """test_pan5_build_stac_item_keys"""
 
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
@@ -381,12 +491,27 @@ def test_build_pan5_stac_item_keys():
     # assets
     # 1 band, 1 metadata, 1 thumbnail
     assert len(smeta["assets"]) == 3
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN5M/219/050/"
+        "CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050.jpg"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/"
+        "CBERS_4_PAN5M_20161009_219_050_L2_BAND1.xml"
+    )
+    assert (
+        smeta["assets"]["B1"]["href"]
+        == "s3://cbers-pds/CBERS4/PAN5M/219/050/CBERS_4_PAN5M_20161009_219_050_L2/"
+        "CBERS_4_PAN5M_20161009_219_050_L2_BAND1.tif"
+    )
 
 
-def test_build_wfi_stac_item_keys():
-    """test_wfi_build_stac_item_keys"""
+def test_build_cb4a_wfi_stac_item_keys():
+    """test_build_cb4a_wfi_stac_item_keys."""
 
-    meta = get_keys_from_cbers(
+    meta = get_keys_from_cbers_am(
         "test/fixtures/CBERS_4A_WFI_20200801_221_156_L4_BAND13.xml"
     )
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
@@ -420,6 +545,123 @@ def test_build_wfi_stac_item_keys():
     assert smeta["properties"]["cbers:data_type"] == "L4"
     assert smeta["properties"]["cbers:path"] == 221
     assert smeta["properties"]["cbers:row"] == 156
+
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4A/WFI/221/156/"
+        "CBERS_4A_WFI_20200801_221_156_L4/CBERS_4A_WFI_20200801_221_156.png"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/CBERS4A/WFI/221/156/CBERS_4A_WFI_20200801_221_156_L4/"
+        "CBERS_4A_WFI_20200801_221_156_L4_BAND13.xml"
+    )
+    assert (
+        smeta["assets"]["B13"]["href"]
+        == "s3://cbers-pds/CBERS4A/WFI/221/156/CBERS_4A_WFI_20200801_221_156_L4/"
+        "CBERS_4A_WFI_20200801_221_156_L4_BAND13.tif"
+    )
+
+
+def test_build_am1_wfi_stac_item_keys():
+    """test_build_am1_wfi_stac_item_keys."""
+
+    meta = get_keys_from_cbers_am(
+        "test/fixtures/AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml"
+    )
+    buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
+    smeta = build_stac_item_keys(meta, buckets)
+
+    # id
+    assert smeta["id"] == "AMAZONIA_1_WFI_20220811_036_018_L4"
+
+    # bbox
+    assert len(smeta["bbox"]) == 4
+
+    # geometry is built like other cameras, correct computation
+    # is checked in test_get_keys_from_cbers4a
+
+    # properties
+    assert smeta["properties"]["datetime"] == "2022-08-11T14:01:37Z"
+
+    # properties:view
+    assert smeta["properties"]["view:sun_elevation"] == 50.042550000000006
+    assert smeta["properties"]["view:sun_azimuth"] == 35.9219
+    assert smeta["properties"]["view:off_nadir"] == 0.000416261
+
+    # properties:proj
+    assert smeta["properties"]["proj:epsg"] == 32722
+
+    # properties:amazonia
+    assert smeta["properties"]["amazonia:data_type"] == "L4"
+    assert smeta["properties"]["amazonia:path"] == 36
+    assert smeta["properties"]["amazonia:row"] == 18
+
+    # assets
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/036/018/"
+        "AMAZONIA_1_WFI_20220811_036_018_L4/AMAZONIA_1_WFI_20220811_036_018.png"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/AMAZONIA1/WFI/036/018/AMAZONIA_1_WFI_20220811_036_018_L4/"
+        "AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml"
+    )
+    assert (
+        smeta["assets"]["B2"]["href"]
+        == "s3://cbers-pds/AMAZONIA1/WFI/036/018/AMAZONIA_1_WFI_20220811_036_018_L4/"
+        "AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.tif"
+    )
+
+    # LEFT case
+    meta = get_keys_from_cbers_am(
+        "test/fixtures/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml"
+    )
+    buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
+    smeta = build_stac_item_keys(meta, buckets)
+
+    # id
+    assert smeta["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+
+    # bbox
+    assert len(smeta["bbox"]) == 4
+
+    # geometry is built like other cameras, correct computation
+    # is checked in test_get_keys_from_cbers4a
+
+    # properties
+    assert smeta["properties"]["datetime"] == "2022-08-10T13:01:35Z"
+
+    # properties:view
+    assert smeta["properties"]["view:sun_elevation"] == 48.9478
+    assert smeta["properties"]["view:sun_azimuth"] == 38.3485
+    assert smeta["properties"]["view:off_nadir"] == 0.000120206
+
+    # properties:proj
+    assert smeta["properties"]["proj:epsg"] == 32724
+
+    # properties:amazonia
+    assert smeta["properties"]["amazonia:data_type"] == "L4"
+    assert smeta["properties"]["amazonia:path"] == 33
+    assert smeta["properties"]["amazonia:row"] == 18
+
+    # assets
+    assert (
+        smeta["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/033/018/"
+        "AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018.png"
+    )
+    assert (
+        smeta["assets"]["metadata"]["href"]
+        == "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/"
+        "AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml"
+    )
+    assert (
+        smeta["assets"]["B2"]["href"]
+        == "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/"
+        "AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.tif"
+    )
 
 
 def test_convert_inpe_to_stac():
@@ -487,7 +729,7 @@ def test_convert_inpe_to_stac():
         "test/CBERS", "test/fixtures/ref_CBERS"
     )
     convert_inpe_to_stac(
-        inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_" "NOGAIN.xml",
+        inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.xml",
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )

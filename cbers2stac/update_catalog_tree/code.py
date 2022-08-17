@@ -13,7 +13,7 @@ from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
     BASE_CATALOG,
     BASE_COLLECTION,
-    CBERS_MISSIONS,
+    CBERS_AM_MISSIONS,
     build_absolute_prefix,
     build_collection_name,
     get_client,
@@ -193,7 +193,7 @@ def get_base_collection(
     collection.update(BASE_COLLECTION)
     collection["summaries"].update(BASE_CAMERA[sat_mission][camera]["summaries"])
     collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]
-    collection["extent"]["temporal"]["interval"] = CBERS_MISSIONS[sat_mission][
+    collection["extent"]["temporal"]["interval"] = CBERS_AM_MISSIONS[sat_mission][
         "interval"
     ]
 

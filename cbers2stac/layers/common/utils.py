@@ -92,7 +92,7 @@ COG_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
 
 
 # CBERS_MISSIONS: Dict[str, Mission] = {
-CBERS_MISSIONS: Dict[str, Any] = {
+CBERS_AM_MISSIONS: Dict[str, Any] = {
     "CBERS-4": {
         "interval": [["2014-12-08T00:00:00Z", None]],
         "quicklook": {"extension": "jpg", "type": "jpeg"},
@@ -139,16 +139,29 @@ CBERS_MISSIONS: Dict[str, Any] = {
         },
         "international_designator": "2019-093E",
     },
+    "AMAZONIA-1": {
+        "interval": [["2021-02-28T00:00:00Z", None]],
+        "quicklook": {"extension": "png", "type": "png"},
+        "instruments": ["WFI"],
+        "band": {
+            "B1": {"common_name": "blue"},
+            "B2": {"common_name": "green"},
+            "B3": {"common_name": "red"},
+            "B4": {"common_name": "nir"},
+        },
+        "international_designator": "2021-015A",
+    },
 }
 
-# Ugh...using this while there are accesses as both CBERS-4
+# Ugh...using this while there are accesses as both CBERS-4s
 # and CBERS4, refactor and unify keys...someday
 # Accesses shold be always using SATELLITE-MISSION
 # One approach to do that is to encapsulate all globals within
 # this module and only allow access through functions such
 # as get_satmissions()
-CBERS_MISSIONS["CBERS4"] = CBERS_MISSIONS["CBERS-4"]
-CBERS_MISSIONS["CBERS4A"] = CBERS_MISSIONS["CBERS-4A"]
+CBERS_AM_MISSIONS["CBERS4"] = CBERS_AM_MISSIONS["CBERS-4"]
+CBERS_AM_MISSIONS["CBERS4A"] = CBERS_AM_MISSIONS["CBERS-4A"]
+CBERS_AM_MISSIONS["AMAZONIA1"] = CBERS_AM_MISSIONS["AMAZONIA-1"]
 
 BASE_COLLECTION = OrderedDict(
     {
@@ -195,7 +208,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [20.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -223,7 +236,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [64.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -251,7 +264,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [5.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -267,7 +280,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [10.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -293,7 +306,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [16.5],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4A"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -321,7 +334,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [55.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4A"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -350,7 +363,7 @@ BASE_CAMERA = {
             "summaries": {
                 "gsd": [2.0, 8.0],
                 "sat:platform_international_designator": [
-                    CBERS_MISSIONS["CBERS-4A"]["international_designator"]
+                    CBERS_AM_MISSIONS["CBERS-4A"]["international_designator"]
                 ],
             },
             "item_assets": {
@@ -360,6 +373,36 @@ BASE_CAMERA = {
                     "type": COG_TYPE,
                     "eo:bands": [{"name": "B0", "common_name": "pan"}],
                 },
+                "B1": {
+                    "type": COG_TYPE,
+                    "eo:bands": [{"name": "B1", "common_name": "blue"}],
+                },
+                "B2": {
+                    "type": COG_TYPE,
+                    "eo:bands": [{"name": "B2", "common_name": "green"}],
+                },
+                "B3": {
+                    "type": COG_TYPE,
+                    "eo:bands": [{"name": "B3", "common_name": "red"}],
+                },
+                "B4": {
+                    "type": COG_TYPE,
+                    "eo:bands": [{"name": "B4", "common_name": "nir"}],
+                },
+            },
+        },
+    },
+    "AMAZONIA1": {
+        "WFI": {
+            "summaries": {
+                "gsd": [64.0],
+                "sat:platform_international_designator": [
+                    CBERS_AM_MISSIONS["AMAZONIA-1"]["international_designator"]
+                ],
+            },
+            "item_assets": {
+                "thumbnail": {"title": "Thumbnail", "type": "image/png"},
+                "metadata": {"title": "INPE original metadata", "type": "text/xml"},
                 "B1": {
                     "type": COG_TYPE,
                     "eo:bands": [{"name": "B1", "common_name": "blue"}],
@@ -571,7 +614,7 @@ def get_collections_for_satmission(satellite: str, mission: str) -> KeysView[str
     """
     Returns all collections for a given satellite mission, e.g., CBERS-4
     """
-    return CBERS_MISSIONS[f"{satellite}-{mission}"]["instruments"]
+    return CBERS_AM_MISSIONS[f"{satellite}-{mission}"]["instruments"]
 
 
 def get_satmissions(use_hyphen: bool) -> List[str]:
@@ -580,7 +623,7 @@ def get_satmissions(use_hyphen: bool) -> List[str]:
     Hyphens are used or not depending on use_hyphen parameter
     """
     ret: List[str] = []
-    for satmission in CBERS_MISSIONS:
+    for satmission in CBERS_AM_MISSIONS:
         if "-" not in satmission:
             continue
         if use_hyphen:
