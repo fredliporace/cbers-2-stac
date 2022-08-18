@@ -801,7 +801,7 @@ def test_json_schema():
 
     # Check a fail from the schema validator
     jsv = STACValidator(schema_filename="item.json")
-    invalid_filename = "test/CBERS_4_MUX_20170528_090_084_L2_error.json"
+    invalid_filename = "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_error.json"
     with pytest.raises(ValidationError) as context:
         jsv.validate(invalid_filename)
     assert "'links' is a required property" in str(context)
