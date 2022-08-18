@@ -50,10 +50,13 @@ def test_collection_utils():
     """test_collection_utils"""
 
     collections = get_collection_ids()
-    assert len(collections) == 7
+    assert len(collections) == 8
 
     mux_prefix = get_collection_s3_key("CBERS4-MUX")
     assert mux_prefix == "CBERS4/MUX/collection.json"
+
+    am1_wfi_prefix = get_collection_s3_key("AMAZONIA1-WFI")
+    assert am1_wfi_prefix == "AMAZONIA1/WFI/collection.json"
 
 
 def test_get_api_stac_root():
