@@ -17,7 +17,6 @@
 /test/catalog_structure/
 /test/fixtures/catalog_structure/
 /test/fixtures/test_update_catalog_or_collection/
-/test/output/
 /cbers2stac/elasticsearch/aws_requests_auth/
 /cbers2stac/elasticsearch/bin/
 /cbers2stac/elasticsearch/certifi/
