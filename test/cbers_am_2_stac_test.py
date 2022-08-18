@@ -1,6 +1,7 @@
 """cbers_am_2_stac_test."""
 
 import difflib
+import re
 from test.stac_validator import STACValidator
 
 import pytest
@@ -664,15 +665,37 @@ def test_build_am1_wfi_stac_item_keys():
     )
 
 
-def test_convert_inpe_to_stac():
+def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
     """test_convert_inpe_to_stac"""
 
     jsv = STACValidator(schema_filename="item.json")
 
     buckets = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
 
+    # AWFI, Amazonia1, both optics
+    output_filename = tmp_path / "AMAZONIA_1_WFI_20220811_036_018_L4.json"
+    ref_output_filename = "test/fixtures/ref_AMAZONIA_1_WFI_20220811_036_018_L4.json"
+    convert_inpe_to_stac(
+        inpe_metadata_filename="test/fixtures/AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml",
+        stac_metadata_filename=output_filename,
+        buckets=buckets,
+    )
+    jsv.validate(output_filename)
+    resam1wfi = diff_files(ref_output_filename, output_filename)
+
+    # AWFI, Amazonia1, left optics only
+    output_filename = tmp_path / "AMAZONIA_1_WFI_20220810_033_018_L4.json"
+    ref_output_filename = "test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json"
+    convert_inpe_to_stac(
+        inpe_metadata_filename="test/fixtures/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml",
+        stac_metadata_filename=output_filename,
+        buckets=buckets,
+    )
+    jsv.validate(output_filename)
+    resam1wfileft = diff_files(ref_output_filename, output_filename)
+
     # MUX, CB4
-    output_filename = "test/CBERS_4_MUX_20170528_090_084_L2.json"
+    output_filename = tmp_path / "CBERS_4_MUX_20170528_090_084_L2.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
@@ -684,7 +707,7 @@ def test_convert_inpe_to_stac():
     rescb4mux = diff_files(ref_output_filename, output_filename)
 
     # AWFI, CB4
-    output_filename = "test/CBERS_4_AWFI_20170409_167_123_L4.json"
+    output_filename = tmp_path / "CBERS_4_AWFI_20170409_167_123_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_AWFI_20170409"
@@ -696,9 +719,9 @@ def test_convert_inpe_to_stac():
     rescb4awfi = diff_files(ref_output_filename, output_filename)
 
     # PAN10M, CB4
-    output_filename = "test/CBERS_4_PAN10M_20190201_180_125_L2.json"
-    ref_output_filename = output_filename.replace(
-        "test/CBERS", "test/fixtures/ref_CBERS"
+    output_filename = tmp_path / "CBERS_4_PAN10M_20190201_180_125_L2.json"
+    ref_output_filename = re.sub(
+        r".*/CBERS", r"test/fixtures/ref_CBERS", str(output_filename)
     )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_"
@@ -710,9 +733,9 @@ def test_convert_inpe_to_stac():
     rescb4pan10 = diff_files(ref_output_filename, output_filename)
 
     # PAN5M, CB4
-    output_filename = "test/CBERS_4_PAN5M_20161009_219_050_L2.json"
-    ref_output_filename = output_filename.replace(
-        "test/CBERS", "test/fixtures/ref_CBERS"
+    output_filename = tmp_path / "CBERS_4_PAN5M_20161009_219_050_L2.json"
+    ref_output_filename = re.sub(
+        r".*/CBERS", r"test/fixtures/ref_CBERS", str(output_filename)
     )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_PAN5M_"
@@ -724,9 +747,9 @@ def test_convert_inpe_to_stac():
     rescb4pan5 = diff_files(ref_output_filename, output_filename)
 
     # PAN10M CB4, no gain
-    output_filename = "test/CBERS_4_PAN10M_NOGAIN.json"
-    ref_output_filename = output_filename.replace(
-        "test/CBERS", "test/fixtures/ref_CBERS"
+    output_filename = tmp_path / "CBERS_4_PAN10M_NOGAIN.json"
+    ref_output_filename = re.sub(
+        r".*/CBERS", r"test/fixtures/ref_CBERS", str(output_filename)
     )
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.xml",
@@ -737,7 +760,7 @@ def test_convert_inpe_to_stac():
     rescb4pan10ng = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4A
-    output_filename = "test/CBERS_4A_MUX_20200808_201_137_L4.json"
+    output_filename = tmp_path / "CBERS_4A_MUX_20200808_201_137_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4A_MUX_20200808_201_137_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4A_MUX_"
@@ -749,7 +772,7 @@ def test_convert_inpe_to_stac():
     rescb4amux = diff_files(ref_output_filename, output_filename)
 
     # WPM, CB4A
-    output_filename = "test/CBERS_4A_WPM_20200730_209_139_L4.json"
+    output_filename = tmp_path / "CBERS_4A_WPM_20200730_209_139_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4A_WPM_20200730_209_139_L4.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4A_WPM_"
@@ -769,6 +792,8 @@ def test_convert_inpe_to_stac():
     assert len(rescb4pan10ng) == 0, rescb4pan10ng
     assert len(rescb4amux) == 0, rescb4amux
     assert len(rescb4awpm) == 0, rescb4awpm
+    assert len(resam1wfi) == 0, resam1wfi
+    assert len(resam1wfileft) == 0, resam1wfileft
 
 
 def test_json_schema():
