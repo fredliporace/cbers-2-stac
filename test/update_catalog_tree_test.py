@@ -185,6 +185,37 @@ def test_get_catalog_info():
         "is_collection": True,
     }
 
+    # Amazonia1 check
+    info = get_catalog_info("AMAZONIA1/WFI/150/129")
+    assert info == {
+        "level": 0,
+        "satellite+mission": "AMAZONIA1",
+        "camera": "WFI",
+        "path": "150",
+        "row": "129",
+        "is_collection": False,
+    }
+
+    info = get_catalog_info("AMAZONIA1/WFI/150")
+    assert info == {
+        "level": 1,
+        "satellite+mission": "AMAZONIA1",
+        "camera": "WFI",
+        "path": "150",
+        "row": None,
+        "is_collection": False,
+    }
+
+    info = get_catalog_info("AMAZONIA1/WFI")
+    assert info == {
+        "level": 2,
+        "satellite+mission": "AMAZONIA1",
+        "camera": "WFI",
+        "path": None,
+        "row": None,
+        "is_collection": True,
+    }
+
 
 def test_build_catalog_from_s3():
     """build_catalog_from_s3_test"""
@@ -243,21 +274,30 @@ def test_build_catalog_from_s3():
     catv.validate_dict(catalog)
 
 
-def test_base_stac_catalog():  # pylint: disable=too-many-statements
+@pytest.mark.parametrize(
+    "satellite, mission, camera", [("CBERS", "4", "AWFI"), ("AMAZONIA", "1", "WFI")],
+)
+def test_base_stac_catalog(
+    satellite: str, mission: str, camera: str
+):  # pylint: disable=too-many-statements
     """base_stac_catalog_test"""
 
     catv = STACValidator(schema_filename="catalog.json")
     colv = STACValidator(schema_filename="collection.json")
 
-    catalog = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI", "130", "100")
+    # path/row level
+    catalog = base_stac_catalog("cbers-stac", satellite, mission, camera, "130", "100")
     assert catalog["stac_version"] == STAC_VERSION
     # validate_dict(catalog)
-    assert catalog["id"] == "CBERS4 AWFI 130/100"
-    assert catalog["description"] == "CBERS4 AWFI camera path 130 row 100 catalog"
+    assert catalog["id"] == f"{satellite}{mission} {camera} 130/100"
+    assert (
+        catalog["description"]
+        == f"{satellite}{mission} {camera} camera path 130 row 100 catalog"
+    )
     assert catalog["links"][0]["rel"] == "self"
     assert (
         catalog["links"][0]["href"]
-        == "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/130/100/catalog.json"
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/{camera}/130/100/catalog.json"
     )
     assert catalog["links"][1]["rel"] == "root"
     assert (
@@ -266,20 +306,24 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
     catv.validate_dict(catalog)
     assert "license" not in catalog
 
     # Same as before using concatenated satellite+mission
-    catalog = base_stac_catalog("cbers-stac", "CBERS4", None, "AWFI", "130", "100")
+    catalog = base_stac_catalog(
+        "cbers-stac", f"{satellite}{mission}", None, f"{camera}", "130", "100"
+    )
     assert catalog["stac_version"] == STAC_VERSION
     # validate_dict(catalog)
-    assert catalog["id"] == "CBERS4 AWFI 130/100"
-    assert catalog["description"] == "CBERS4 AWFI camera path 130 row 100 catalog"
+    assert catalog["id"] == f"{satellite}{mission} {camera} 130/100"
+    assert (
+        catalog["description"]
+        == f"{satellite}{mission} {camera} camera path 130 row 100 catalog"
+    )
     assert catalog["links"][0]["rel"] == "self"
     assert (
         catalog["links"][0]["href"]
-        == "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/"
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/{camera}/"
         "130/100/catalog.json"
     )
     assert catalog["links"][1]["rel"] == "root"
@@ -289,19 +333,23 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
     catv.validate_dict(catalog)
     assert "license" not in catalog
 
-    catalog = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI", "130")
+    # path level
+    catalog = base_stac_catalog(
+        "cbers-stac", f"{satellite}", f"{mission}", f"{camera}", "130"
+    )
     assert catalog["stac_version"] == STAC_VERSION
-    # validate_dict(catalog)
-    assert catalog["id"] == "CBERS4 AWFI 130"
-    assert catalog["description"] == "CBERS4 AWFI camera path 130 catalog"
+    assert catalog["id"] == f"{satellite}{mission} {camera} 130"
+    assert (
+        catalog["description"]
+        == f"{satellite}{mission} {camera} camera path 130 catalog"
+    )
     assert catalog["links"][0]["rel"] == "self"
     assert (
         catalog["links"][0]["href"]
-        == "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/"
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/{camera}/"
         "130/catalog.json"
     )
     assert catalog["links"][1]["rel"] == "root"
@@ -311,19 +359,19 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../collection.json"
-    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
     catv.validate_dict(catalog)
 
     # This is the collection level
-    collection = base_stac_catalog("cbers-stac", "CBERS", "4", "AWFI")
+    collection = base_stac_catalog(
+        "cbers-stac", f"{satellite}", f"{mission}", f"{camera}"
+    )
     assert collection["stac_version"] == STAC_VERSION
-    # validate_dict(collection)
-    assert collection["id"] == "CBERS4-AWFI"
-    assert collection["description"] == "CBERS4 AWFI camera catalog"
+    assert collection["id"] == f"{satellite}{mission}-{camera}"
+    assert collection["description"] == f"{satellite}{mission} {camera} camera catalog"
     assert collection["links"][0]["rel"] == "self"
     assert (
         collection["links"][0]["href"]
-        == "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/"
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/{camera}/"
         "collection.json"
     )
     assert collection["links"][1]["rel"] == "root"
@@ -334,20 +382,20 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     assert collection["links"][2]["rel"] == "parent"
     assert collection["summaries"]["gsd"] == [64.0]
     assert collection["links"][2]["href"] == "../catalog.json"
-    # assert validate(collection, setup.col_schema, resolver=setup.col_resolver) is None
     colv.validate_dict(collection)
 
     # This is the collection level using satellite and mission
     # concatenated
-    catalog = base_stac_catalog("cbers-stac", "CBERS4", None, "AWFI")
+    catalog = base_stac_catalog(
+        "cbers-stac", f"{satellite}{mission}", None, f"{camera}"
+    )
     assert catalog["stac_version"] == STAC_VERSION
-    # validate_dict(catalog)
-    assert catalog["id"] == "CBERS4-AWFI"
-    assert catalog["description"] == "CBERS4 AWFI camera catalog"
+    assert catalog["id"] == f"{satellite}{mission}-{camera}"
+    assert catalog["description"] == f"{satellite}{mission} {camera} camera catalog"
     assert catalog["links"][0]["rel"] == "self"
     assert (
         catalog["links"][0]["href"]
-        == "https://cbers-stac.s3.amazonaws.com/CBERS4/AWFI/"
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/{camera}/"
         "collection.json"
     )
     assert catalog["links"][1]["rel"] == "root"
@@ -358,17 +406,17 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
     assert catalog["summaries"]["gsd"] == [64.0]
-    # assert validate(catalog, setup.col_schema, resolver=setup.col_resolver) is None
     colv.validate_dict(catalog)
 
-    catalog = base_stac_catalog("cbers-stac", "CBERS", "4")
+    catalog = base_stac_catalog("cbers-stac", f"{satellite}", f"{mission}")
     assert catalog["stac_version"] == STAC_VERSION
     # validate_dict(catalog)
-    assert catalog["id"] == "CBERS4"
-    assert catalog["description"] == "CBERS4 catalog"
+    assert catalog["id"] == f"{satellite}{mission}"
+    assert catalog["description"] == f"{satellite}{mission} catalog"
     assert catalog["links"][0]["rel"] == "self"
     assert (
-        catalog["links"][0]["href"] == "https://cbers-stac.s3.amazonaws.com/CBERS4/"
+        catalog["links"][0]["href"]
+        == f"https://cbers-stac.s3.amazonaws.com/{satellite}{mission}/"
         "catalog.json"
     )
     assert catalog["links"][1]["rel"] == "root"
@@ -378,14 +426,13 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
     )
     assert catalog["links"][2]["rel"] == "parent"
     assert catalog["links"][2]["href"] == "../catalog.json"
-    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
     catv.validate_dict(catalog)
 
-    catalog = base_stac_catalog("cbers-stac", "CBERS")
+    catalog = base_stac_catalog("cbers-stac", f"{satellite}")
     assert catalog["stac_version"], STAC_VERSION
     # validate_dict(catalog)
-    assert catalog["id"] == "CBERS"
-    assert catalog["description"] == "CBERS catalog"
+    assert catalog["id"] == f"{satellite}"
+    assert catalog["description"] == f"{satellite} catalog"
     assert len(catalog["links"]) == 2
     assert catalog["links"][0]["rel"] == "self"
     assert (
@@ -397,7 +444,6 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
         catalog["links"][1]["href"]
         == "https://cbers-stac.s3.amazonaws.com/catalog.json"
     )
-    # assert validate(catalog, setup.cat_schema, resolver=setup.cat_resolver) is None
     catv.validate_dict(catalog)
 
 
@@ -405,7 +451,8 @@ def test_base_stac_catalog():  # pylint: disable=too-many-statements
 def test_integration(s3_bucket):
     """integration_test"""
 
-    s3_client, s3_resource = s3_bucket  # pylint: disable=unused-variable
+    s3_client, _ = s3_bucket
+
     prefix = "CBERS4/MUX/083/095"
 
     # Create STAC metadata structure, single file
@@ -425,5 +472,24 @@ def test_integration(s3_bucket):
     write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)
 
     prefix = "CBERS4/MUX"
+    catalog = build_catalog_from_s3(bucket="cbers-stac", prefix=prefix)
+    write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)
+
+    # Same as above for Amazonia1
+    prefix = "AMAZONIA1/WFI/033/018"
+    s3_client.upload_file(
+        Filename="test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json",
+        Bucket="cbers-stac",
+        Key=f"{prefix}/CBERS_4_MUX_20170528_090_084_L2.json",
+    )
+    catalog = build_catalog_from_s3(bucket="cbers-stac", prefix=prefix)
+    assert catalog["id"] == "AMAZONIA1 WFI 033/018"
+    write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)
+
+    prefix = "AMAZONIA1/WFI/033"
+    catalog = build_catalog_from_s3(bucket="cbers-stac", prefix=prefix)
+    write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)
+
+    prefix = "AMAZONIA1/WFI"
     catalog = build_catalog_from_s3(bucket="cbers-stac", prefix=prefix)
     write_catalog_to_s3(bucket="cbers-stac", prefix="test/" + prefix, catalog=catalog)

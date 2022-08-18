@@ -55,7 +55,7 @@ def get_resource(service: str) -> boto3.client:
 
 
 # Collections are currently hard-coded here, this is not
-# an issue for CBERS on AWS since this does not frequently change
+# an issue for CBERS/Amazonia on AWS since this does not frequently change
 COLLECTIONS = {
     "CBERS4-MUX": "CBERS4/MUX/collection.json",
     "CBERS4-AWFI": "CBERS4/AWFI/collection.json",
@@ -64,6 +64,7 @@ COLLECTIONS = {
     "CBERS4A-MUX": "CBERS4A/MUX/collection.json",
     "CBERS4A-WFI": "CBERS4A/WFI/collection.json",
     "CBERS4A-WPM": "CBERS4A/WPM/collection.json",
+    "AMAZONIA1-WFI": "AMAZONIA1/WFI/collection.json",
 }
 
 STAC_VERSION = "1.0.0"

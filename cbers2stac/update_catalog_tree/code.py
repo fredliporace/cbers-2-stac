@@ -267,7 +267,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     else:
         # Check for satellite+mission in first parameter
         # @todo change this to always separate satellite and mission
-        if satellite == "CBERS":
+        if satellite in ["CBERS", "AMAZONIA"]:
             sat_sensor = None  # type: ignore
         else:
             sat_sensor = satellite
