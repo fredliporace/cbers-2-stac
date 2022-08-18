@@ -14,9 +14,7 @@
 /cbers2stac/process_new_scene_queue/utm-0.7.0.dist-info/
 /cbers2stac/process_new_scene_queue/utm/
 /stack/static_catalog_structure/
-/test/catalog_structure/
 /test/fixtures/catalog_structure/
-/test/fixtures/test_update_catalog_or_collection/
 /cbers2stac/elasticsearch/aws_requests_auth/
 /cbers2stac/elasticsearch/bin/
 /cbers2stac/elasticsearch/certifi/
