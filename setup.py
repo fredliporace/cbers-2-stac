@@ -13,7 +13,7 @@ inst_reqs = [
 extra_reqs = {
     "dev": ["awscli", "awscli-local",],
     "test": [
-        "pydantic",
+        "pydantic[dotenv]",
         "importlib-metadata<2,>=0.12",  # This is required by tox 3.2.0
         "pytest",
         "pytest-cov",
@@ -33,7 +33,7 @@ extra_reqs = {
         "utm",
     ],
     "deploy": [
-        "pydantic",
+        "pydantic[dotenv]",
         "aws-cdk.core",
         "aws-cdk.aws-sqs",
         "aws-cdk.aws-sns",
