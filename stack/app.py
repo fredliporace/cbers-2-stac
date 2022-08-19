@@ -168,9 +168,7 @@ class CBERS2STACStack(core.Stack):
         )
         # Subscription for CB4A (all cameras)
         sns.Topic.from_topic_arn(
-            self,
-            id="CB4A",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4AQuicklook",
+            self, id="CB4A-AM1", topic_arn=settings.cb4a_am1_topic,
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
