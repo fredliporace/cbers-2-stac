@@ -25,11 +25,13 @@ extra_reqs = {
         "retry",
         # The packages below are used by lambdas and need to be installed locally
         # for testing to work
-        # Used in elasticsearch
-        "elasticsearch>=7.0.0,<8.0.0",
+        # Used in elasticsearch lambda. This needs to be <7.14.0 to avoid the
+        #   "The client noticed that the server is not a supported distribution of Elasticsearch"
+        #   error message.
+        "elasticsearch>=7.0.0,<7.14.0",
         "elasticsearch-dsl>=7.0.0,<8.0.0",
         "aws-requests-auth",
-        # Used in process_new_scene_queue
+        # Used in process_new_scene_queue lambda.
         "utm",
     ],
     "deploy": [
