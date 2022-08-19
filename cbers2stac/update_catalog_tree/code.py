@@ -357,9 +357,7 @@ def trigger_handler(event, context):  # pylint: disable=unused-argument
     for record in event["Records"]:
         prefix = record["body"]
         LOGGER.info("Processing %s", prefix)
-        catalog = build_catalog_from_s3(
-            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix
-        )
+        catalog = build_catalog_from_s3(bucket=os.environ["STAC_BUCKET"], prefix=prefix)
         write_catalog_to_s3(
-            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix, catalog=catalog
+            bucket=os.environ["STAC_BUCKET"], prefix=prefix, catalog=catalog
         )

@@ -906,8 +906,7 @@ def wfs3_collections_endpoint_handler(
         collections["collections"].append(
             static_to_api_collection(
                 collection=stac_item_from_s3_key(
-                    bucket=os.environ["CBERS_STAC_BUCKET"],
-                    key=get_collection_s3_key(cid),
+                    bucket=os.environ["STAC_BUCKET"], key=get_collection_s3_key(cid),
                 ),
                 event=event,
             )
@@ -931,7 +930,7 @@ def wfs3_collectionid_endpoint_handler(
 
     cid = event["pathParameters"]["collectionId"]
     collection = stac_item_from_s3_key(
-        bucket=os.environ["CBERS_STAC_BUCKET"], key=get_collection_s3_key(cid)
+        bucket=os.environ["STAC_BUCKET"], key=get_collection_s3_key(cid)
     )
     retmsg = {
         "statusCode": "200",

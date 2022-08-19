@@ -704,13 +704,13 @@ class CBERS2STACStack(core.Stack):
         if settings.stac_bucket_name is None:
             raise RuntimeError("STACK_STAC_BUCKET_NAME is mandatory")
             # Use external STAC bucket name
-            # self.lambdas_env_.update({"CBERS_STAC_BUCKET": settings.stac_bucket_name})
+            # self.lambdas_env_.update({"STAC_BUCKET": settings.stac_bucket_name})
 
         # Create and use internal STAC bucket
         stac_working_bucket = s3.Bucket(
             self, "stac_working_bucket", bucket_name=settings.stac_bucket_name
         )
-        self.lambdas_env_.update({"CBERS_STAC_BUCKET": stac_working_bucket.bucket_name})
+        self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["s3:PutObject", "s3:PutObjectAcl"],

@@ -25,7 +25,7 @@ def handler(event, context):  # pylint: disable=unused-argument
                 event,
                 item_search=True,
                 static_catalog=True,
-                static_bucket=os.environ["CBERS_STAC_BUCKET"],
+                static_bucket=os.environ["STAC_BUCKET"],
             ),
             indent=2,
         ),

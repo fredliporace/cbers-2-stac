@@ -400,7 +400,7 @@ def handler(event, context):  # pylint: disable=unused-argument
         # reconcile topic
         process_queue(
             cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
-            cbers_stac_bucket=os.environ["CBERS_STAC_BUCKET"],
+            cbers_stac_bucket=os.environ["STAC_BUCKET"],
             cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
             queue=event["queue"],
             message_batch_size=int(os.environ["MESSAGE_BATCH_SIZE"]),
@@ -413,7 +413,7 @@ def handler(event, context):  # pylint: disable=unused-argument
         # Lambda is being invoked as trigger to SQS
         process_trigger(
             cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
-            cbers_stac_bucket=os.environ["CBERS_STAC_BUCKET"],
+            cbers_stac_bucket=os.environ["STAC_BUCKET"],
             cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
             event=event,
             sns_target_arn=os.environ["SNS_TARGET_ARN"],
