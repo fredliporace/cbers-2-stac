@@ -258,7 +258,7 @@ def es_connect(  # pylint: disable=too-many-arguments
     verify_certs: bool = True,
     http_auth=None,
     timeout: int = 60,
-):
+) -> Elasticsearch:
     """
     Connects to ES endpoint, returns Elasticsarch
     low level client.

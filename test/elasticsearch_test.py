@@ -26,10 +26,11 @@ from cbers2stac.elasticsearch.es import (
     stac_search,
     strip_stac_item,
 )
+from elasticsearch import Elasticsearch
 
 
 @pytest.fixture
-def es_client(request):
+def es_client(request) -> Elasticsearch:
     """Elasticsarch client"""
 
     domain_name = "my-domain"
@@ -82,7 +83,7 @@ def es_client(request):
     return client
 
 
-def populate_es_test_case_1(es_client):
+def populate_es_test_case_1(es_client: Elasticsearch):
     """
     Populate ES instance with two items, one CB4 MUX and other
     CB4 AWFI
@@ -104,6 +105,25 @@ def populate_es_test_case_1(es_client):
     )
     assert es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
+    )
+
+
+def populate_es_test_case_2(es_client: Elasticsearch):
+    """
+    Extends populate_es_test_case_1 with Amazonia1 example.
+    """
+    populate_es_test_case_1(es_client)
+    stac_items = []
+    with open(
+        "test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json",
+        "r",
+        encoding="utf-8",
+    ) as fin:
+        stac_items.append(fin.read())
+    for stac_item in stac_items:
+        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="AMAZONIA_1_WFI_20220810_033_018_L4"
     )
 
 
@@ -223,6 +243,19 @@ def test_create_document_in_index(es_client):
     )
     assert doc["_source"]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
 
+    # Checking AMAZONIA1 case
+    with open(
+        "test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json",
+        "r",
+        encoding="utf-8",
+    ) as fin:
+        stac_item = fin.read()
+    create_document_in_index(es_client=es_client, stac_item=stac_item)
+    doc = es_client.get(
+        index="stac", doc_type="_doc", id="AMAZONIA_1_WFI_20220810_033_018_L4"
+    )
+    assert doc["_source"]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+
 
 def test_create_stripped_document_in_index(es_client):
     """test_create_stripped_document_in_index"""
@@ -330,7 +363,7 @@ def test_bulk_create_document_in_index_upsert(es_client):
     assert doc["_source"]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
 
-def test_basic_search(es_client):
+def test_basic_search(es_client: Elasticsearch):
     """test_basic_search"""
 
     populate_es_test_case_1(es_client)
@@ -415,6 +448,89 @@ def test_basic_search(es_client):
     #    print(hit.to_dict())
     assert res["hits"]["total"]["value"] == 1
     assert res[0].to_dict()["properties"]["cbers:path"] == 90
+
+
+def test_basic_search_am1(es_client: Elasticsearch):
+    """
+    Extends test_basic_search with Amazonia1 data.
+    """
+
+    populate_es_test_case_2(es_client)
+
+    # All items are returned for empty query, sleeps for 2 seconds
+    # before searching to allow ES to index the documents.
+    # See
+    # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+    # for a possibly better solution
+    time.sleep(2)
+    res = stac_search(es_client=es_client).execute()
+    assert res["hits"]["total"]["value"] == 3
+    assert len(res) == 3
+
+    # Single item depending on date range
+    res = stac_search(
+        es_client=es_client, start_date="2022-08-10T00:00:00.000"
+    ).execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+
+    res = stac_search(es_client=es_client, end_date="2022-08-11T00:00:00.000").execute()
+    assert res["hits"]["total"]["value"] == 3
+    assert "AMAZONIA_1_WFI_20220810_033_018_L4" in [scn["id"] for scn in res]
+
+    # Geo search
+    res = stac_search(
+        es_client=es_client,
+        start_date="2010-04-10T00:00:00.000",
+        end_date="2022-08-11T00:00:00.000",
+        bbox=[[-40, -15], [-40, -15]],
+    )
+    res = res.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+    # print(res[0].to_dict())
+
+    # Geo search for whole envelope, was raising error when
+    # update to ES 7.7
+    res = stac_search(
+        es_client=es_client,
+        start_date=None,
+        end_date=None,
+        bbox=[[-180.0, 90.0], [180.0, -90.0]],
+    )
+    res = res.execute()
+    assert res["hits"]["total"]["value"] == 3
+
+    # Query extension (eq operator only)
+    empty_query = stac_search(es_client=es_client)
+    res = process_query_extension(dsl_query=empty_query, query_params={}).execute()
+    assert res["hits"]["total"]["value"] == 3
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:data_type": {"eq": "L2"}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    assert res["hits"]["total"]["value"] == 0
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:data_type": {"eq": "L4"}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["amazonia:data_type"] == "L4"
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:path": {"eq": 33}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    # print(res.to_dict())
+    # for hit in res:
+    #    print(hit.to_dict())
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["amazonia:path"] == 33
 
 
 def test_query_extension_search(es_client):  # pylint: disable=too-many-statements
