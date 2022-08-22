@@ -31,9 +31,8 @@ Some lambdas require extra pip packages to be installed in the lambda directory 
 Deployment uses AWS CDK.
 
 Requirements:
-
- * node.js 10.3.0 or later (13.0.0 through 13.6.0 are not supported)
- * AWS credentials configured
+* node: Use [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/) to make sure a supported node is being used, tested with 16.16.0
+* AWS credentials configured
 
 To install and check AWS CDK:
 ```bash
@@ -92,10 +91,10 @@ The lambda payload is a prefix, all directories under the prefix are queued. Eac
 
 Some examples are shown below.
 
-
 To index all CBERS-4 MUX scenes with path 102 and row 83.
 ```json
 {
+  "bucket": "cbers-pds",
   "prefix": "CBERS4/MUX/102/083/"
 }
 ```
@@ -103,6 +102,7 @@ To index all CBERS-4 MUX scenes with path 102 and row 83.
 To index all CBERS-4A MUX scenes:
 ```json
 {
+  "bucket": "cbers-pds",
   "prefix": "CBERS4A/MUX/"
 }
 ```
@@ -110,6 +110,7 @@ To index all CBERS-4A MUX scenes:
 To index all CBERS-4A MUX scenes with path 120:
 ```json
 {
+  "bucket": "cbers-pds",
   "prefix": "CBERS4A/MUX/120/"
 }
 ```
@@ -142,7 +143,7 @@ A tool is provided to move messages from SQS queues, this may be used to re-queu
 cb2stac-redrive-sqs --src-url=https://... --dst-url=https://... --messages-no=100
 ```
 
-The jobs may also be re-queued using the new `Start DLQ redrive` available from the AWS console.
+The jobs may also be re-queued using the new `Start DLQ redrive` now available from the AWS console.
 
 ## Recovering from ElasticSearch (ES) cluster failures
 
@@ -163,7 +164,7 @@ Use `cb2stac-redrive-sqs` (or `Start DLQ redrive` from AWS console) to transfer 
 ```bash
 $ git clone git@github.com:fredliporace/cbers-2-stac.git
 $ cd cbers-2-stac
-$ pip install -e .[dev,test]
+$ pip install -e .[dev,test,deploy]
 $ ./pip-on-lambdas.sh
 ```
 

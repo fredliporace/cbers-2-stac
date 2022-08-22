@@ -5,77 +5,23 @@ import json
 import logging
 import os
 import re
+from typing import Any, Dict, Generator
 
-from cbers2stac.layers.common.cbers_2_stac import convert_inpe_to_stac
-from cbers2stac.layers.common.utils import get_client
+from botocore.exceptions import ClientError
+
+from cbers2stac.layers.common.cbers_2_stac import (
+    candidate_xml_files,
+    convert_inpe_to_stac,
+)
+from cbers2stac.layers.common.utils import CBERS_AM_MISSIONS, get_client
 
 # Get rid of "Found credentials in environment variables" messages
 logging.getLogger("botocore.credentials").disabled = True
 LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
-# CBERS metadata
-# @todo check if quicklook_pixel_size is being used
-CMETA = {
-    # Same for CBERS4 and CBERS4A
-    "MUX": {
-        "reference": 5,
-        "num_bands": 4,
-        "quicklook_pixel_size": 200,
-        "red": 7,
-        "green": 6,
-        "blue": 5,
-        "meta_band": 6,
-    },
-    "AWFI": {
-        "reference": 13,
-        "num_bands": 4,
-        "quicklook_pixel_size": 640,
-        "red": 15,
-        "green": 14,
-        "blue": 13,
-        "meta_band": 14,
-    },
-    "PAN5M": {
-        "reference": 1,
-        "num_bands": 1,
-        "quicklook_pixel_size": 50,
-        "red": 1,
-        "green": 1,
-        "blue": 1,
-        "meta_band": 1,
-    },
-    "PAN10M": {
-        "reference": 2,
-        "num_bands": 3,
-        "quicklook_pixel_size": 100,
-        "red": 3,
-        "green": 4,
-        "blue": 2,
-        "meta_band": 4,
-    },
-    "WFI": {
-        "reference": 13,
-        "num_bands": 4,
-        "quicklook_pixel_size": 640,
-        "red": 15,
-        "green": 14,
-        "blue": 13,
-        "meta_band": 14,
-    },
-    "WPM": {
-        "reference": 1,
-        "num_bands": 5,
-        "quicklook_pixel_size": 640,
-        "red": 3,
-        "green": 2,
-        "blue": 1,
-        "meta_band": 2,
-    },
-}
 
-
-def parse_quicklook_key(key):
+def parse_quicklook_key(key: str) -> Dict[str, Any]:
     """
     Parse quicklook key and return dictionary with
     relevant fields.
@@ -111,7 +57,7 @@ def parse_quicklook_key(key):
     }
 
 
-def get_s3_keys(quicklook_key):
+def get_s3_keys(quicklook_key: str) -> Dict[str, Any]:
     """
     Get S3 keys associated with quicklook
     key parameter.
@@ -144,7 +90,7 @@ def get_s3_keys(quicklook_key):
             qdict["row"],
             qdict["scene_id"],
             qdict["scene_id"],
-            CMETA[qdict["camera"]]["meta_band"],
+            CBERS_AM_MISSIONS[qdict["satellite"]][qdict["camera"]]["meta_band"],
         )
     )
     return {
@@ -154,7 +100,7 @@ def get_s3_keys(quicklook_key):
     }
 
 
-def sqs_messages(queue):
+def sqs_messages(queue: str) -> Generator[Dict[str, Any], None, None]:
     """
     Generator for SQS messages.
 
@@ -175,6 +121,7 @@ def sqs_messages(queue):
         records = json.loads(msg["Message"])
         retd = {}
         retd["key"] = records["Records"][0]["s3"]["object"]["key"]
+        retd["bucket"] = records["Records"][0]["s3"]["bucket"]["name"]
         retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
 
@@ -201,8 +148,12 @@ def build_sns_topic_msg_attributes(stac_item):
 
 
 def process_message(
-    msg, buckets, sns_target_arn, catalog_update_queue, catalog_update_table
-):
+    msg: Dict[str, Any],
+    buckets,
+    sns_target_arn: str,
+    catalog_update_queue: str,
+    catalog_update_table: str,
+) -> None:
     """
     Process a single message. Generate STAC item, send STAC item to SNS topic,
     write key into DynamoDB table and, optionally, send key to queue for
@@ -214,7 +165,7 @@ def process_message(
       sns_target_arn(string): SNS arn for stac items. Items are always published
       catalog_update_queue(string): URL of queue that receives new STAC items
         for updating the catalog structure, None if not used.
-      catalog_update_table: DynamoDB that hold the catalog update requests
+      catalog_update_table: DynamoDB table name that hold the catalog update requests
     """
 
     LOGGER.info(msg["key"])
@@ -229,16 +180,29 @@ def process_message(
         "WFI",
     ), ("Unrecognized key: " + metadata_keys["quicklook_keys"]["camera"])
 
-    local_inpe_metadata = "/tmp/" + metadata_keys["inpe_metadata"].split("/")[-1]
     local_stac_item = "/tmp/" + metadata_keys["stac"].split("/")[-1]
-    # Download INPE metadata and generate STAC item file
-    with open(local_inpe_metadata, "wb") as data:
-        get_client("s3").download_fileobj(
-            buckets["cog"],
-            metadata_keys["inpe_metadata"],
-            data,
-            ExtraArgs={"RequestPayer": "requester"},
-        )
+    found = False
+    # Check candidates for XML, required to try LEFT and RIGHT for Amazonia1
+    for inpe_metadata_option in candidate_xml_files(
+        metadata_keys["inpe_metadata"].split("/")[-1]
+    ):
+        local_inpe_metadata = "/tmp/" + inpe_metadata_option
+        # Download INPE metadata and generate STAC item file
+        try:
+            with open(local_inpe_metadata, "wb") as data:
+                get_client("s3").download_fileobj(
+                    buckets["cog"],
+                    "/".join(metadata_keys["inpe_metadata"].split("/")[0:-1])
+                    + "/"
+                    + inpe_metadata_option,
+                    data,
+                    ExtraArgs={"RequestPayer": "requester"},
+                )
+            found = True
+            break
+        except ClientError:
+            pass
+    assert found, f"Can't find metadata for {metadata_keys['inpe_metadata']}"
     stac_meta = convert_inpe_to_stac(
         inpe_metadata_filename=local_inpe_metadata,
         stac_metadata_filename=local_stac_item,
@@ -267,7 +231,7 @@ def process_message(
     )
 
 
-def catalog_update_request(table_name, stac_item_key):
+def catalog_update_request(table_name: str, stac_item_key: str):
     """
     Generate a catalog structure update request by recording
     register into DynamoDB table.
@@ -286,10 +250,10 @@ def catalog_update_request(table_name, stac_item_key):
     )
 
 
-def process_trigger(  # pylint: disable=too-many-arguments
-    cbers_pds_bucket,
-    cbers_stac_bucket,
-    cbers_meta_pds_bucket,
+def process_trigger(
+    *,
+    stac_bucket,
+    meta_pds_bucket,
     event,
     sns_target_arn,
     sns_reconcile_target_arn,
@@ -300,9 +264,9 @@ def process_trigger(  # pylint: disable=too-many-arguments
     Read quicklook queue and create STAC items if necessary.
 
     Input:
-      cbers_pds_bucket(string): ditto
-      cbers_stac_bucket(string): ditto
-      cbers_meta_pds_bucket(string): ditto
+      pds_bucket(string): ditto
+      stac_bucket(string): ditto
+      meta_pds_bucket(string): ditto
       event(dict): event dictionary generated by trigger
       sns_target_arn: SNS arn for new stac items topic
       sns_reconcile_target_arn: SNS arn for reconciled stac items topic
@@ -313,9 +277,8 @@ def process_trigger(  # pylint: disable=too-many-arguments
     """
 
     buckets = {
-        "cog": cbers_pds_bucket,
-        "stac": cbers_stac_bucket,
-        "metadata": cbers_meta_pds_bucket,
+        "stac": stac_bucket,
+        "metadata": meta_pds_bucket,
     }
     for record in event["Records"]:
         message = json.loads(json.loads(record["body"])["Message"])
@@ -326,17 +289,17 @@ def process_trigger(  # pylint: disable=too-many-arguments
                 eff_sns_target_arn = sns_target_arn
             process_message(
                 {"key": rec["s3"]["object"]["key"]},
-                buckets,
+                {**buckets, **{"cog": rec["s3"]["bucket"]["name"]}},
                 eff_sns_target_arn,
                 catalog_update_queue,
                 catalog_update_table,
             )
 
 
-def process_queue(  # pylint: disable=too-many-arguments
-    cbers_pds_bucket,
-    cbers_stac_bucket,
-    cbers_meta_pds_bucket,
+def process_queue(
+    *,
+    stac_bucket,
+    meta_pds_bucket,
     queue,
     message_batch_size,
     sns_reconcile_target_arn,
@@ -348,9 +311,8 @@ def process_queue(  # pylint: disable=too-many-arguments
     Read quicklook queue and create STAC items if necessary.
 
     Input:
-      cbers_pds_bucket(string): ditto
-      cbers_stac_bucket(string): ditto
-      cbers_meta_pds_bucket(string): ditto
+      stac_bucket(string): ditto
+      meta_pds_bucket(string): ditto
       queue(string): SQS URL
       message_batch_size: maximum number of messages to be processed, 0 for
                           all messages.
@@ -363,16 +325,15 @@ def process_queue(  # pylint: disable=too-many-arguments
     """
 
     buckets = {
-        "cog": cbers_pds_bucket,
-        "stac": cbers_stac_bucket,
-        "metadata": cbers_meta_pds_bucket,
+        "stac": stac_bucket,
+        "metadata": meta_pds_bucket,
     }
     processed_messages = 0
     for msg in sqs_messages(queue):
 
         process_message(
             msg,
-            buckets,
+            {**buckets, **{"cog": msg["bucket"]}},
             sns_reconcile_target_arn,
             catalog_update_queue,
             catalog_update_table,
@@ -399,9 +360,8 @@ def handler(event, context):  # pylint: disable=unused-argument
         # In that mode SNS events are always sent to the internal
         # reconcile topic
         process_queue(
-            cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
-            cbers_stac_bucket=os.environ["STAC_BUCKET"],
-            cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
+            stac_bucket=os.environ["STAC_BUCKET"],
+            meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
             queue=event["queue"],
             message_batch_size=int(os.environ["MESSAGE_BATCH_SIZE"]),
             sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],
@@ -412,9 +372,8 @@ def handler(event, context):  # pylint: disable=unused-argument
     else:
         # Lambda is being invoked as trigger to SQS
         process_trigger(
-            cbers_pds_bucket=os.environ["CBERS_PDS_BUCKET"],
-            cbers_stac_bucket=os.environ["STAC_BUCKET"],
-            cbers_meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
+            stac_bucket=os.environ["STAC_BUCKET"],
+            meta_pds_bucket=os.environ["CBERS_META_PDS_BUCKET"],
             event=event,
             sns_target_arn=os.environ["SNS_TARGET_ARN"],
             sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],

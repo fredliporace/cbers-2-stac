@@ -9,6 +9,7 @@ from jsonschema.exceptions import ValidationError
 
 from cbers2stac.layers.common.cbers_2_stac import (
     build_stac_item_keys,
+    candidate_xml_files,
     convert_inpe_to_stac,
     epsg_from_utm_zone,
     get_keys_from_cbers_am,
@@ -32,6 +33,23 @@ def test_epsg_from_utm_zone():
     """test_epsg_from_utm_zone"""
     assert epsg_from_utm_zone(-23) == 32723
     assert epsg_from_utm_zone(23) == 32623
+
+
+def test_candidate_xml_files():
+    """test_candidate_xml_files."""
+
+    options = candidate_xml_files("CBERS_4_MUX_20170528_090_084_L2_BAND6.xml")
+    assert len(options) == 1
+    assert options[0] == "CBERS_4_MUX_20170528_090_084_L2_BAND6.xml"
+
+    # Amazonia1 special case with multiple options
+    options = candidate_xml_files("AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml")
+    assert len(options) == 3
+    assert options == [
+        "AMAZONIA_1_WFI_20220811_036_018_L4_BAND2.xml",
+        "AMAZONIA_1_WFI_20220811_036_018_L4_LEFT_BAND2.xml",
+        "AMAZONIA_1_WFI_20220811_036_018_L4_RIGHT_BAND2.xml",
+    ]
 
 
 def test_get_keys_from_cbers4():

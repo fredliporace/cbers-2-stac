@@ -25,7 +25,17 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
                 message["Message"] = json.dumps(
                     {
                         "Records": [
-                            {"s3": {"object": {"key": file["Key"], "reconcile": 1}}}
+                            {
+                                "s3": {
+                                    "bucket": {"name": bucket,},
+                                    "object": {
+                                        "key": file["Key"],
+                                        # This is an artificial key to indicate that the item
+                                        # should always be reconciled
+                                        "reconcile": 1,
+                                    },
+                                }
+                            }
                         ]
                     }
                 )
@@ -52,9 +62,10 @@ def handler(event, context):  # pylint: disable=unused-argument
         # Consume payload data from job queue, one job only
         response = get_client("sqs").receive_message(QueueUrl=event["queue"])
         receipt_handle = response["Messages"][0]["ReceiptHandle"]
+        msgp = json.loads(response["Messages"][0]["Body"])
         populate_queue_with_quicklooks(
-            bucket=os.environ["CBERS_PDS_BUCKET"],
-            prefix=response["Messages"][0]["Body"],
+            bucket=msgp["bucket"],
+            prefix=msgp["prefix"],
             suffix=r"\.(jpg|png)",
             queue=os.environ["NEW_SCENES_QUEUE"],
         )
@@ -67,9 +78,10 @@ def handler(event, context):  # pylint: disable=unused-argument
     else:
         # Lambda called from SQS trigger
         for record in event["Records"]:
+            msgp = json.loads(record["body"])
             populate_queue_with_quicklooks(
-                bucket=os.environ["CBERS_PDS_BUCKET"],
-                prefix=record["body"],
+                bucket=msgp["bucket"],
+                prefix=msgp["prefix"],
                 suffix=r"\.(jpg|png)",
                 queue=os.environ["NEW_SCENES_QUEUE"],
             )

@@ -113,6 +113,10 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
             "B16": {"common_name": "nir"},
         },
         "international_designator": "2014-079A",
+        "MUX": {"meta_band": 6},
+        "AWFI": {"meta_band": 14},
+        "PAN5M": {"meta_band": 1},
+        "PAN10M": {"meta_band": 4},
     },
     "CBERS-4A": {
         "interval": [["2019-12-20T00:00:00Z", None]],
@@ -139,6 +143,9 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
             "B16": {"common_name": "nir"},
         },
         "international_designator": "2019-093E",
+        "WPM": {"meta_band": 2},
+        "MUX": {"meta_band": 6},
+        "WFI": {"meta_band": 14},
     },
     "AMAZONIA-1": {
         "interval": [["2021-02-28T00:00:00Z", None]],
@@ -151,6 +158,7 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
             "B4": {"common_name": "nir"},
         },
         "international_designator": "2021-015A",
+        "WFI": {"meta_band": 2},
     },
 }
 

@@ -157,6 +157,34 @@ def s3_bucket(request):
 
 
 @pytest.fixture
+def s3_buckets(request):
+    """S3 buckets for testing"""
+    marker = request.node.get_closest_marker("s3_buckets_args")
+    # Marker is mandatory, first argument is bucket name
+    assert marker
+    bucket_names = marker.args[0]
+    s3_resource = None
+
+    def fin():
+        """fixture finalizer"""
+        if s3_client:
+            for bucket_name in bucket_names:
+                s3_resource.Bucket(bucket_name).objects.delete()
+                s3_client.delete_bucket(Bucket=bucket_name)
+
+    # Hook teardown (finalizer) code
+    request.addfinalizer(fin)
+
+    # Buckets creation
+    s3_client = boto3.client("s3", endpoint_url=ENDPOINT_URL)
+    s3_resource = boto3.resource("s3", endpoint_url=ENDPOINT_URL)
+    for bucket_name in bucket_names:
+        s3_client.create_bucket(Bucket=bucket_name)
+
+    return s3_client, s3_resource
+
+
+@pytest.fixture
 def sqs_queue(request):
     """SQS queue for testing"""
     marker = request.node.get_closest_marker("sqs_queue_args")
@@ -180,6 +208,35 @@ def sqs_queue(request):
     )
 
     return queue
+
+
+@pytest.fixture
+def sqs_queues(request):
+    """SQS queues for testing."""
+    marker = request.node.get_closest_marker("sqs_queues_args")
+    # Marker is mandatory, first argument are queue names
+    assert marker
+    queue_names = marker.args[0]
+    queues = []
+
+    def fin():
+        """fixture finalizer"""
+        for queue in queues:
+            if queue:
+                queue.delete()
+
+    # Hook teardown (finalizer) code
+    request.addfinalizer(fin)
+
+    # Queues creation
+    for queue_name in queue_names:
+        sqs_resource = boto3.resource("sqs", endpoint_url=ENDPOINT_URL)
+        queue = sqs_resource.create_queue(
+            QueueName=queue_name, Attributes={"VisibilityTimeout": "300"}
+        )
+        queues.append(queue)
+
+    return queues
 
 
 @pytest.fixture

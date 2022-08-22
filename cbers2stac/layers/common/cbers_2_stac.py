@@ -8,6 +8,7 @@ import sys
 import typing
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from typing import List
 
 import utm
 
@@ -494,7 +495,7 @@ def build_stac_item_keys(cbers_am, buckets):
     return stac_item
 
 
-def create_json_item(stac_item, filename) -> None:
+def create_json_item(stac_item, filename: str) -> None:
     """
     Dumps STAC item into json file
     Input:
@@ -504,6 +505,28 @@ def create_json_item(stac_item, filename) -> None:
 
     with open(filename, "w", encoding="utf-8") as outfile:
         json.dump(stac_item, outfile, indent=2)
+
+
+def candidate_xml_files(xml_file: str) -> List[str]:
+    """
+    Return a list of candidate names for xml files, including
+    optics for Amazonia-1 xml files.
+
+    Args:
+      xml_file: XML filename
+    Return:
+      List with options for XML filenames.
+    """
+    match = TIF_XML_REGEX.match(xml_file.split("/")[-1])
+    assert match, f"Can't match {xml_file}"
+    group = match.groupdict()
+    xml_options = []
+    if group["satellite"] == "AMAZONIA":
+        for optics in ["", "_LEFT", "_RIGHT"]:
+            xml_options.append(re.sub(r"_L(\d+)_", f"_L\\g<1>{optics}_", xml_file))
+    else:
+        xml_options.append(xml_file)
+    return xml_options
 
 
 def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets):
