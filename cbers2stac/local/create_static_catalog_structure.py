@@ -68,7 +68,7 @@ def create_local_catalog_structure(root_directory: str, bucket_name: str) -> Non
 
     # The root catalog for all satellites and missions
     cat_dict = base_root_catalog(bucket_name)
-    assert cat_dict["id"] == "CBERS-AMAZONIA"
+    assert cat_dict["id"] == "CBERS-AMAZONIA STATIC ROOT", cat_dict["id"]
     catalog_filename = f"{root_directory}/catalog.json"
     update_catalog_or_collection(c_dict=cat_dict, filename=catalog_filename)
     with open(catalog_filename, encoding="utf-8") as fp_in:

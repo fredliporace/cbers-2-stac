@@ -54,6 +54,9 @@ def get_resource(service: str) -> boto3.client:
     return RESOURCE[service]
 
 
+ROOT_DESCRIPTION = "Catalogs of AMAZONIA and CBERS 4/4A missions' imagery on AWS"
+ROOT_TITLE = "CBERS/AMAZONIA on AWS"
+
 # Collections are currently hard-coded here, this is not
 # an issue for CBERS/Amazonia on AWS since this does not frequently change
 COLLECTIONS = {
@@ -536,9 +539,9 @@ def get_api_stac_root(
     """
 
     doc: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
-    doc["id"] = "CBERS"
-    doc["description"] = "Catalogs of CBERS 4 & 4A mission's imagery on AWS"
-    doc["title"] = "CBERS 4/4A on AWS"
+    doc["id"] = "CBERS-AMAZONIA ROOT"
+    doc["description"] = ROOT_DESCRIPTION
+    doc["title"] = ROOT_TITLE
     doc["links"] = []
     doc["conformsTo"] = []
 

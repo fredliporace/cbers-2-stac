@@ -858,7 +858,7 @@ def stac_search_endpoint_handler(
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 
@@ -990,7 +990,7 @@ def wfs3_collectionid_items_endpoint_handler(
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 
@@ -1051,7 +1051,7 @@ def wfs3_collectionid_featureid_endpoint_handler(
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 

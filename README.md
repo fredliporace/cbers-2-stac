@@ -85,9 +85,9 @@ It is recommended to change the cluster configuration to disable the automatic c
 
 ## Reconciliation from INPE's original metadata
 
-The lambda ```populate_reconcile_queue_lambda``` may be used to reconcile the STAC catalog with the original CBERS metadata catalog.
+The lambda `populate_reconcile_queue_lambda` may be used to reconcile the STAC catalog with the original CBERS metadata catalog.
 
-The lambda payload is a prefix, all directories under the prefix are queued. Each directory is then scanned separately by a distinct lambda instance, all XMLs are converted to static STAC documents and indexed again, if the API is configured.
+The lambda payload is a bucket name and a prefix, all directories under the prefix are queued. Each directory is then scanned separately by a distinct lambda instance, all XMLs are converted to static STAC documents and indexed again, if the API is configured.
 
 Some examples are shown below.
 
