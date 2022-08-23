@@ -554,7 +554,7 @@ def get_api_stac_root(
         doc["links"].append(
             {
                 "rel": "child",
-                "title": "CBERS 4/4A on AWS static catalog",
+                "title": "Amazonia, CBERS 4/4A on AWS static catalog",
                 "href": build_absolute_prefix(bucket=static_bucket)  # type: ignore
                 + "catalog.json",
             }

@@ -3,7 +3,7 @@
 ## Unreleased
 
 * Support for Amazonia-1
-* Development environment update to localstack 1.
+* Development environment update to localstack V1.
 * `constraints.txt` included
 * Release step removed from CI
 * Vault directory removed
