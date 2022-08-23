@@ -1,5 +1,6 @@
 """process_new_scene_test"""
 
+import json
 import pathlib
 
 import pytest
@@ -12,6 +13,7 @@ from cbers2stac.process_new_scene_queue.code import (  # process_queue
     get_s3_keys,
     parse_quicklook_key,
     process_message,
+    process_queue,
     sqs_messages,
 )
 
@@ -238,3 +240,62 @@ def test_process_mesage(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
     assert "AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4.json" in [
         item["stacitem"] for item in db_table.scan()["Items"]
     ]
+
+
+@pytest.mark.s3_buckets_args(["cog", "stac"])
+@pytest.mark.sqs_queues_args(["quicklook-queue", "catup_queue"])
+@pytest.mark.dynamodb_table_args({**(DBTable.schema())})
+def test_process_queue(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
+    """
+    test_process_queue
+    """
+
+    s3_client, _ = s3_buckets
+    quicklook_queue = sqs_queues[0]
+    catup_queue = sqs_queues[1]
+    _, topic = sns_topic
+    db_table = dynamodb_table
+
+    fixture_prefix = "test/fixtures/cbers_amazonia_pds_bucket_structure/"
+    paths = pathlib.Path(fixture_prefix).rglob("*")
+    files = [
+        str(f.relative_to(fixture_prefix))
+        for f in paths
+        if any(ext in str(f) for ext in ["png", "xml"])
+    ]
+    for upfile in files:
+        s3_client.upload_file(
+            Filename=fixture_prefix + "/" + upfile, Bucket="cog", Key=upfile
+        )
+
+    # CB4A MUX case
+    populate_queue_with_quicklooks(
+        bucket="cog", prefix="CBERS4A/MUX/", queue=quicklook_queue.url, suffix=r"\.png"
+    )
+    process_queue(
+        stac_bucket="stac",
+        cog_pds_meta_pds={"cog": "metadata"},
+        queue=quicklook_queue.url,
+        message_batch_size=1,
+        sns_reconcile_target_arn=topic["TopicArn"],
+        catalog_update_queue=catup_queue.url,
+        catalog_update_table=DBTable.schema()["TableName"],
+    )
+    assert len(db_table.scan()["Items"]) == 1
+    assert (
+        db_table.scan()["Items"][0]["stacitem"]
+        == "CBERS4A/MUX/222/116/CBERS_4A_MUX_20220810_222_116_L4.json"
+    )
+    item = json.loads(
+        s3_client.get_object(
+            Bucket="stac",
+            Key="CBERS4A/MUX/222/116/CBERS_4A_MUX_20220810_222_116_L4.json",
+        )["Body"]
+        .read()
+        .decode("utf-8")
+    )
+    assert (
+        item["assets"]["thumbnail"]["href"]
+        == "https://s3.amazonaws.com/metadata/CBERS4A/MUX/222/116/"
+        "CBERS_4A_MUX_20220810_222_116_L4/CBERS_4A_MUX_20220810_222_116.png"
+    )

@@ -4,7 +4,6 @@ import json
 import os
 import re
 import statistics
-import sys
 import typing
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
@@ -548,18 +547,3 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets
     if stac_metadata_filename:
         create_json_item(stac_meta, stac_metadata_filename)
     return stac_meta
-
-
-if __name__ == "__main__":
-    # Command line arguments
-    # inpe_metadata filename (1)
-    # stac_metadata filename (2)
-
-    BUCKETS = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
-
-    assert sys.argv == 3
-    convert_inpe_to_stac(
-        inpe_metadata_filename=sys.argv[1],
-        stac_metadata_filename=sys.argv[2],
-        buckets=BUCKETS,
-    )

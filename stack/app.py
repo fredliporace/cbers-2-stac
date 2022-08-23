@@ -680,7 +680,7 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_env_.update(
             {
                 # The CBERS metadata bucket (metadata only)
-                "CBERS_META_PDS_BUCKET": "cbers-meta-pds",
+                "COG_PDS_META_PDS": settings.cog_pds_meta_pds,
                 # If 1 then processed messages are deleted from queues
                 "DELETE_MESSAGES": "1",
             }
