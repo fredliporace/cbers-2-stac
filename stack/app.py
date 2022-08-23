@@ -20,6 +20,7 @@ from aws_cdk import aws_s3_deployment as s3_deployment
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_synthetics as synthetics
 from aws_cdk import core
 from aws_cdk.aws_cloudwatch import ComparisonOperator
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
@@ -586,7 +587,7 @@ class CBERS2STACStack(core.Stack):
 
     def create_api_gateway(self) -> None:
         """
-        Create API gateway and lambda integration
+        Create API gateway, lambda integration and canary
         """
 
         # api_stage = core.CfnParameter(self, id="ApiStage", type=str)
@@ -599,7 +600,7 @@ class CBERS2STACStack(core.Stack):
             "AWS::Include", {"Location": openapi_asset.s3_object_url}
         )
         definition = apigateway.AssetApiDefinition.from_inline(data)
-        apigateway.SpecRestApi(
+        apigw = apigateway.SpecRestApi(
             self,
             id="stacapi",
             api_definition=definition,
@@ -607,6 +608,27 @@ class CBERS2STACStack(core.Stack):
                 logging_level=apigateway.MethodLoggingLevel.INFO
             ),
         )
+        # Canary to check search endpoint
+        canary = synthetics.Canary(
+            self,
+            "SearchEndpointCanary",
+            schedule=synthetics.Schedule.rate(core.Duration.hours(1)),
+            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
+            test=synthetics.Test.custom(
+                code=synthetics.Code.from_asset("cbers2stac/canary"),
+                handler="api_canary.handler",
+            ),
+            environment_variables={"ENDPOINT_URL": apigw.url_for_path() + "/search"},
+        )
+        canary_alarm = cloudwatch.Alarm(
+            self,
+            "CanaryAlarm",
+            metric=canary.metric_failed(period=core.Duration.hours(1)),
+            evaluation_periods=1,
+            threshold=0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        canary_alarm.add_alarm_action(cw_actions.SnsAction(self.topics_["alarm_topic"]))
 
     def create_es_domain(self) -> None:
         """
