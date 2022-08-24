@@ -64,7 +64,7 @@ cb2stac-redrive-sqs=utils.redrive_sqs_queue:main
 
 setup(
     name="cbers-2-stac",
-    version="1.0.0",
+    version="0.0.0",
     description=u"",
     long_description=long_description,
     long_description_content_type="text/markdown",
