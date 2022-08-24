@@ -44,9 +44,11 @@ def verify_request(method, url, post_data=None, headers={}):
                 conn.close()
                 raise Exception("Failed with status code: %s" % response.status)
 
-    logger.info("Response: %s" % response.read().decode())
+    response_text = response.read().decode()
+    logger.info("Response: %s" % response_text)
     logger.info("HTTP request successfully executed")
     conn.close()
+    return json.loads(response_text)
 
 
 def main():
@@ -55,7 +57,8 @@ def main():
     method1 = "GET"
     postData1 = ""
     headers1 = {}
-    verify_request(method1, url1, None, headers1)
+    resp = verify_request(method1, url1, None, headers1)
+    assert resp["features"][0]["stac_version"] == "1.0.0"
     logger.info("Canary successfully executed")
 
 
