@@ -120,6 +120,25 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
         "AWFI": {"meta_band": 14},
         "PAN5M": {"meta_band": 1},
         "PAN10M": {"meta_band": 4},
+        "providers": [
+            {
+                "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+                "roles": ["producer"],
+                "url": "http://www.cbers.inpe.br",
+            },
+            {
+                "name": "AMS Kepler",
+                "roles": ["processor"],
+                "description": "Convert INPE's original TIFF to COG "
+                "and copy to Amazon Web Services",
+                "url": "https://github.com/fredliporace/cbers-on-aws",
+            },
+            {
+                "name": "Amazon Web Services",
+                "roles": ["host"],
+                "url": "https://registry.opendata.aws/cbers/",
+            },
+        ],
     },
     "CBERS-4A": {
         "interval": [["2019-12-20T00:00:00Z", None]],
@@ -149,38 +168,6 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
         "WPM": {"meta_band": 2},
         "MUX": {"meta_band": 6},
         "WFI": {"meta_band": 14},
-    },
-    "AMAZONIA-1": {
-        "interval": [["2021-02-28T00:00:00Z", None]],
-        "quicklook": {"extension": "png", "type": "png"},
-        "instruments": ["WFI"],
-        "band": {
-            "B1": {"common_name": "blue"},
-            "B2": {"common_name": "green"},
-            "B3": {"common_name": "red"},
-            "B4": {"common_name": "nir"},
-        },
-        "international_designator": "2021-015A",
-        "WFI": {"meta_band": 2},
-    },
-}
-
-# Ugh...using this while there are accesses as both CBERS-4s
-# and CBERS4, refactor and unify keys...someday
-# Accesses shold be always using SATELLITE-MISSION
-# One approach to do that is to encapsulate all globals within
-# this module and only allow access through functions such
-# as get_satmissions()
-CBERS_AM_MISSIONS["CBERS4"] = CBERS_AM_MISSIONS["CBERS-4"]
-CBERS_AM_MISSIONS["CBERS4A"] = CBERS_AM_MISSIONS["CBERS-4A"]
-CBERS_AM_MISSIONS["AMAZONIA1"] = CBERS_AM_MISSIONS["AMAZONIA-1"]
-
-BASE_COLLECTION = OrderedDict(
-    {
-        "stac_extensions": [
-            "https://stac-extensions.github.io/item-assets/v1.0.0/schema.json"
-        ],
-        "license": "CC-BY-SA-3.0",
         "providers": [
             {
                 "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
@@ -200,6 +187,58 @@ BASE_COLLECTION = OrderedDict(
                 "url": "https://registry.opendata.aws/cbers/",
             },
         ],
+    },
+    "AMAZONIA-1": {
+        "interval": [["2021-02-28T00:00:00Z", None]],
+        "quicklook": {"extension": "png", "type": "png"},
+        "instruments": ["WFI"],
+        "band": {
+            "B1": {"common_name": "blue"},
+            "B2": {"common_name": "green"},
+            "B3": {"common_name": "red"},
+            "B4": {"common_name": "nir"},
+        },
+        "international_designator": "2021-015A",
+        "WFI": {"meta_band": 2},
+        "providers": [
+            {
+                "name": "Instituto Nacional de Pesquisas Espaciais, INPE",
+                "roles": ["producer"],
+                "url": "http://www.inpe.br/amazonia1",
+            },
+            {
+                "name": "AMS Kepler",
+                "roles": ["processor"],
+                "description": "Convert INPE's original TIFF to COG "
+                "and copy to Amazon Web Services",
+                "url": "https://amskepler.com",
+            },
+            {
+                "name": "Amazon Web Services",
+                "roles": ["host"],
+                "url": "https://registry.opendata.aws/amazonia",
+            },
+        ],
+    },
+}
+
+# Ugh...using this while there are accesses as both CBERS-4s
+# and CBERS4, refactor and unify keys...someday
+# Accesses shold be always using SATELLITE-MISSION
+# One approach to do that is to encapsulate all globals within
+# this module and only allow access through functions such
+# as get_satmissions()
+CBERS_AM_MISSIONS["CBERS4"] = CBERS_AM_MISSIONS["CBERS-4"]
+CBERS_AM_MISSIONS["CBERS4A"] = CBERS_AM_MISSIONS["CBERS-4A"]
+CBERS_AM_MISSIONS["AMAZONIA1"] = CBERS_AM_MISSIONS["AMAZONIA-1"]
+
+BASE_COLLECTION = OrderedDict(
+    {
+        "stac_extensions": [
+            "https://stac-extensions.github.io/item-assets/v1.0.0/schema.json"
+        ],
+        "license": "CC-BY-SA-3.0",
+        "providers": None,
         "extent": {
             "spatial": {"bbox": [[-180.0, -83.0, 180.0, 83.0]],},
             "temporal": {"interval": None},

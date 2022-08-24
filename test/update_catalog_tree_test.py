@@ -13,6 +13,7 @@ from cbers2stac.layers.common.utils import STAC_VERSION
 from cbers2stac.update_catalog_tree.code import (
     base_stac_catalog,
     build_catalog_from_s3,
+    get_base_collection,
     get_catalog_info,
     get_catalogs_from_s3,
     get_items_from_s3,
@@ -272,6 +273,15 @@ def test_build_catalog_from_s3():
     assert catalog["links"][-1]["rel"] == "child"
     assert catalog["links"][-1]["href"] == "111/catalog.json"
     catv.validate_dict(catalog)
+
+
+def test_get_base_collection():
+    """test_get_base_collection."""
+    col = get_base_collection(sat_mission="CBERS4", camera="AWFI")
+    assert col["providers"][0]["url"] == "http://www.cbers.inpe.br"
+
+    col = get_base_collection(sat_mission="AMAZONIA1", camera="WFI")
+    assert col["providers"][0]["url"] == "http://www.inpe.br/amazonia1"
 
 
 @pytest.mark.parametrize(

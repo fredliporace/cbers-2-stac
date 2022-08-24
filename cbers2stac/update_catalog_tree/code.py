@@ -7,7 +7,7 @@ import re
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
@@ -177,9 +177,7 @@ def sqs_messages(queue):
         yield retd
 
 
-def get_base_collection(
-    sat_mission: str, camera: Optional[str] = None
-) -> Dict[str, Any]:
+def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     """
     Return the base collection for the camera.
 
@@ -198,6 +196,7 @@ def get_base_collection(
     collection["extent"]["temporal"]["interval"] = CBERS_AM_MISSIONS[sat_mission][
         "interval"
     ]
+    collection["providers"] = CBERS_AM_MISSIONS[sat_mission]["providers"]
 
     return collection
 
@@ -252,6 +251,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
             sat_mission = f"{satellite}{mission}"
         else:
             sat_mission = satellite
+        assert camera is not None
         stac_catalog = get_base_collection(sat_mission, camera)
         stac_catalog = {**{"type": "Collection"}, **stac_catalog}
 
