@@ -48,6 +48,7 @@ jobs:
           path: |
             ~/.cache/pip
             ~/.cache/pre-commit
+            .tox
           key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('setup.py', 'constraints.txt') }}
 
       - name: Install dependencies
