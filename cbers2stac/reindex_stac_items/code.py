@@ -145,7 +145,7 @@ def consume_stac_reconcile_queue_handler(
         response = get_client("sqs").receive_message(QueueUrl=event["queue"])
         receipt_handle = response["Messages"][0]["ReceiptHandle"]
         send_stac_items_to_queue(
-            bucket=os.environ["CBERS_STAC_BUCKET"],
+            bucket=os.environ["STAC_BUCKET"],
             prefix=response["Messages"][0]["Body"],
             queue=os.environ["insert_into_elasticsearch_queue_url"],
         )
@@ -159,7 +159,7 @@ def consume_stac_reconcile_queue_handler(
         # Lambda called from SQS trigger
         for record in event["Records"]:
             send_stac_items_to_queue(
-                bucket=os.environ["CBERS_STAC_BUCKET"],
+                bucket=os.environ["STAC_BUCKET"],
                 prefix=record["body"],
                 queue=os.environ["insert_into_elasticsearch_queue_url"],
             )
@@ -174,7 +174,7 @@ def populate_stac_reconcile_queue_handler(
     """
 
     return populate_queue_with_subdirs(
-        bucket=os.environ["CBERS_STAC_BUCKET"],
+        bucket=os.environ["STAC_BUCKET"],
         prefix=event["prefix"],
         queue=os.environ["stac_reconcile_queue_url"],
     )

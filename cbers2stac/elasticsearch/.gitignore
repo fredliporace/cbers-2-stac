@@ -1,2 +1,12 @@
 *-info/
-utils.py
+aws_requests_auth/
+bin/
+certifi/
+charset_normalizer/
+dateutil/
+elasticsearch/
+elasticsearch_dsl/
+idna/
+requests/
+urllib3/
+six.py

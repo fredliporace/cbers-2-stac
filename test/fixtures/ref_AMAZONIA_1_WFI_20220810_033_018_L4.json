@@ -1,0 +1,129 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/view/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
+    "https://stac-extensions.github.io/sat/v1.0.0/schema.json"
+  ],
+  "id": "AMAZONIA_1_WFI_20220810_033_018_L4",
+  "type": "Feature",
+  "geometry": {
+    "type": "MultiPolygon",
+    "coordinates": [
+      [
+        [
+          [
+            -43.39588,
+            -20.55836
+          ],
+          [
+            -39.153037,
+            -21.278641
+          ],
+          [
+            -37.565482,
+            -14.471335
+          ],
+          [
+            -41.648783,
+            -13.793701
+          ],
+          [
+            -43.39588,
+            -20.55836
+          ]
+        ]
+      ]
+    ]
+  },
+  "bbox": [
+    -43.422677,
+    -21.25324,
+    -37.558733,
+    -13.72715
+  ],
+  "collection": "AMAZONIA1-WFI",
+  "properties": {
+    "datetime": "2022-08-10T13:01:35Z",
+    "platform": "amazonia-1",
+    "instruments": [
+      "WFI"
+    ],
+    "gsd": 64.0,
+    "view:sun_azimuth": 38.3485,
+    "view:sun_elevation": 48.9478,
+    "view:off_nadir": 0.000120206,
+    "proj:epsg": 32724,
+    "sat:platform_international_designator": "2021-015A",
+    "sat:orbit_state": "descending",
+    "amazonia:data_type": "L4",
+    "amazonia:path": 33,
+    "amazonia:row": 18
+  },
+  "links": [
+    {
+      "rel": "self",
+      "href": "https://cbers-stac.s3.amazonaws.com/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4.json"
+    },
+    {
+      "rel": "parent",
+      "href": "https://cbers-stac.s3.amazonaws.com/AMAZONIA1/WFI/033/018/catalog.json"
+    },
+    {
+      "rel": "collection",
+      "href": "https://cbers-stac.s3.amazonaws.com/AMAZONIA1/WFI/collection.json"
+    }
+  ],
+  "assets": {
+    "thumbnail": {
+      "href": "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018.png",
+      "type": "image/png"
+    },
+    "metadata": {
+      "href": "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.xml",
+      "title": "INPE original metadata",
+      "type": "text/xml"
+    },
+    "B1": {
+      "href": "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND1.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B1",
+          "common_name": "blue"
+        }
+      ]
+    },
+    "B2": {
+      "href": "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND2.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B2",
+          "common_name": "green"
+        }
+      ]
+    },
+    "B3": {
+      "href": "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND3.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B3",
+          "common_name": "red"
+        }
+      ]
+    },
+    "B4": {
+      "href": "s3://cbers-pds/AMAZONIA1/WFI/033/018/AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018_L4_LEFT_BAND4.tif",
+      "type": "image/tiff; application=geotiff; profile=cloud-optimized",
+      "eo:bands": [
+        {
+          "name": "B4",
+          "common_name": "nir"
+        }
+      ]
+    }
+  }
+}

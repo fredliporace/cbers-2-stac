@@ -1,23 +1,29 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-"""Converts CBERS-4 scene metadata (xml) to stac item"""
+"""Converts CBERS-4/4A and AMAZONIA1 scene metadata (xml) to stac item"""
 
 import json
 import os
 import re
 import statistics
-import sys
+import typing
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
+from typing import List
 
 import utm
 
 from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
-    CBERS_MISSIONS,
+    CBERS_AM_MISSIONS,
     STAC_VERSION,
     build_absolute_prefix,
     build_collection_name,
+)
+
+TIF_XML_REGEX = re.compile(
+    r"(?P<satellite>\w+)_(?P<mission>\w+)_(?P<camera>\w+)_"
+    r"(?P<date>\d{8})_(?P<path>\d{3})_(?P<row>\d{3})_"
+    r"(?P<level>[^\W_]+)(?P<optics>_LEFT|_RIGHT)?_"
+    r"BAND(?P<band>\d+)\.(tif|xml)"
 )
 
 
@@ -37,29 +43,27 @@ def epsg_from_utm_zone(zone):
     return epsg
 
 
-def get_keys_from_cbers(
-    cbers_metadata,
-):  # pylint: disable=too-many-statements,too-many-locals
+@typing.no_type_check
+def get_keys_from_cbers_am(  # pylint: disable=too-many-statements,too-many-locals
+    cb_am_metadata: str,
+):
     """
     Input:
-    cbers_metadata(sting): CBERS metadata file location
+    cb_am_metadata: CBERS/AM metadata file location
     Output:
     dict: Dictionary with stac information
     """
 
     nsp = {"x": "http://www.gisplan.com.br/xmlsat"}
-    metadata = dict()
+    metadata = {}
 
-    # match = re.match(r'.*_(?P<camera>\w+)_(?P<ymd>\d{8})_.*', cbers_metadata)
-    # assert match
-    # ymd = match.group('ymd')
+    match = TIF_XML_REGEX.match(cb_am_metadata.split("/")[-1])
+    assert match, f"Can't match {cb_am_metadata}"
 
-    # import nose.tools; nose.tools.set_trace()
-
-    tree = ET.parse(cbers_metadata)
+    tree = ET.parse(cb_am_metadata)
     original_root = tree.getroot()
 
-    # satellite node information, checking for CBERS-04A WFI
+    # satellite node information, checking for CBERS-04A/AMAZONIA1 WFI
     # special case
     left_root = original_root.find("x:leftCamera", nsp)
     if left_root:
@@ -79,6 +83,9 @@ def get_keys_from_cbers(
         satellite=metadata["mission"],
         mission=metadata["number"],
         camera=metadata["sensor"],
+    )
+    metadata["optics"] = (
+        match.groupdict()["optics"] if match.groupdict()["optics"] else ""
     )
 
     # image node information
@@ -119,7 +126,7 @@ def get_keys_from_cbers(
     metadata["sun_azimuth"] = sun_position.find("x:sunAzimuth", nsp).text
 
     if left_root:
-        # Update fields for CB04A WFI special case
+        # Update fields for CB04A / AMAZONIA WFI special case
         lidata = left_root.find("x:image", nsp).find("x:imageData", nsp)
         ridata = right_root.find("x:image", nsp).find("x:imageData", nsp)
         metadata["ur_lat"] = ridata.find("x:UR", nsp).find("x:latitude", nsp).text
@@ -207,10 +214,10 @@ def get_keys_from_cbers(
 
     # availableBands node information
     available_bands = root.find("x:availableBands", nsp)
-    metadata["bands"] = list()
+    metadata["bands"] = []
     for band in available_bands.findall("x:band", nsp):
         metadata["bands"].append(band.text)
-        key = "band_%s_gain" % (band.text)
+        key = f"band_{band.text}_gain"
         metadata[key] = band.attrib.get("gain")
 
     # viewing node information
@@ -219,31 +226,34 @@ def get_keys_from_cbers(
     metadata["acquisition_day"] = metadata["acquisition_date"].split(" ")[0]
 
     # derived fields
-    metadata["no_level_id"] = "CBERS_%s_%s_%s_" "%03d_%03d" % (
-        metadata["number"],
-        metadata["sensor"],
-        metadata["acquisition_day"].replace("-", ""),
-        int(metadata["path"]),
-        int(metadata["row"]),
+    metadata["no_level_id"] = (
+        f"{metadata['mission']}_{metadata['number']}_{metadata['sensor']}_"
+        f"{metadata['acquisition_day'].replace('-', '')}_"
+        f"{int(metadata['path']):03d}_{int(metadata['row']):03d}"
     )
 
     # example: CBERS4/MUX/071/092/CBERS_4_MUX_20171105_071_092_L2
     metadata["download_url"] = (
-        "CBERS%s/"
+        "%s%s/"
         "%s/"
         "%03d/%03d/"
         "%s"
         % (
+            metadata["mission"],
             metadata["number"],
             metadata["sensor"],
             int(metadata["path"]),
             int(metadata["row"]),
-            re.sub(r"_BAND\d+.xml", "", os.path.basename(cbers_metadata)),
+            re.sub(
+                r"(_LEFT|_RIGHT)?_BAND\d+.xml", "", os.path.basename(cb_am_metadata)
+            ),
         )
     )
-    metadata["sat_sensor"] = "CBERS%s/%s" % (metadata["number"], metadata["sensor"])
-    metadata["sat_number"] = "{}-{}".format(metadata["mission"], metadata["number"])
-    metadata["meta_file"] = os.path.basename(cbers_metadata)
+    metadata[
+        "sat_sensor"
+    ] = f"{metadata['mission']}{metadata['number']}/{metadata['sensor']}"
+    metadata["sat_number"] = f"{metadata['mission']}-{metadata['number']}"
+    metadata["meta_file"] = os.path.basename(cb_am_metadata)
 
     return metadata
 
@@ -276,19 +286,19 @@ def build_asset(
     if band_id is not None:
         eo_band = OrderedDict()
         eo_band["name"] = band_id
-        eo_band["common_name"] = CBERS_MISSIONS[sat_number]["band"][band_id][
+        eo_band["common_name"] = CBERS_AM_MISSIONS[sat_number]["band"][band_id][
             "common_name"
         ]
         asset["eo:bands"] = [eo_band]
     return asset
 
 
-def build_stac_item_keys(cbers, buckets):
+def build_stac_item_keys(cbers_am, buckets):
     """
-    Builds a STAC item dict based on CBERS metadata
+    Builds a STAC item dict based on CBERS_AM metadata
 
     Input:
-    cbers(dict): CBERS metadata
+    cbers_am(dict): CBERS_AM metadata
     buckets(dict): buckets identification
     """
 
@@ -301,13 +311,18 @@ def build_stac_item_keys(cbers, buckets):
         "https://stac-extensions.github.io/eo/v1.0.0/schema.json",
         "https://stac-extensions.github.io/sat/v1.0.0/schema.json",
     ]
-    stac_item["id"] = "CBERS_%s_%s_%s_" "%03d_%03d_L%s" % (
-        cbers["number"],
-        cbers["sensor"],
-        cbers["acquisition_day"].replace("-", ""),
-        int(cbers["path"]),
-        int(cbers["row"]),
-        cbers["processing_level"],
+    stac_item["id"] = (
+        "%s_%s_%s_%s_"  # pylint: disable=consider-using-f-string
+        "%03d_%03d_L%s"
+        % (
+            cbers_am["mission"],
+            cbers_am["number"],
+            cbers_am["sensor"],
+            cbers_am["acquisition_day"].replace("-", ""),
+            int(cbers_am["path"]),
+            int(cbers_am["row"]),
+            cbers_am["processing_level"],
+        )
     )
 
     stac_item["type"] = "Feature"
@@ -317,44 +332,44 @@ def build_stac_item_keys(cbers, buckets):
     stac_item["geometry"]["coordinates"] = [
         [
             [
-                (float(cbers["ll_lon"]), float(cbers["ll_lat"])),
-                (float(cbers["lr_lon"]), float(cbers["lr_lat"])),
-                (float(cbers["ur_lon"]), float(cbers["ur_lat"])),
-                (float(cbers["ul_lon"]), float(cbers["ul_lat"])),
-                (float(cbers["ll_lon"]), float(cbers["ll_lat"])),
+                (float(cbers_am["ll_lon"]), float(cbers_am["ll_lat"])),
+                (float(cbers_am["lr_lon"]), float(cbers_am["lr_lat"])),
+                (float(cbers_am["ur_lon"]), float(cbers_am["ur_lat"])),
+                (float(cbers_am["ul_lon"]), float(cbers_am["ul_lat"])),
+                (float(cbers_am["ll_lon"]), float(cbers_am["ll_lat"])),
             ]
         ]
     ]
 
     # Order is lower left lon, lat; upper right lon, lat
     stac_item["bbox"] = (
-        float(cbers["bb_ll_lon"]),
-        float(cbers["bb_ll_lat"]),
-        float(cbers["bb_ur_lon"]),
-        float(cbers["bb_ur_lat"]),
+        float(cbers_am["bb_ll_lon"]),
+        float(cbers_am["bb_ll_lat"]),
+        float(cbers_am["bb_ur_lon"]),
+        float(cbers_am["bb_ur_lat"]),
     )
 
     # Collection
-    stac_item["collection"] = cbers["collection"]
+    stac_item["collection"] = cbers_am["collection"]
 
     stac_item["properties"] = OrderedDict()
-    datetime = cbers["acquisition_date"].replace(" ", "T")
+    datetime = cbers_am["acquisition_date"].replace(" ", "T")
     datetime = re.sub(r"\.\d+", "Z", datetime)
     stac_item["properties"]["datetime"] = datetime
 
     # Common metadata
-    stac_item["properties"]["platform"] = cbers["sat_number"].lower()
-    stac_item["properties"]["instruments"] = [cbers["sensor"]]
+    stac_item["properties"]["platform"] = cbers_am["sat_number"].lower()
+    stac_item["properties"]["instruments"] = [cbers_am["sensor"]]
     stac_item["properties"]["gsd"] = BASE_CAMERA[
-        f"{cbers['mission']}{cbers['number']}"
-    ][cbers["sensor"]]["summaries"]["gsd"][0]
+        f"{cbers_am['mission']}{cbers_am['number']}"
+    ][cbers_am["sensor"]]["summaries"]["gsd"][0]
 
     # Links
-    meta_prefix = "https://s3.amazonaws.com/%s/" % (buckets["metadata"])
-    main_prefix = "s3://%s/" % (buckets["cog"])
-    stac_prefix = "https://%s.s3.amazonaws.com/" % (buckets["stac"])
+    meta_prefix = f"https://s3.amazonaws.com/{buckets['metadata']}/"
+    main_prefix = f"s3://{buckets['cog']}/"
+    stac_prefix = f"https://{buckets['stac']}.s3.amazonaws.com/"
     # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg
-    stac_item["links"] = list()
+    stac_item["links"] = []
 
     # links, self
     stac_item["links"].append(
@@ -362,9 +377,9 @@ def build_stac_item_keys(cbers, buckets):
             "self",
             build_absolute_prefix(
                 buckets["stac"],
-                cbers["sat_sensor"],
-                int(cbers["path"]),
-                int(cbers["row"]),
+                cbers_am["sat_sensor"],
+                int(cbers_am["path"]),
+                int(cbers_am["row"]),
             )
             + stac_item["id"]
             + ".json",
@@ -377,9 +392,9 @@ def build_stac_item_keys(cbers, buckets):
             "parent",
             build_absolute_prefix(
                 buckets["stac"],
-                cbers["sat_sensor"],
-                int(cbers["path"]),
-                int(cbers["row"]),
+                cbers_am["sat_sensor"],
+                int(cbers_am["path"]),
+                int(cbers_am["row"]),
             )
             + "catalog.json",
         )
@@ -390,10 +405,10 @@ def build_stac_item_keys(cbers, buckets):
         build_link(
             rel="collection",
             href=stac_prefix
-            + cbers["mission"]
-            + cbers["number"]
+            + cbers_am["mission"]
+            + cbers_am["number"]
             + "/"
-            + cbers["sensor"]
+            + cbers_am["sensor"]
             + "/collection.json",
         )
     )
@@ -403,67 +418,75 @@ def build_stac_item_keys(cbers, buckets):
     # eo:cloud_cover
 
     # VIEW extension
-    stac_item["properties"]["view:sun_azimuth"] = float(cbers["sun_azimuth"])
-    stac_item["properties"]["view:sun_elevation"] = float(cbers["sun_elevation"])
-    stac_item["properties"]["view:off_nadir"] = abs(float(cbers["roll"]))
+    stac_item["properties"]["view:sun_azimuth"] = float(cbers_am["sun_azimuth"])
+    stac_item["properties"]["view:sun_elevation"] = float(cbers_am["sun_elevation"])
+    stac_item["properties"]["view:off_nadir"] = abs(float(cbers_am["roll"]))
 
     # PROJECTION extension
-    assert cbers["projection_name"] == "UTM", (
-        "Unsupported projection " + cbers["projection_name"]
+    assert cbers_am["projection_name"] == "UTM", (
+        "Unsupported projection " + cbers_am["projection_name"]
     )
-    utm_zone = int(utm.from_latlon(float(cbers["ct_lat"]), float(cbers["ct_lon"]))[2])
-    if float(cbers["ct_lat"]) < 0.0:
+    utm_zone = int(
+        utm.from_latlon(float(cbers_am["ct_lat"]), float(cbers_am["ct_lon"]))[2]
+    )
+    if float(cbers_am["ct_lat"]) < 0.0:
         utm_zone *= -1
     stac_item["properties"]["proj:epsg"] = int(epsg_from_utm_zone(utm_zone))
 
     # SATELLITE extension
-    stac_item["properties"]["sat:platform_international_designator"] = CBERS_MISSIONS[
-        cbers["sat_number"]
-    ]["international_designator"]
+    stac_item["properties"][
+        "sat:platform_international_designator"
+    ] = CBERS_AM_MISSIONS[cbers_am["sat_number"]]["international_designator"]
     stac_item["properties"]["sat:orbit_state"] = (
-        "descending" if float(cbers["vz"]) < 0 else "ascending"
+        "descending" if float(cbers_am["vz"]) < 0 else "ascending"
     )
 
     # CBERS section
-    stac_item["properties"]["cbers:data_type"] = "L" + cbers["processing_level"]
-    stac_item["properties"]["cbers:path"] = int(cbers["path"])
-    stac_item["properties"]["cbers:row"] = int(cbers["row"])
+    stac_item["properties"][f"{cbers_am['mission'].lower()}:data_type"] = (
+        "L" + cbers_am["processing_level"]
+    )
+    stac_item["properties"][f"{cbers_am['mission'].lower()}:path"] = int(
+        cbers_am["path"]
+    )
+    stac_item["properties"][f"{cbers_am['mission'].lower()}:row"] = int(cbers_am["row"])
 
     # Assets
     stac_item["assets"] = OrderedDict()
     stac_item["assets"]["thumbnail"] = build_asset(
         meta_prefix
-        + cbers["download_url"]
+        + cbers_am["download_url"]
         + "/"
-        + cbers["no_level_id"]
+        + cbers_am["no_level_id"]
         + "."
-        + CBERS_MISSIONS[cbers["sat_number"]]["quicklook"]["extension"],
-        cbers["sat_number"],
-        asset_type="image/" + CBERS_MISSIONS[cbers["sat_number"]]["quicklook"]["type"],
+        + CBERS_AM_MISSIONS[cbers_am["sat_number"]]["quicklook"]["extension"],
+        cbers_am["sat_number"],
+        asset_type="image/"
+        + CBERS_AM_MISSIONS[cbers_am["sat_number"]]["quicklook"]["type"],
     )
 
     stac_item["assets"]["metadata"] = build_asset(
-        main_prefix + cbers["download_url"] + "/" + cbers["meta_file"],
-        cbers["sat_number"],
+        main_prefix + cbers_am["download_url"] + "/" + cbers_am["meta_file"],
+        cbers_am["sat_number"],
         asset_type="text/xml",
         title="INPE original metadata",
     )
-    for band in cbers["bands"]:
+    for band in cbers_am["bands"]:
         band_id = "B" + band
-        gsd = CBERS_MISSIONS[cbers["sat_number"]]["band"][band_id].get("gsd")
+        gsd = CBERS_AM_MISSIONS[cbers_am["sat_number"]]["band"][band_id].get("gsd")
         if gsd:
             properties = {"gsd": gsd}
         else:
             properties = None
         stac_item["assets"][band_id] = build_asset(
             main_prefix
-            + cbers["download_url"]
+            + cbers_am["download_url"]
             + "/"
             + stac_item["id"]
+            + cbers_am["optics"]
             + "_BAND"
             + band
             + ".tif",
-            cbers["sat_number"],
+            cbers_am["sat_number"],
             asset_type="image/tiff; application=geotiff; " "profile=cloud-optimized",
             band_id=band_id,
             properties=properties,
@@ -471,7 +494,7 @@ def build_stac_item_keys(cbers, buckets):
     return stac_item
 
 
-def create_json_item(stac_item, filename):
+def create_json_item(stac_item, filename: str) -> None:
     """
     Dumps STAC item into json file
     Input:
@@ -479,8 +502,30 @@ def create_json_item(stac_item, filename):
     filename(string): ditto
     """
 
-    with open(filename, "w") as outfile:
+    with open(filename, "w", encoding="utf-8") as outfile:
         json.dump(stac_item, outfile, indent=2)
+
+
+def candidate_xml_files(xml_file: str) -> List[str]:
+    """
+    Return a list of candidate names for xml files, including
+    optics for Amazonia-1 xml files.
+
+    Args:
+      xml_file: XML filename
+    Return:
+      List with options for XML filenames.
+    """
+    match = TIF_XML_REGEX.match(xml_file.split("/")[-1])
+    assert match, f"Can't match {xml_file}"
+    group = match.groupdict()
+    xml_options = []
+    if group["satellite"] == "AMAZONIA":
+        for optics in ["", "_LEFT", "_RIGHT"]:
+            xml_options.append(re.sub(r"_L(\d+)_", f"_L\\g<1>{optics}_", xml_file))
+    else:
+        xml_options.append(xml_file)
+    return xml_options
 
 
 def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets):
@@ -497,23 +542,8 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets
     Dictionary based on INPE's metadata
     """
 
-    meta = get_keys_from_cbers(inpe_metadata_filename)
+    meta = get_keys_from_cbers_am(inpe_metadata_filename)
     stac_meta = build_stac_item_keys(meta, buckets)
     if stac_metadata_filename:
         create_json_item(stac_meta, stac_metadata_filename)
     return stac_meta
-
-
-if __name__ == "__main__":
-    # Command line arguments
-    # inpe_metadata filename (1)
-    # stac_metadata filename (2)
-
-    BUCKETS = {"metadata": "cbers-meta-pds", "cog": "cbers-pds", "stac": "cbers-stac"}
-
-    assert sys.argv == 3
-    convert_inpe_to_stac(
-        inpe_metadata_filename=sys.argv[1],
-        stac_metadata_filename=sys.argv[2],
-        buckets=BUCKETS,
-    )

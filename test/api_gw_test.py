@@ -46,7 +46,7 @@ def api_gw_lambda_integrate_deploy(
         restApiId=api["id"],
         resourceId=api_resource["id"],
         httpMethod=http_method,
-        type="AWS",
+        type="AWS_PROXY",
         integrationHttpMethod="POST",
         uri=lambda_integration_arn,
     )
@@ -105,7 +105,7 @@ def api_gw_method(request):
     {
         "name": "stac_endpoint",
         "handler": "code.handler",
-        "environment": {"CBERS_STAC_BUCKET": "bucket",},
+        "environment": {"STAC_BUCKET": "bucket",},
         "timeout": 30,
         "layers": (
             {
@@ -160,12 +160,21 @@ def test_item_search_get(
     test_item_search_get
     """
 
+    # {'hostname': 'my-domain.us-east-1.es.localhost.localstack.cloud', 'port': '4566'}
+
     api_client, api, api_resource = api_gw_method
     lambda_client, lambda_func = lambda_function  # pylint: disable=unused-variable
     # ES_ENDPOINT is set by lambda_function
     lambda_client.update_function_configuration(
         FunctionName=lambda_func["FunctionName"],
-        Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
+        Environment={
+            "Variables": {
+                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                # ES_PORT not required if we are using complete URL as ES_ENDPOINT
+                # "ES_PORT": "4566",
+                "ES_SSL": "NO",
+            }
+        },
     )
 
     populate_es_test_case_1(es_client)
@@ -266,7 +275,12 @@ def test_item_search_post(
     # ES_ENDPOINT is set by lambda_function
     lambda_client.update_function_configuration(
         FunctionName=lambda_func["FunctionName"],
-        Environment={"Variables": {"ES_PORT": "4571", "ES_SSL": "NO",}},
+        Environment={
+            "Variables": {
+                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                "ES_SSL": "NO",
+            }
+        },
     )
 
     populate_es_test_case_1(es_client)

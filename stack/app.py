@@ -20,6 +20,7 @@ from aws_cdk import aws_s3_deployment as s3_deployment
 from aws_cdk import aws_sns as sns
 from aws_cdk import aws_sns_subscriptions as sns_subscriptions
 from aws_cdk import aws_sqs as sqs
+from aws_cdk import aws_synthetics as synthetics
 from aws_cdk import core
 from aws_cdk.aws_cloudwatch import ComparisonOperator
 from aws_cdk.aws_lambda_event_sources import SqsEventSource
@@ -36,7 +37,7 @@ settings = StackSettings()
 class CBERS2STACStack(core.Stack):
     """CBERS2STACStack"""
 
-    lambdas_env_: Dict[str, str] = dict()
+    lambdas_env_: Dict[str, str] = {}
 
     def create_queue(self, **kwargs: Any) -> sqs.Queue:
         """
@@ -168,9 +169,7 @@ class CBERS2STACStack(core.Stack):
         )
         # Subscription for CB4A (all cameras)
         sns.Topic.from_topic_arn(
-            self,
-            id="CB4A",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4AQuicklook",
+            self, id="CB4A-AM1", topic_arn=settings.cb4a_am1_topic,
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
@@ -583,14 +582,12 @@ class CBERS2STACStack(core.Stack):
             description="Implement /search endpoint",
         )
 
-        for lambda_f in self.api_lambdas_:
-            self.api_lambdas_[lambda_f].grant_invoke(
-                iam.ServicePrincipal("apigateway.amazonaws.com")
-            )
+        for _, lambda_f in self.api_lambdas_.items():
+            lambda_f.grant_invoke(iam.ServicePrincipal("apigateway.amazonaws.com"))
 
     def create_api_gateway(self) -> None:
         """
-        Create API gateway and lambda integration
+        Create API gateway, lambda integration and canary
         """
 
         # api_stage = core.CfnParameter(self, id="ApiStage", type=str)
@@ -603,7 +600,7 @@ class CBERS2STACStack(core.Stack):
             "AWS::Include", {"Location": openapi_asset.s3_object_url}
         )
         definition = apigateway.AssetApiDefinition.from_inline(data)
-        apigateway.SpecRestApi(
+        apigw = apigateway.SpecRestApi(
             self,
             id="stacapi",
             api_definition=definition,
@@ -611,6 +608,27 @@ class CBERS2STACStack(core.Stack):
                 logging_level=apigateway.MethodLoggingLevel.INFO
             ),
         )
+        # Canary to check search endpoint
+        canary = synthetics.Canary(
+            self,
+            "SearchEndpointCanary",
+            schedule=synthetics.Schedule.rate(core.Duration.hours(1)),
+            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
+            test=synthetics.Test.custom(
+                code=synthetics.Code.from_asset("cbers2stac/canary"),
+                handler="api_canary.handler",
+            ),
+            environment_variables={"ENDPOINT_URL": apigw.url_for_path() + "/search"},
+        )
+        canary_alarm = cloudwatch.Alarm(
+            self,
+            "CanaryAlarm",
+            metric=canary.metric_failed(period=core.Duration.hours(1)),
+            evaluation_periods=1,
+            threshold=0,
+            comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
+        )
+        canary_alarm.add_alarm_action(cw_actions.SnsAction(self.topics_["alarm_topic"]))
 
     def create_es_domain(self) -> None:
         """
@@ -663,30 +681,28 @@ class CBERS2STACStack(core.Stack):
         super().__init__(scope, stack_id, description=description, *kwargs)
 
         # All stack queues
-        self.queues_: Dict[str, sqs.Queue] = dict()
+        self.queues_: Dict[str, sqs.Queue] = {}
 
         # All stack topics
-        self.topics_: Dict[str, sns.Topic] = dict()
+        self.topics_: Dict[str, sns.Topic] = {}
 
         # All lambda layers
-        self.layers_: Dict[str, aws_lambda.LayerVersion] = dict()
+        self.layers_: Dict[str, aws_lambda.LayerVersion] = {}
 
         # All lambdas and permissions (except API lambdas)
-        self.lambdas_: Dict[str, aws_lambda.Function] = dict()
-        self.lambdas_perms_: List[iam.PolicyStatement] = list()
+        self.lambdas_: Dict[str, aws_lambda.Function] = {}
+        self.lambdas_perms_: List[iam.PolicyStatement] = []
 
         # All API lambdas and permissions
-        self.api_lambdas_: Dict[str, aws_lambda.Function] = dict()
-        self.api_lambdas_perms_: List[iam.PolicyStatement] = list()
+        self.api_lambdas_: Dict[str, aws_lambda.Function] = {}
+        self.api_lambdas_perms_: List[iam.PolicyStatement] = []
 
         # Parameters that will not typically change and thus
         # are defined as fixed ENVs
         self.lambdas_env_.update(
             {
-                # The CBERS PDS bucket (COGs, metadata)
-                "CBERS_PDS_BUCKET": "cbers-pds",
                 # The CBERS metadata bucket (metadata only)
-                "CBERS_META_PDS_BUCKET": "cbers-meta-pds",
+                "COG_PDS_META_PDS": settings.cog_pds_meta_pds,
                 # If 1 then processed messages are deleted from queues
                 "DELETE_MESSAGES": "1",
             }
@@ -706,13 +722,13 @@ class CBERS2STACStack(core.Stack):
         if settings.stac_bucket_name is None:
             raise RuntimeError("STACK_STAC_BUCKET_NAME is mandatory")
             # Use external STAC bucket name
-            # self.lambdas_env_.update({"CBERS_STAC_BUCKET": settings.stac_bucket_name})
+            # self.lambdas_env_.update({"STAC_BUCKET": settings.stac_bucket_name})
 
         # Create and use internal STAC bucket
         stac_working_bucket = s3.Bucket(
             self, "stac_working_bucket", bucket_name=settings.stac_bucket_name
         )
-        self.lambdas_env_.update({"CBERS_STAC_BUCKET": stac_working_bucket.bucket_name})
+        self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["s3:PutObject", "s3:PutObjectAcl"],
@@ -788,7 +804,7 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["sqs:*"],
-                resources=[self.queues_[queue].queue_arn for queue in self.queues_],
+                resources=[queue.queue_arn for _, queue in self.queues_.items()],
             )
         )
         # Full access to all buckets within stack
@@ -817,14 +833,14 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_perms_.append(
             iam.PolicyStatement(
                 actions=["sns:*"],
-                resources=[self.topics_[topic].topic_arn for topic in self.topics_],
+                resources=[topic.topic_arn for _, topic in self.topics_.items()],
             )
         )
 
         # Permissions for all (non API) lambdas
         for perm in self.lambdas_perms_:
-            for lambda_f in self.lambdas_:
-                self.lambdas_[lambda_f].add_to_role_policy(perm)
+            for _, lambda_f in self.lambdas_.items():
+                lambda_f.add_to_role_policy(perm)
 
         # API
         if settings.enable_api:

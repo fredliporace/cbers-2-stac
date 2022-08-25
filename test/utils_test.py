@@ -30,10 +30,10 @@ def test_get_satmissions():
     test_get_satmissions
     """
     smi = get_satmissions(use_hyphen=False)
-    assert set(smi) == set(["CBERS4", "CBERS4A"])
+    assert set(smi) == set(["AMAZONIA1", "CBERS4", "CBERS4A"])
 
     smi = get_satmissions(use_hyphen=True)
-    assert set(smi) == set(["CBERS-4", "CBERS-4A"])
+    assert set(smi) == set(["AMAZONIA-1", "CBERS-4", "CBERS-4A"])
 
 
 def test_build_collection_name():
@@ -50,10 +50,13 @@ def test_collection_utils():
     """test_collection_utils"""
 
     collections = get_collection_ids()
-    assert len(collections) == 7
+    assert len(collections) == 8
 
     mux_prefix = get_collection_s3_key("CBERS4-MUX")
     assert mux_prefix == "CBERS4/MUX/collection.json"
+
+    am1_wfi_prefix = get_collection_s3_key("AMAZONIA1-WFI")
+    assert am1_wfi_prefix == "AMAZONIA1/WFI/collection.json"
 
 
 def test_get_api_stac_root():
@@ -61,7 +64,7 @@ def test_get_api_stac_root():
 
     val = STACValidator(schema_filename="catalog.json")
 
-    with open("test/fixtures/api_event.json", "r") as jfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as jfile:
         event = json.load(jfile)
 
     # core only
@@ -106,7 +109,7 @@ def test_get_api_stac_root():
 def test_parse_api_gateway_event():
     """test_parse_api_gateway_event"""
 
-    with open("test/fixtures/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as cfile:
         event = json.load(cfile)
     parsed = parse_api_gateway_event(event)
     assert parsed["phost"] == "https://stac.amskepler.com"
@@ -119,9 +122,9 @@ def test_parse_api_gateway_event():
 def test_static_to_api_collection():
     """test_static_to_api_collection"""
 
-    with open("test/cbers4muxcollection.json", "r") as cfile:
+    with open("test/cbers4muxcollection.json", "r", encoding="utf-8") as cfile:
         collection = json.load(cfile)
-    with open("test/fixtures/api_event.json", "r") as cfile:
+    with open("test/fixtures/api_event.json", "r", encoding="utf-8") as cfile:
         event = json.load(cfile)
     # from nose.tools import set_trace; set_trace()
     api_collection = static_to_api_collection(collection=collection, event=event)

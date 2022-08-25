@@ -2,6 +2,7 @@
 populate_reconcile_queue_test
 """
 
+import json
 import pathlib
 from test.utils import check_queue_size
 
@@ -17,7 +18,7 @@ def test_populate_queue_with_subdirs(s3_bucket, sqs_queue):
     test_populate_queue_with_subdirs
     """
 
-    s3_client, s3_resource = s3_bucket  # pylint: disable=unused-variable
+    s3_client, _ = s3_bucket
     queue = sqs_queue
 
     fixture_prefix = "test/fixtures/cbers_pds_bucket_structure/"
@@ -35,3 +36,8 @@ def test_populate_queue_with_subdirs(s3_bucket, sqs_queue):
     # Not all subdirs contain .jpg files, MUX/058 and MUX/059 do
     # not contain and hence are not uploaded to the test S3 bucket
     check_queue_size(sqs_queue, 6)
+
+    message = sqs_queue.receive_messages(AttributeNames=["All"])
+    msgdict = json.loads(message[0].body)
+    assert msgdict["bucket"] == "cbers-stac"
+    assert "prefix" in msgdict.keys()

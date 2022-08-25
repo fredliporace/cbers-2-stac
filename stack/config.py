@@ -9,7 +9,7 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     """Application settings"""
 
     name: str = "cbers2stac"
-    description: Optional[str] = "CBERS 4/4A STAC static catalog"
+    description: Optional[str] = "CBERS 4/4A and Amazonia 1 STAC catalogs"
     stage: str = "production"
     operator_email: str
     cost_center: Optional[str]
@@ -20,12 +20,16 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     stac_bucket_enable_cors: Optional[bool] = False
     stac_bucket_public_read: Optional[bool] = False
     stac_bucket_prune: bool = False
+    cog_pds_meta_pds: str
 
+    enable_api: Optional[bool] = False
     es_instance_type: str
     es_volume_size: int
     es_data_nodes: int
 
-    enable_api: Optional[bool] = False
+    cb4a_am1_topic: Optional[
+        str
+    ] = "arn:aws:sns:us-east-1:599544552497:NewCB4AQuicklook"
 
     additional_env: Dict[str, str] = {}
 

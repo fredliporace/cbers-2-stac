@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import traceback
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, Union
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
 from elasticsearch_dsl import Q, Search
@@ -43,9 +43,6 @@ def api_gw_lambda_integration(func):
 
     def inner(event, context):
         try:
-            # Fix to work with localstack environment
-            if os.environ.get("LOCALSTACK_HOSTNAME"):
-                os.environ["ES_ENDPOINT"] = os.environ["LOCALSTACK_HOSTNAME"]
             retmsg = func(event, context)
             retmsg["headers"] = {
                 "Content-Type": "application/json",
@@ -82,7 +79,7 @@ def sqs_messages(queue: str):
         if "Messages" not in response:
             break
         msg = json.loads(response["Messages"][0]["Body"])
-        retd = dict()
+        retd = {}
         retd["stac_item"] = msg["Message"]
         retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
@@ -179,8 +176,8 @@ def bulk_process_insert_queue(
     """
 
     processed_messages = 0
-    receipts = list()
-    items = list()
+    receipts = []
+    items = []
     for msg in sqs_messages(queue):
 
         receipts.append(msg["ReceiptHandle"])
@@ -237,7 +234,7 @@ def bbox_to_es_envelope(els: List[float]) -> List[List[float]]:
     # Make sure that output bbox is top - bottom
     if els[1] < els[3]:
         els[1], els[3] = els[3], els[1]
-    bbox_l = list()
+    bbox_l = []
     bbox_l.append([els[0], els[1]])
     bbox_l.append([els[2], els[3]])
     return bbox_l
@@ -256,25 +253,34 @@ def parse_bbox(bbox: str) -> List[List[float]]:
 
 def es_connect(  # pylint: disable=too-many-arguments
     endpoint: str,
-    port: int,
+    port: int = None,
     use_ssl: bool = True,
     verify_certs: bool = True,
     http_auth=None,
     timeout: int = 60,
-):
+) -> Elasticsearch:
     """
     Connects to ES endpoint, returns Elasticsarch
     low level client.
 
-    :param endpoint str: Elastic endpoint
-    :param port int: endpoint TCP port
-    :param timeout int: timeout in seconds
-    :return: Elastic low level client
-    :rtype: class Elasticsearch
+    Args:
+      endpoint: Elastic endpoint. If port is None then this is assumed
+                to be a RFC-1738 format URL, otherwise it is assumed
+                to be the host part of the endpoint.
+      port: endpoint TCP port
+      timeout: timeout in seconds
+
+    Returns:
+      class Elasticsearch
     """
 
+    hosts: List[Union[str, Dict[str, Union[str, int]]]]
+    if port is not None:
+        hosts = [{"host": endpoint, "port": port}]
+    else:
+        hosts = [endpoint]
     es_client = Elasticsearch(
-        hosts=[{"host": endpoint, "port": port}],
+        hosts=hosts,
         use_ssl=use_ssl,
         verify_certs=verify_certs,
         connection_class=RequestsHttpConnection,
@@ -339,7 +345,7 @@ def bulk_create_document_in_index(
 
     # @todo include timeout option
     # @todo use generator instead of building list
-    stac_updates = list()
+    stac_updates = []
 
     for item in stac_items:
         if not stripped:
@@ -347,7 +353,7 @@ def bulk_create_document_in_index(
         else:
             dict_item = strip_stac_item(json.loads(item))
         if not update_if_exists:
-            bulk_item = dict()
+            bulk_item = {}
             # doc type is deprecated
             # bulk_item["_type"] = "_doc"
             bulk_item["_id"] = dict_item["id"]
@@ -356,7 +362,7 @@ def bulk_create_document_in_index(
             bulk_item["_source"] = dict_item
             stac_updates.append(bulk_item)
         else:
-            bulk_item = dict()
+            bulk_item = {}
             # doc type is deprecated
             # bulk_item["_type"] = "_doc"
             bulk_item["_id"] = dict_item["id"]
@@ -402,7 +408,7 @@ def create_document_in_index(
             request_timeout=timeout,
         )
     else:
-        document = dict()
+        document = {}
         document["doc"] = item
         document["doc_as_upsert"] = True
         es_client.update(
@@ -468,8 +474,8 @@ def stac_search(  # pylint: disable=too-many-arguments
     # https://stackoverflow.com/questions/39263663/elasticsearch-dsl-py-query-formation
     query = search.query()
     if start_date or end_date:
-        date_range: Dict[str, Dict[str, str]] = dict()
-        date_range["properties.datetime"] = dict()
+        date_range: Dict[str, Dict[str, str]] = {}
+        date_range["properties.datetime"] = {}
         if start_date:
             date_range["properties.datetime"]["gte"] = start_date
         if end_date:
@@ -493,7 +499,7 @@ def stac_search(  # pylint: disable=too-many-arguments
     #                      properties__datetime="2017-05-28T09:01:17Z"))
     # query = query.query(Q("match", **{"properties.cbers:data_type":"L2"}))
 
-    # print(json.dumps(query.to_dict(), indent=2))
+    # print(json.dumps(query.to_{}, indent=2))
     return query[(page - 1) * limit : page * limit]
 
 
@@ -641,9 +647,7 @@ def process_query_extension(dsl_query: Search, query_params: dict) -> Search:
                     )
                 )
             else:
-                raise RuntimeError(
-                    "{op} is not a supported operator".format(op=operator)
-                )
+                raise RuntimeError(f"{operator} is not a supported operator")
         # dsl_query = dsl_query.query(Q("match",
         #                              **{"properties."+key:query_params[key]}))
 
@@ -660,7 +664,7 @@ def query_from_event(  # pylint: disable=too-many-branches
     :return: Tuple with DSL query and processed parameters as a dict
     """
 
-    document: Dict[str, Any] = dict()
+    document: Dict[str, Any] = {}
     if event["httpMethod"] == "GET":
         qsp = event["queryStringParameters"]
         if qsp:
@@ -671,11 +675,11 @@ def query_from_event(  # pylint: disable=too-many-branches
             if qsp.get("collections"):
                 document["collections"] = qsp.get("collections").split(",")
             else:
-                document["collections"] = list()
+                document["collections"] = []
             if qsp.get("ids"):
                 document["ids"] = qsp.get("ids").split(",")
             else:
-                document["ids"] = list()
+                document["ids"] = []
             if qsp.get("query"):
                 document["query"] = json.loads(qsp.get("query"))
         else:
@@ -683,7 +687,7 @@ def query_from_event(  # pylint: disable=too-many-branches
             document["datetime"] = None
             document["limit"] = 10
             document["page"] = 1
-            document["ids"] = list()
+            document["ids"] = []
     else:  # POST
         if event.get("body"):
             document = json.loads(event["body"])
@@ -765,7 +769,7 @@ def create_documents_handler(event, context):  # pylint: disable=unused-argument
             )
     elif "Records" in event:
         # Lambda called from SQS trigger
-        stac_items = list()
+        stac_items = []
         for record in event["Records"]:
             # print(json.dumps(record, indent=2))
             stac_items.append(json.loads(record["body"])["Message"])
@@ -788,9 +792,9 @@ def stac_search_endpoint_handler(
     Lambda entry point
     """
 
-    # @todo common code with WFS3 {collectionId/items} endpoint, unify
+    # todo: common code with WFS3 {collectionId/items} endpoint, unify  pylint:disable=fixme
 
-    LOGGER.info(event)
+    # LOGGER.info(event)
 
     # Check for local development or production environment
     if os.environ["ES_SSL"].lower() in ["y", "yes", "t", "true"]:
@@ -802,9 +806,14 @@ def stac_search_endpoint_handler(
     else:
         auth = None
 
+    # LOGGER.info(os.environ["ES_ENDPOINT"])
     es_client = es_connect(
         endpoint=os.environ["ES_ENDPOINT"],
-        port=int(os.environ["ES_PORT"]),
+        # This is just to make sure we convert to int only if ES_PORT
+        # is defined.
+        port=int(os.environ.get("ES_PORT"))
+        if os.environ.get("ES_PORT")
+        else os.environ.get("ES_PORT"),
         use_ssl=(auth is not None),
         verify_certs=(auth is not None),
         http_auth=auth,
@@ -835,25 +844,28 @@ def stac_search_endpoint_handler(
     # Execute query
     LOGGER.info(query.to_dict())
     res = query.execute()
-    results = dict()
+    # LOGGER.info(type(res))
+    # LOGGER.info(res.to_dict())
+    results = {}
     results["stac_version"] = STAC_API_VERSION
     results["type"] = "FeatureCollection"
-    results["features"] = list()
+    results["features"] = []
 
     for item in res:
+        LOGGER.info(item)
         item_dict = item.to_dict()
         # If s3_key is present then we recover the original item from
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 
     # Check need for rel=next object (paging)
     if document["page"] * document["limit"] < res["hits"]["total"]["value"]:
         parsed = parse_api_gateway_event(event)
-        results["links"] = list()
+        results["links"] = []
         if event["httpMethod"] == "GET":
             params = next_page_get_method_params(event["queryStringParameters"])
             results["links"].append(
@@ -886,16 +898,15 @@ def wfs3_collections_endpoint_handler(
     Lambda entry point serving WFS3 collections requests
     """
 
-    collections = dict()
-    collections["collections"] = list()
-    collections["links"] = list()
+    collections = {}
+    collections["collections"] = []
+    collections["links"] = []
     cids = get_collection_ids()
     for cid in cids:
         collections["collections"].append(
             static_to_api_collection(
                 collection=stac_item_from_s3_key(
-                    bucket=os.environ["CBERS_STAC_BUCKET"],
-                    key=get_collection_s3_key(cid),
+                    bucket=os.environ["STAC_BUCKET"], key=get_collection_s3_key(cid),
                 ),
                 event=event,
             )
@@ -919,7 +930,7 @@ def wfs3_collectionid_endpoint_handler(
 
     cid = event["pathParameters"]["collectionId"]
     collection = stac_item_from_s3_key(
-        bucket=os.environ["CBERS_STAC_BUCKET"], key=get_collection_s3_key(cid)
+        bucket=os.environ["STAC_BUCKET"], key=get_collection_s3_key(cid)
     )
     retmsg = {
         "statusCode": "200",
@@ -969,9 +980,9 @@ def wfs3_collectionid_items_endpoint_handler(
 
     # Execute query
     res = query.execute()
-    results = dict()
+    results = {}
     results["type"] = "FeatureCollection"
-    results["features"] = list()
+    results["features"] = []
 
     for item in res:
         item_dict = item.to_dict()
@@ -979,7 +990,7 @@ def wfs3_collectionid_items_endpoint_handler(
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 
@@ -1030,9 +1041,9 @@ def wfs3_collectionid_featureid_endpoint_handler(
 
     # Execute query
     res = query.execute()
-    results = dict()
+    results = {}
     results["type"] = "FeatureCollection"
-    results["features"] = list()
+    results["features"] = []
 
     for item in res:
         item_dict = item.to_dict()
@@ -1040,7 +1051,7 @@ def wfs3_collectionid_featureid_endpoint_handler(
         # the STAC bucket
         if "s3_key" in item_dict:
             item_dict = stac_item_from_s3_key(
-                bucket=os.environ["CBERS_" "STAC_BUCKET"], key=item_dict["s3_key"]
+                bucket=os.environ["STAC_BUCKET"], key=item_dict["s3_key"]
             )
         results["features"].append(item_dict)
 

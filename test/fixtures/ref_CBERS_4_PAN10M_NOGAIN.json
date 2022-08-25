@@ -77,16 +77,16 @@
   ],
   "assets": {
     "thumbnail": {
-      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_NOGAIN.xml/CBERS_4_PAN10M_20160322_156_117.jpg",
+      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_20160322_156_117_L2/CBERS_4_PAN10M_20160322_156_117.jpg",
       "type": "image/jpeg"
     },
     "metadata": {
-      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_NOGAIN.xml/CBERS_4_PAN10M_NOGAIN.xml",
+      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_20160322_156_117_L2/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.xml",
       "title": "INPE original metadata",
       "type": "text/xml"
     },
     "B2": {
-      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_NOGAIN.xml/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.tif",
+      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_20160322_156_117_L2/CBERS_4_PAN10M_20160322_156_117_L2_BAND2.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
         {
@@ -96,7 +96,7 @@
       ]
     },
     "B3": {
-      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_NOGAIN.xml/CBERS_4_PAN10M_20160322_156_117_L2_BAND3.tif",
+      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_20160322_156_117_L2/CBERS_4_PAN10M_20160322_156_117_L2_BAND3.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
         {
@@ -106,7 +106,7 @@
       ]
     },
     "B4": {
-      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_NOGAIN.xml/CBERS_4_PAN10M_20160322_156_117_L2_BAND4.tif",
+      "href": "s3://cbers-pds/CBERS4/PAN10M/156/117/CBERS_4_PAN10M_20160322_156_117_L2/CBERS_4_PAN10M_20160322_156_117_L2_BAND4.tif",
       "type": "image/tiff; application=geotiff; profile=cloud-optimized",
       "eo:bands": [
         {

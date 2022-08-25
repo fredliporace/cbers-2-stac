@@ -77,17 +77,19 @@ def create_lambda_layer_from_docker(output_dir: str, dockerfile: str, tag: str) 
     # Copy layer from docker container using temporary tarfile
     container = client.containers.run(image=tag, command="echo", detach=True)
 
-    namedtarfile = tempfile.NamedTemporaryFile(delete=True)
-    # print(namedtarfile.name, file=sys.stderr)
-    bits, stat = container.get_archive(  # pylint: disable=unused-variable
-        "/tmp/package_localstack.zip"
-    )
-    for chunk in bits:
-        namedtarfile.write(chunk)
+    with tempfile.NamedTemporaryFile(delete=True) as namedtarfile:
+        # print(namedtarfile.name, file=sys.stderr)
+        bits, stat = container.get_archive(  # pylint: disable=unused-variable
+            "/tmp/package_localstack.zip"
+        )
+        for chunk in bits:
+            namedtarfile.write(chunk)
 
-    with tarfile.open(namedtarfile.name) as tfile:
-        tfile.extract(member="package_localstack.zip", path="./")
-    os.rename("./package_localstack.zip", f"{os.path.abspath(output_dir)}/{tag}.zip")
+        with tarfile.open(namedtarfile.name) as tfile:
+            tfile.extract(member="package_localstack.zip", path="./")
+        os.rename(
+            "./package_localstack.zip", f"{os.path.abspath(output_dir)}/{tag}.zip"
+        )
 
     # Original way to copy the layer file from docker container
     # This does not work within act, the mounted volume is from the host
@@ -155,6 +157,34 @@ def s3_bucket(request):
 
 
 @pytest.fixture
+def s3_buckets(request):
+    """S3 buckets for testing"""
+    marker = request.node.get_closest_marker("s3_buckets_args")
+    # Marker is mandatory, first argument is bucket name
+    assert marker
+    bucket_names = marker.args[0]
+    s3_resource = None
+
+    def fin():
+        """fixture finalizer"""
+        if s3_client:
+            for bucket_name in bucket_names:
+                s3_resource.Bucket(bucket_name).objects.delete()
+                s3_client.delete_bucket(Bucket=bucket_name)
+
+    # Hook teardown (finalizer) code
+    request.addfinalizer(fin)
+
+    # Buckets creation
+    s3_client = boto3.client("s3", endpoint_url=ENDPOINT_URL)
+    s3_resource = boto3.resource("s3", endpoint_url=ENDPOINT_URL)
+    for bucket_name in bucket_names:
+        s3_client.create_bucket(Bucket=bucket_name)
+
+    return s3_client, s3_resource
+
+
+@pytest.fixture
 def sqs_queue(request):
     """SQS queue for testing"""
     marker = request.node.get_closest_marker("sqs_queue_args")
@@ -178,6 +208,35 @@ def sqs_queue(request):
     )
 
     return queue
+
+
+@pytest.fixture
+def sqs_queues(request):
+    """SQS queues for testing."""
+    marker = request.node.get_closest_marker("sqs_queues_args")
+    # Marker is mandatory, first argument are queue names
+    assert marker
+    queue_names = marker.args[0]
+    queues = []
+
+    def fin():
+        """fixture finalizer"""
+        for queue in queues:
+            if queue:
+                queue.delete()
+
+    # Hook teardown (finalizer) code
+    request.addfinalizer(fin)
+
+    # Queues creation
+    for queue_name in queue_names:
+        sqs_resource = boto3.resource("sqs", endpoint_url=ENDPOINT_URL)
+        queue = sqs_resource.create_queue(
+            QueueName=queue_name, Attributes={"VisibilityTimeout": "300"}
+        )
+        queues.append(queue)
+
+    return queues
 
 
 @pytest.fixture
@@ -260,11 +319,16 @@ def lambda_function(request):  # pylint: disable=too-many-locals
         # ... add the remaining layers ...
         with ZipFile(lambda_zip, "a") as zfile:
             for layer in lambda_layers[1:]:
-                zfl = ZipFile(layer["output_dir"] + "/" + layer["tag"] + ".zip", "r")
+                zfl = ZipFile(  # pylint: disable=consider-using-with
+                    layer["output_dir"] + "/" + layer["tag"] + ".zip", "r"
+                )
                 for fname in zfl.namelist():
                     zinfo = ZipInfo(filename=fname)
                     zinfo.external_attr = 0o755 << 16
-                    zfile.writestr(zinfo, zfl.open(fname).read())
+                    zfile.writestr(
+                        zinfo,
+                        zfl.open(fname).read(),  # pylint: disable=consider-using-with
+                    )
         # ... and then add the lambda function
         with ZipFile(lambda_zip, "a") as zfile:
             paths = lambda_filtered_paths(lambda_dir)

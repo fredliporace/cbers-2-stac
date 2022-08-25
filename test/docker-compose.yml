@@ -3,38 +3,35 @@ version: '2.1'
 services:
   localstack:
     container_name: cbers2stac-localstack_main
-    #image: localstack/localstack
-    image: localstack/localstack-full:0.12.9.1
+    image: localstack/localstack-full:1.0.3
     network_mode: bridge
     #networks:
     #  - internal
     ports:
+      # This is the edge port
       - "4566:4566"
-      # This is the Elasticsearch port
-      - "4571:4571"
-      #- "${PORT_WEB_UI-8080}:${PORT_WEB_UI-8080}"
     environment:
       - SERVICES=sqs,s3,sns,lambda,cloudwatch,dynamodb,es,apigateway
       - DEBUG=1
       - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=${PORT_WEB_UI- }
       - LAMBDA_EXECUTOR=docker
+      - LAMBDA_DOCKER_NETWORK=host
       # Set to false to allow checking lambda logs after
       # execution
       - LAMBDA_REMOVE_CONTAINERS=true
       - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # See
+      #  https://github.com/localstack/localstack/issues/6419
+      #  for limitation in using "port" as strategy, connection to es does not
+      #  for from host neither from other container defined in the compose file.
+      - OPENSEARCH_ENDPOINT_STRATEGY=path
       # HOSTNAME should not be changed
       # https://github.com/localstack/localstack/issues/808#issuecomment-670186448
       # - HOSTNAME=localhost
       # localhost is the default value for HOSTNAME_EXTERNAL
       # - HOSTNAME_EXTERNAL=localhost
     volumes:
-      - "${TMPDIR:-/tmp/localstack}:/tmp/localstack"
+      - "${TMPDIR:-/tmp/localstack}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
-
-# Network used for lambda/es testing
-# https://github.com/localstack/localstack/issues/3814
-#networks:
-#  internal:
-#    name: internal

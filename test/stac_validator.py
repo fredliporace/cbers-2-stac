@@ -43,7 +43,7 @@ class STACValidator(BaseModel):
         )
         self.schema_path: str = os.path.join(json_schema_path, self.schema_filename)
         self.resolver = RefResolver("file://" + json_schema_path + "/", None)
-        with open(self.schema_path) as fp_schema:
+        with open(self.schema_path, encoding="utf-8") as fp_schema:
             self.c_schema = json.load(fp_schema)
 
         # Check if stac_node_validator is available
@@ -53,7 +53,7 @@ class STACValidator(BaseModel):
         """
         Validate against STAC schema
         """
-        with open(filename) as fp_in:
+        with open(filename, encoding="utf-8") as fp_in:
             assert (
                 validate(json.load(fp_in), self.c_schema, resolver=self.resolver)
                 is None
@@ -64,7 +64,7 @@ class STACValidator(BaseModel):
         """
         Validate using Pystac
         """
-        with open(filename) as fname:
+        with open(filename, encoding="utf-8") as fname:
             jsd = json.load(fname)  # pylint: disable=unused-variable
             # See issue#47
             # validate_dict(jsd)
@@ -111,7 +111,7 @@ class STACValidator(BaseModel):
         Raise exception if JSON is not validated by any of the available validators
         """
 
-        tfile = tempfile.NamedTemporaryFile(delete=True)
-        with open(tfile.name, "w") as tfl:
-            json.dump(item, tfl, indent=2)
-        self.validate(tfile.name, **kwargs)
+        with tempfile.NamedTemporaryFile(delete=True) as tfile:
+            with open(tfile.name, "w", encoding="utf-8") as tfl:
+                json.dump(item, tfl, indent=2)
+            self.validate(tfile.name, **kwargs)

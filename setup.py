@@ -2,7 +2,7 @@
 
 from setuptools import find_packages, setup
 
-with open("README.md") as f:
+with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
 inst_reqs = [
@@ -13,7 +13,7 @@ inst_reqs = [
 extra_reqs = {
     "dev": ["awscli", "awscli-local",],
     "test": [
-        "pydantic",
+        "pydantic[dotenv]",
         "importlib-metadata<2,>=0.12",  # This is required by tox 3.2.0
         "pytest",
         "pytest-cov",
@@ -25,15 +25,17 @@ extra_reqs = {
         "retry",
         # The packages below are used by lambdas and need to be installed locally
         # for testing to work
-        # Used in elasticsearch
-        "elasticsearch>=7.0.0,<8.0.0",
+        # Used in elasticsearch lambda. This needs to be <7.14.0 to avoid the
+        #   "The client noticed that the server is not a supported distribution of Elasticsearch"
+        #   error message.
+        "elasticsearch>=7.0.0,<7.14.0",
         "elasticsearch-dsl>=7.0.0,<8.0.0",
         "aws-requests-auth",
-        # Used in process_new_scene_queue
+        # Used in process_new_scene_queue lambda.
         "utm",
     ],
     "deploy": [
-        "pydantic",
+        "pydantic[dotenv]",
         "aws-cdk.core",
         "aws-cdk.aws-sqs",
         "aws-cdk.aws-sns",
@@ -51,6 +53,7 @@ extra_reqs = {
         "aws-cdk.aws-events-targets",
         "aws-cdk.aws-apigateway",
         "aws-cdk.aws-elasticsearch",
+        "aws-cdk.aws-synthetics",
     ],
 }
 
@@ -61,7 +64,7 @@ cb2stac-redrive-sqs=utils.redrive_sqs_queue:main
 
 setup(
     name="cbers-2-stac",
-    version="1.0.0",
+    version="0.0.0",
     description=u"",
     long_description=long_description,
     long_description_content_type="text/markdown",

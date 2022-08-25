@@ -16,7 +16,7 @@ def get_catalog_levels(item: str) -> List[str]:
     """
     Return the levels to be updated given a STAC item key
     """
-    levels = list()
+    levels = []
     levels.append("/".join(item.split("/")[:-1]))
     levels.append("/".join(item.split("/")[:-2]))
     levels.append("/".join(item.split("/")[:-3]))
@@ -44,7 +44,7 @@ class GenerateCatalogLevelsToBeUpdated:
         queue: URL for output SQS queue, where levels to be updated will be placed
         """
         self._levels_to_be_updated: Set[str] = set()
-        self._items = list()
+        self._items = []
         self._input_table = input_table
         self._output_table = output_table
         self._queue: str = queue
@@ -100,7 +100,7 @@ class GenerateCatalogLevelsToBeUpdated:
         )
         LOGGER.info("Start sending SQS messages")
         # Update catalog level table and send prefix to catalog update queue
-        entries = list()
+        entries = []
         for level in self._levels_to_be_updated:
 
             # This is only executed if the table is defined, currently

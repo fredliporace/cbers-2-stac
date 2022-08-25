@@ -7,13 +7,15 @@ import re
 from collections import OrderedDict
 from copy import deepcopy
 from operator import itemgetter
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
     BASE_CATALOG,
     BASE_COLLECTION,
-    CBERS_MISSIONS,
+    CBERS_AM_MISSIONS,
+    ROOT_DESCRIPTION,
+    ROOT_TITLE,
     build_absolute_prefix,
     build_collection_name,
     get_client,
@@ -85,7 +87,7 @@ def get_catalog_info(key):
     key(string): 'directory' key
     """
 
-    ret = dict()
+    ret = {}
 
     # Level
     levels = key.split("/")
@@ -116,7 +118,7 @@ def get_catalogs_from_s3(bucket, prefix, response=None):
     prefix(string): key prefix
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
-    ret = list()
+    ret = []
     if not response:
         response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
@@ -138,7 +140,7 @@ def get_items_from_s3(bucket, prefix, response=None):
     prefix(string): key prefix
     response(dict): S3 output from list_objects_v2, used for unit testing
     """
-    ret = list()
+    ret = []
     if not response:
         response = get_client("s3").list_objects_v2(
             Bucket=bucket, Delimiter="/", Prefix=prefix
@@ -169,15 +171,13 @@ def sqs_messages(queue):
         response = get_client("sqs").receive_message(QueueUrl=queue)
         if "Messages" not in response:
             break
-        retd = dict()
+        retd = {}
         retd["stac_item"] = response["Messages"][0]["Body"]
         retd["ReceiptHandle"] = response["Messages"][0]["ReceiptHandle"]
         yield retd
 
 
-def get_base_collection(
-    sat_mission: str, camera: Optional[str] = None
-) -> Dict[str, Any]:
+def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     """
     Return the base collection for the camera.
 
@@ -193,9 +193,10 @@ def get_base_collection(
     collection.update(BASE_COLLECTION)
     collection["summaries"].update(BASE_CAMERA[sat_mission][camera]["summaries"])
     collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]
-    collection["extent"]["temporal"]["interval"] = CBERS_MISSIONS[sat_mission][
+    collection["extent"]["temporal"]["interval"] = CBERS_AM_MISSIONS[sat_mission][
         "interval"
     ]
+    collection["providers"] = CBERS_AM_MISSIONS[sat_mission]["providers"]
 
     return collection
 
@@ -206,10 +207,10 @@ def base_root_catalog(bucket: str) -> Dict[Any, Any]:
     """
     json_filename = "catalog.json"
     stac_catalog: Dict[str, Any] = {**{"type": "Catalog"}, **BASE_CATALOG}
-    stac_catalog["id"] = "CBERS"
-    stac_catalog["description"] = "Catalogs from CBERS 4/4A missions' imagery on AWS"
-    stac_catalog["title"] = "CBERS on AWS"
-    stac_catalog["links"] = list()
+    stac_catalog["id"] = "CBERS-AMAZONIA STATIC ROOT"
+    stac_catalog["description"] = ROOT_DESCRIPTION
+    stac_catalog["title"] = ROOT_TITLE
+    stac_catalog["links"] = []
 
     self_link = OrderedDict()
     self_link["rel"] = "self"
@@ -247,9 +248,10 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         json_filename = "collection.json"
         # Deal with satellite including or not mission
         if mission:
-            sat_mission = "{}{}".format(satellite, mission)
+            sat_mission = f"{satellite}{mission}"
         else:
             sat_mission = satellite
+        assert camera is not None
         stac_catalog = get_base_collection(sat_mission, camera)
         stac_catalog = {**{"type": "Collection"}, **stac_catalog}
 
@@ -267,7 +269,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     else:
         # Check for satellite+mission in first parameter
         # @todo change this to always separate satellite and mission
-        if satellite == "CBERS":
+        if satellite in ["CBERS", "AMAZONIA"]:
             sat_sensor = None  # type: ignore
         else:
             sat_sensor = satellite
@@ -277,15 +279,15 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         description += mission
         sat_sensor += mission
     if camera:
-        name += " %s" % (camera)
-        description += " %s camera" % (camera)
-        sat_sensor += "/%s" % camera
+        name += f" {camera}"
+        description += f" {camera} camera"
+        sat_sensor += f"/{camera}"
     if path:
-        name += " %s" % (path)
-        description += " path %s" % (path)
+        name += f" {path}"
+        description += f" path {path}"
     if row:
-        name += "/%s" % (row)
-        description += " row %s" % (row)
+        name += f"/{row}"
+        description += f" row {row}"
     description += " catalog"
 
     # @todo the collection id is also built in the stac item,
@@ -301,7 +303,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     stac_catalog["title"] = stac_catalog["id"]
     stac_catalog["description"] = description
 
-    stac_catalog["links"] = list()
+    stac_catalog["links"] = []
 
     # Checks if on collection level
     if in_collection:
@@ -355,9 +357,7 @@ def trigger_handler(event, context):  # pylint: disable=unused-argument
     for record in event["Records"]:
         prefix = record["body"]
         LOGGER.info("Processing %s", prefix)
-        catalog = build_catalog_from_s3(
-            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix
-        )
+        catalog = build_catalog_from_s3(bucket=os.environ["STAC_BUCKET"], prefix=prefix)
         write_catalog_to_s3(
-            bucket=os.environ["CBERS_STAC_BUCKET"], prefix=prefix, catalog=catalog
+            bucket=os.environ["STAC_BUCKET"], prefix=prefix, catalog=catalog
         )

@@ -4,9 +4,6 @@
 # pylint: disable=redefined-outer-name
 
 import json
-
-# import os
-import re
 import time
 from test.conftest import ENDPOINT_URL
 
@@ -29,13 +26,14 @@ from cbers2stac.elasticsearch.es import (
     stac_search,
     strip_stac_item,
 )
+from elasticsearch import Elasticsearch
 
 
 @pytest.fixture
-def es_client(request):
+def es_client(request) -> Elasticsearch:
     """Elasticsarch client"""
 
-    domain_name = "es1"
+    domain_name = "my-domain"
 
     # boto3 ES client
     es_client = None
@@ -58,14 +56,17 @@ def es_client(request):
     # Create domain to start localstack's ES service
     es_client = boto3.client("es", endpoint_url=ENDPOINT_URL)
     result = es_client.create_elasticsearch_domain(
-        DomainName=domain_name, ElasticsearchVersion="7.7.0"
+        DomainName=domain_name, ElasticsearchVersion="7.7"
     )
-    endpoint = result["DomainStatus"]["Endpoint"]
-    match = re.match(r"http://(?P<hostname>\w+):(?P<port>\d+)", endpoint)
+
+    # We do not need to split the endpoint anymore
+    # endpoint = result["DomainStatus"]["Endpoint"]
+    # match = re.match(r"(?P<hostname>[\w\.\-]+):(?P<port>\d+)", endpoint)
+    # assert match
 
     client = es_connect(
-        match.groupdict()["hostname"],
-        port=int(match.groupdict()["port"]),
+        endpoint=result["DomainStatus"]["Endpoint"],
+        # port=int(match.groupdict()["port"]),
         use_ssl=False,
         verify_certs=False,
     )
@@ -82,15 +83,19 @@ def es_client(request):
     return client
 
 
-def populate_es_test_case_1(es_client):
+def populate_es_test_case_1(es_client: Elasticsearch):
     """
     Populate ES instance with two items, one CB4 MUX and other
     CB4 AWFI
     """
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
 
     for stac_item in stac_items:
@@ -100,6 +105,25 @@ def populate_es_test_case_1(es_client):
     )
     assert es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_AWFI_20170409_167_123_L4"
+    )
+
+
+def populate_es_test_case_2(es_client: Elasticsearch):
+    """
+    Extends populate_es_test_case_1 with Amazonia1 example.
+    """
+    populate_es_test_case_1(es_client)
+    stac_items = []
+    with open(
+        "test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json",
+        "r",
+        encoding="utf-8",
+    ) as fin:
+        stac_items.append(fin.read())
+    for stac_item in stac_items:
+        create_document_in_index(es_client=es_client, stac_item=stac_item)
+    assert es_client.exists(
+        index="stac", doc_type="_doc", id="AMAZONIA_1_WFI_20220810_033_018_L4"
     )
 
 
@@ -115,9 +139,7 @@ def test_parse_datetime():
     assert end == "2018-03-18T12:31:12Z"
 
     with pytest.raises(AssertionError):
-        start, end = parse_datetime(
-            "2018-02-12T00:00:00Z/2018-03-18T" "12:31:12Z/ERROR"
-        )
+        start, end = parse_datetime("2018-02-12T00:00:00Z/2018-03-18T12:31:12Z/ERROR")
 
     start, end = parse_datetime(None)
     assert start is None
@@ -146,7 +168,9 @@ def test_parse_bbox():
 
 def test_strip_stac_item():
     """test_strip_stac_item"""
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         item = json.loads(fin.read())
     assert "bbox" in item
     strip = strip_stac_item(item)
@@ -182,7 +206,9 @@ def test_create_document_in_index(es_client):
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_item = fin.read()
     create_document_in_index(es_client=es_client, stac_item=stac_item)
     doc = es_client.get(
@@ -217,6 +243,19 @@ def test_create_document_in_index(es_client):
     )
     assert doc["_source"]["id"] == "CBERS_4_MUX_20170528_090_084_L2"
 
+    # Checking AMAZONIA1 case
+    with open(
+        "test/fixtures/ref_AMAZONIA_1_WFI_20220810_033_018_L4.json",
+        "r",
+        encoding="utf-8",
+    ) as fin:
+        stac_item = fin.read()
+    create_document_in_index(es_client=es_client, stac_item=stac_item)
+    doc = es_client.get(
+        index="stac", doc_type="_doc", id="AMAZONIA_1_WFI_20220810_033_018_L4"
+    )
+    assert doc["_source"]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+
 
 def test_create_stripped_document_in_index(es_client):
     """test_create_stripped_document_in_index"""
@@ -224,7 +263,9 @@ def test_create_stripped_document_in_index(es_client):
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_item = json.loads(fin.read())
     create_document_in_index(
         es_client=es_client, stac_item=json.dumps(strip_stac_item(stac_item))
@@ -245,10 +286,14 @@ def test_bulk_create_document_in_index(es_client):
     # Two distinct items, create
     # Does not use populate_es_test_case_1 here since we are
     # testing bulk insert
-    stac_items = list()
-    with open("test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r") as fin:
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
-    with open("test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r") as fin:
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
         stac_items.append(fin.read())
 
     inserted_items = bulk_create_document_in_index(
@@ -285,11 +330,20 @@ def test_bulk_create_document_in_index(es_client):
     )
     assert doc["_source"]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
-    # Resets index and calls bulk with upsert from the start
-    es_client.indices.delete(index="stac")
-    create_stac_index(es_client, timeout=60)
 
-    es_client = es_connect("localhost", port=4571, use_ssl=False, verify_certs=False)
+def test_bulk_create_document_in_index_upsert(es_client):
+    """test_bulk_create_document_in_index_upsert"""
+
+    stac_items = []
+    with open(
+        "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json", "r", encoding="utf-8"
+    ) as fin:
+        stac_items.append(fin.read())
+    with open(
+        "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json", "r", encoding="utf-8"
+    ) as fin:
+        stac_items.append(fin.read())
+
     assert not es_client.exists(
         index="stac", doc_type="_doc", id="CBERS_4_MUX_20170528_090_084_L2"
     )
@@ -309,7 +363,7 @@ def test_bulk_create_document_in_index(es_client):
     assert doc["_source"]["id"] == "CBERS_4_AWFI_20170409_167_123_L4"
 
 
-def test_basic_search(es_client):
+def test_basic_search(es_client: Elasticsearch):
     """test_basic_search"""
 
     populate_es_test_case_1(es_client)
@@ -394,6 +448,89 @@ def test_basic_search(es_client):
     #    print(hit.to_dict())
     assert res["hits"]["total"]["value"] == 1
     assert res[0].to_dict()["properties"]["cbers:path"] == 90
+
+
+def test_basic_search_am1(es_client: Elasticsearch):
+    """
+    Extends test_basic_search with Amazonia1 data.
+    """
+
+    populate_es_test_case_2(es_client)
+
+    # All items are returned for empty query, sleeps for 2 seconds
+    # before searching to allow ES to index the documents.
+    # See
+    # https://stackoverflow.com/questions/45936211/check-if-elasticsearch-has-finished-indexing
+    # for a possibly better solution
+    time.sleep(2)
+    res = stac_search(es_client=es_client).execute()
+    assert res["hits"]["total"]["value"] == 3
+    assert len(res) == 3
+
+    # Single item depending on date range
+    res = stac_search(
+        es_client=es_client, start_date="2022-08-10T00:00:00.000"
+    ).execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+
+    res = stac_search(es_client=es_client, end_date="2022-08-11T00:00:00.000").execute()
+    assert res["hits"]["total"]["value"] == 3
+    assert "AMAZONIA_1_WFI_20220810_033_018_L4" in [scn["id"] for scn in res]
+
+    # Geo search
+    res = stac_search(
+        es_client=es_client,
+        start_date="2010-04-10T00:00:00.000",
+        end_date="2022-08-11T00:00:00.000",
+        bbox=[[-40, -15], [-40, -15]],
+    )
+    res = res.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0]["id"] == "AMAZONIA_1_WFI_20220810_033_018_L4"
+    # print(res[0].to_dict())
+
+    # Geo search for whole envelope, was raising error when
+    # update to ES 7.7
+    res = stac_search(
+        es_client=es_client,
+        start_date=None,
+        end_date=None,
+        bbox=[[-180.0, 90.0], [180.0, -90.0]],
+    )
+    res = res.execute()
+    assert res["hits"]["total"]["value"] == 3
+
+    # Query extension (eq operator only)
+    empty_query = stac_search(es_client=es_client)
+    res = process_query_extension(dsl_query=empty_query, query_params={}).execute()
+    assert res["hits"]["total"]["value"] == 3
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:data_type": {"eq": "L2"}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    assert res["hits"]["total"]["value"] == 0
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:data_type": {"eq": "L4"}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["amazonia:data_type"] == "L4"
+
+    query = process_query_extension(
+        dsl_query=empty_query, query_params={"amazonia:path": {"eq": 33}}
+    )
+    # print(json.dumps(query.to_dict(), indent=2))
+    res = query.execute()
+    # print(res.to_dict())
+    # for hit in res:
+    #    print(hit.to_dict())
+    assert res["hits"]["total"]["value"] == 1
+    assert res[0].to_dict()["properties"]["amazonia:path"] == 33
 
 
 def test_query_extension_search(es_client):  # pylint: disable=too-many-statements

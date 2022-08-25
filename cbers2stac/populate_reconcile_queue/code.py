@@ -1,5 +1,6 @@
 """populate_reconcile_queue"""
 
+import json
 import logging
 import os
 
@@ -34,7 +35,10 @@ def populate_queue_with_subdirs(bucket: str, prefix: str, queue: str):
     assert not dirs["IsTruncated"]
     for dir_key in dirs["CommonPrefixes"]:
         LOGGER.info(dir_key["Prefix"])
-        get_client("sqs").send_message(QueueUrl=queue, MessageBody=dir_key["Prefix"])
+        get_client("sqs").send_message(
+            QueueUrl=queue,
+            MessageBody=json.dumps({"bucket": bucket, "prefix": dir_key["Prefix"]}),
+        )
 
 
 def handler(event, context):  # pylint: disable=unused-argument
@@ -44,7 +48,7 @@ def handler(event, context):  # pylint: disable=unused-argument
     """
 
     return populate_queue_with_subdirs(
-        bucket=os.environ["CBERS_PDS_BUCKET"],
+        bucket=event["bucket"],
         prefix=event["prefix"],
         queue=os.environ["RECONCILE_QUEUE"],
     )
