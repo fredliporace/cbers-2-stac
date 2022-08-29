@@ -726,7 +726,11 @@ class CBERS2STACStack(core.Stack):
 
         # Create and use internal STAC bucket
         stac_working_bucket = s3.Bucket(
-            self, "stac_working_bucket", bucket_name=settings.stac_bucket_name
+            self,
+            "stac_working_bucket",
+            bucket_name=settings.stac_bucket_name,
+            auto_delete_objects=True,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})
         self.lambdas_perms_.append(
@@ -772,6 +776,7 @@ class CBERS2STACStack(core.Stack):
                 name=DBTable.pk_attr_name_, type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update(
             {"CATALOG_UPDATE_TABLE": catalog_update_table.table_name}
