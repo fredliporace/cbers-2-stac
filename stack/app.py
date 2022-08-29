@@ -368,7 +368,9 @@ class CBERS2STACStack(core.Stack):
         """
         self.create_lambda(
             id="process_new_scene_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/process_new_scene_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/process_new_scene_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -404,7 +406,7 @@ class CBERS2STACStack(core.Stack):
         self.create_lambda(
             id="generate_catalog_levels_to_be_updated_lambda",
             code=aws_lambda.Code.from_asset(
-                path="cbers2stac/generate_catalog_levels_to_be_updated"
+                path="cbers2stac/generate_catalog_levels_to_be_updated", exclude=["*~"]
             ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
@@ -424,7 +426,9 @@ class CBERS2STACStack(core.Stack):
 
         self.create_lambda(
             id="update_catalog_prefix_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/update_catalog_tree"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/update_catalog_tree", exclude=["*~"]
+            ),
             handler="code.trigger_handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -441,7 +445,9 @@ class CBERS2STACStack(core.Stack):
 
         self.create_lambda(
             id="populate_reconcile_queue_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/populate_reconcile_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/populate_reconcile_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -468,7 +474,9 @@ class CBERS2STACStack(core.Stack):
 
         self.create_lambda(
             id="consume_reconcile_queue_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/consume_reconcile_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/consume_reconcile_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -494,7 +502,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="create_elastic_index_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/elasticsearch", exclude=["*~"]
+                ),
                 handler="es.create_stac_index_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={**self.lambdas_env_,},
@@ -506,7 +516,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="insert_into_elastic_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/elasticsearch", exclude=["*~"]
+                ),
                 handler="es.create_documents_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={
@@ -528,7 +540,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="consume_stac_reconcile_queue_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/reindex_stac_items", exclude=["*~"]
+                ),
                 handler="code.consume_stac_reconcile_queue_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment=self.lambdas_env_,
@@ -544,7 +558,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="populate_stac_reconcile_queue_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/reindex_stac_items", exclude=["*~"]
+                ),
                 handler="code.populate_stac_reconcile_queue_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={**self.lambdas_env_,},
@@ -564,7 +580,9 @@ class CBERS2STACStack(core.Stack):
         # Section with lambdas integrated with API GW
         self.create_api_lambda(
             id="LandingEndpointLambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/stac_endpoint"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/stac_endpoint", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -575,7 +593,9 @@ class CBERS2STACStack(core.Stack):
         )
         self.create_api_lambda(
             id="SearchEndpointLambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/elasticsearch", exclude=["*~"]
+            ),
             handler="es.stac_search_endpoint_handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -612,16 +632,25 @@ class CBERS2STACStack(core.Stack):
             ),
         )
         # Canary to check search endpoint
+        canary_artifacts_bucket = s3.Bucket(
+            self,
+            "canary_artifacts",
+            auto_delete_objects=True,
+            removal_policy=core.RemovalPolicy.DESTROY,
+        )
         canary = synthetics.Canary(
             self,
             "SearchEndpointCanary",
             schedule=synthetics.Schedule.rate(core.Duration.hours(1)),
             runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
             test=synthetics.Test.custom(
-                code=synthetics.Code.from_asset("cbers2stac/canary"),
+                code=synthetics.Code.from_asset("cbers2stac/canary", exclude=["*~"]),
                 handler="api_canary.handler",
             ),
             environment_variables={"ENDPOINT_URL": apigw.url_for_path() + "/search"},
+            artifacts_bucket_location=synthetics.ArtifactsBucketLocation(
+                bucket=canary_artifacts_bucket
+            ),
         )
         canary_alarm = cloudwatch.Alarm(
             self,
