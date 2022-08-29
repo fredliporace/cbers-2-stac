@@ -167,12 +167,15 @@ class CBERS2STACStack(core.Stack):
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
-        # Subscription for CB4A (all cameras)
-        sns.Topic.from_topic_arn(
-            self, id="CB4A-AM1", topic_arn=settings.cb4a_am1_topic,
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
+        # Subscription for CB4A (all cameras) and Amazonia1
+        for topic_arn in settings.cb4a_am1_topic:
+            sns.Topic.from_topic_arn(
+                self,
+                id=f"CB4A-AM1-{topic_arn.rsplit(':', maxsplit=1)[-1]}",
+                topic_arn=topic_arn,
+            ).add_subscription(
+                sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+            )
 
         self.create_queue(
             id="catalog_prefix_update_queue",
