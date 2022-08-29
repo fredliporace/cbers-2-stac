@@ -664,6 +664,7 @@ class CBERS2STACStack(core.Stack):
                     # No need to specify resource, the domain is implicit
                 )
             ],
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         # Add environment for lambdas
