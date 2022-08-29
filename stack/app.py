@@ -460,18 +460,6 @@ class CBERS2STACStack(core.Stack):
             description="Populates reconcile queue with S3 keys from a common prefix",
         )
 
-        # I'm using the bucket ARN directly here just to make sure that I don't
-        # mess with the cbers-pds bucket... creating it from_bucket_name should
-        # be safe but I'll not take my chances
-        # cbers_pds_bucket = s3.Bucket.from_bucket_name(self, "cbers-pds", "cbers-pds")
-        list_cbers_pds_permissions = iam.PolicyStatement(
-            actions=["s3:ListObjectsV2", "s3:ListBucket"],
-            resources=["arn:aws:s3:::cbers-pds", "arn:aws:s3:::cbers-pds/*",],
-        )
-        self.lambdas_["populate_reconcile_queue_lambda"].add_to_role_policy(
-            list_cbers_pds_permissions
-        )
-
         self.create_lambda(
             id="consume_reconcile_queue_lambda",
             code=aws_lambda.Code.from_asset(
@@ -489,12 +477,28 @@ class CBERS2STACStack(core.Stack):
             description="Consume dirs from reconcile queue, populating "
             "new_scenes_queue with quicklooks to be processed",
         )
-        self.lambdas_["consume_reconcile_queue_lambda"].add_to_role_policy(
-            list_cbers_pds_permissions
-        )
         self.lambdas_["consume_reconcile_queue_lambda"].add_event_source(
             SqsEventSource(queue=self.queues_["reconcile_queue"], batch_size=5)
         )
+
+        # I'm using the bucket ARNs directly here just to make sure that I don't
+        # mess with the cbers-pds bucket... creating it from_bucket_name should
+        # be safe but I'll not take my chances
+        # cbers_pds_bucket = s3.Bucket.from_bucket_name(self, "cbers-pds", "cbers-pds")
+        for pds_bucket in ["cbers-pds", "amazonia-pds"]:
+            list_pds_permissions = iam.PolicyStatement(
+                actions=["s3:ListObjectsV2", "s3:ListBucket"],
+                resources=[
+                    f"arn:aws:s3:::{pds_bucket}",
+                    f"arn:aws:s3:::{pds_bucket}/*",
+                ],
+            )
+            self.lambdas_["populate_reconcile_queue_lambda"].add_to_role_policy(
+                list_pds_permissions
+            )
+            self.lambdas_["consume_reconcile_queue_lambda"].add_to_role_policy(
+                list_pds_permissions
+            )
 
         # Section with lambdas used to support STAC API. Specific lambdas integrated
         # with API GW are defined in create_api_lambdas()
