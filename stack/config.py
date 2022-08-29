@@ -32,6 +32,8 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
         "arn:aws:sns:us-east-1:599544552497:NewAMQuicklook",
     ]
 
+    deploy_static_catalog_structure: Optional[bool] = True
+
     additional_env: Dict[str, str] = {}
 
     class Config:  # pylint: disable=too-few-public-methods

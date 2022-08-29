@@ -125,6 +125,14 @@ To index all CBERS-4A MUX scenes with path 120:
 }
 ```
 
+To index all Amazonia-1 WFI scenes:
+```json
+{
+    "bucket": "amazonia-pds",
+    "prefix": "AMAZONIA1/WFI/"
+}
+```
+
 The indexed documents are immediately available through the STAC API. The static catalogs are updated every 30 minutes. To update the static catalogs before that you may execute the ```generate_catalog_levels_to_be_updated_lambda``` lambda.
 
 ### Reconciliation from STAC static catalog

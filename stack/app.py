@@ -792,13 +792,15 @@ class CBERS2STACStack(core.Stack):
             root_directory="stack/static_catalog_structure",
             bucket_name=settings.stac_bucket_name,
         )
-        s3_deployment.BucketDeployment(
-            self,
-            "static_catalog",
-            sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
-            destination_bucket=stac_working_bucket,
-            prune=settings.stac_bucket_prune,
-        )
+        # See #88
+        if settings.deploy_static_catalog_structure:
+            s3_deployment.BucketDeployment(
+                self,
+                "static_catalog",
+                sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
+                destination_bucket=stac_working_bucket,
+                prune=settings.stac_bucket_prune,
+            )
 
         # DynamoDB table
         db_table_schema = DBTable.schema()
