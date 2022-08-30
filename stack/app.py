@@ -284,6 +284,11 @@ class CBERS2STACStack(core.Stack):
             )
         )
 
+        # Queue for corrupted XML entries, see #89
+        self.create_queue(
+            id="corrupted_xml_queue", retention_period=core.Duration.days(14),
+        )
+
     def create_all_topics(self) -> None:
         """
         Create all stack topics

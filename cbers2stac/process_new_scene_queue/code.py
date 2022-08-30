@@ -6,6 +6,7 @@ import logging
 import os
 import re
 from typing import Any, Dict, Generator
+from xml.etree.ElementTree import ParseError
 
 from botocore.exceptions import ClientError
 
@@ -259,6 +260,7 @@ def process_trigger(
     sns_reconcile_target_arn: str,
     catalog_update_queue: str,
     catalog_update_table: str,
+    corrupted_xml_queue: str,
 ):
     """
     Read quicklook queue and create STAC items if necessary.
@@ -273,6 +275,8 @@ def process_trigger(
                             STAC items for updating the
                             catalog structure
       catalog_update_table: DynamoDB that hold the catalog update requests
+      corrupted_xml_queue: URL of queue that receive the keys associated with
+                           corrupted/inexistent XML files.
     """
 
     buckets = {
@@ -285,19 +289,28 @@ def process_trigger(
                 eff_sns_target_arn = sns_reconcile_target_arn
             else:
                 eff_sns_target_arn = sns_target_arn
-            process_message(
-                {"key": rec["s3"]["object"]["key"]},
-                {
-                    **buckets,
-                    **{
-                        "cog": rec["s3"]["bucket"]["name"],
-                        "metadata": cog_pds_meta_pds[rec["s3"]["bucket"]["name"]],
+            try:
+                process_message(
+                    {"key": rec["s3"]["object"]["key"]},
+                    {
+                        **buckets,
+                        **{
+                            "cog": rec["s3"]["bucket"]["name"],
+                            "metadata": cog_pds_meta_pds[rec["s3"]["bucket"]["name"]],
+                        },
                     },
-                },
-                eff_sns_target_arn,
-                catalog_update_queue,
-                catalog_update_table,
-            )
+                    eff_sns_target_arn,
+                    catalog_update_queue,
+                    catalog_update_table,
+                )
+            except ParseError:
+                LOGGER.info(
+                    "Corrupted XML for %s quicklook.",
+                    rec["s3"]["object"]["key"].split("/")[-1],
+                )
+                get_client("sqs").send_message(
+                    QueueUrl=corrupted_xml_queue, MessageBody=rec["s3"]["object"]["key"]
+                )
 
 
 def process_queue(
@@ -309,6 +322,7 @@ def process_queue(
     sns_reconcile_target_arn: str,
     catalog_update_queue: str,
     catalog_update_table: str,
+    corrupted_xml_queue: str,
     delete_processed_messages: bool = False,
 ):
     """
@@ -324,6 +338,8 @@ def process_queue(
       catalog_update_queue: URL of queue that receives new STAC
                                     items for updating the catalog structure
       catalog_update_table: DynamoDB that hold the catalog update requests
+      corrupted_xml_queue: URL of queue that receive the keys associated with
+                           corrupted/inexistent XML files.
       delete_processed_messages: if True messages are deleted from queue
                                  after processing
     """
@@ -334,16 +350,25 @@ def process_queue(
     processed_messages = 0
     for msg in sqs_messages(queue):
 
-        process_message(
-            msg,
-            {
-                **buckets,
-                **{"cog": msg["bucket"], "metadata": cog_pds_meta_pds[msg["bucket"]]},
-            },
-            sns_reconcile_target_arn,
-            catalog_update_queue,
-            catalog_update_table,
-        )
+        try:
+            process_message(
+                msg,
+                {
+                    **buckets,
+                    **{
+                        "cog": msg["bucket"],
+                        "metadata": cog_pds_meta_pds[msg["bucket"]],
+                    },
+                },
+                sns_reconcile_target_arn,
+                catalog_update_queue,
+                catalog_update_table,
+            )
+        except ParseError:
+            LOGGER.info("Corrupted XML for %s quicklook.", msg["key"].split("/")[-1])
+            get_client("sqs").send_message(
+                QueueUrl=corrupted_xml_queue, MessageBody=msg["key"]
+            )
 
         # Remove message from queue
         if delete_processed_messages:
@@ -373,6 +398,7 @@ def handler(event, context):  # pylint: disable=unused-argument
             sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],
             catalog_update_queue=os.environ.get("CATALOG_UPDATE_QUEUE"),
             catalog_update_table=os.environ["CATALOG_UPDATE_TABLE"],
+            corrupted_xml_queue=os.environ["corrupted_xml_queue_url"],
             delete_processed_messages=int(os.environ["DELETE_MESSAGES"]) == 1,
         )
     else:
@@ -385,4 +411,5 @@ def handler(event, context):  # pylint: disable=unused-argument
             sns_reconcile_target_arn=os.environ["SNS_RECONCILE_TARGET_ARN"],
             catalog_update_queue=os.environ.get("CATALOG_UPDATE_QUEUE"),
             catalog_update_table=os.environ["CATALOG_UPDATE_TABLE"],
+            corrupted_xml_queue=os.environ["corrupted_xml_queue_url"],
         )
