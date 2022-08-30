@@ -167,12 +167,15 @@ class CBERS2STACStack(core.Stack):
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
-        # Subscription for CB4A (all cameras)
-        sns.Topic.from_topic_arn(
-            self, id="CB4A-AM1", topic_arn=settings.cb4a_am1_topic,
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
+        # Subscription for CB4A (all cameras) and Amazonia1
+        for topic_arn in settings.cb4a_am1_topic:
+            sns.Topic.from_topic_arn(
+                self,
+                id=f"CB4A-AM1-{topic_arn.rsplit(':', maxsplit=1)[-1]}",
+                topic_arn=topic_arn,
+            ).add_subscription(
+                sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+            )
 
         self.create_queue(
             id="catalog_prefix_update_queue",
@@ -281,6 +284,11 @@ class CBERS2STACStack(core.Stack):
             )
         )
 
+        # Queue for corrupted XML entries, see #89
+        self.create_queue(
+            id="corrupted_xml_queue", retention_period=core.Duration.days(14),
+        )
+
     def create_all_topics(self) -> None:
         """
         Create all stack topics
@@ -365,7 +373,9 @@ class CBERS2STACStack(core.Stack):
         """
         self.create_lambda(
             id="process_new_scene_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/process_new_scene_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/process_new_scene_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -401,7 +411,7 @@ class CBERS2STACStack(core.Stack):
         self.create_lambda(
             id="generate_catalog_levels_to_be_updated_lambda",
             code=aws_lambda.Code.from_asset(
-                path="cbers2stac/generate_catalog_levels_to_be_updated"
+                path="cbers2stac/generate_catalog_levels_to_be_updated", exclude=["*~"]
             ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
@@ -421,7 +431,9 @@ class CBERS2STACStack(core.Stack):
 
         self.create_lambda(
             id="update_catalog_prefix_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/update_catalog_tree"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/update_catalog_tree", exclude=["*~"]
+            ),
             handler="code.trigger_handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -438,7 +450,9 @@ class CBERS2STACStack(core.Stack):
 
         self.create_lambda(
             id="populate_reconcile_queue_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/populate_reconcile_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/populate_reconcile_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -451,21 +465,11 @@ class CBERS2STACStack(core.Stack):
             description="Populates reconcile queue with S3 keys from a common prefix",
         )
 
-        # I'm using the bucket ARN directly here just to make sure that I don't
-        # mess with the cbers-pds bucket... creating it from_bucket_name should
-        # be safe but I'll not take my chances
-        # cbers_pds_bucket = s3.Bucket.from_bucket_name(self, "cbers-pds", "cbers-pds")
-        list_cbers_pds_permissions = iam.PolicyStatement(
-            actions=["s3:ListObjectsV2", "s3:ListBucket"],
-            resources=["arn:aws:s3:::cbers-pds", "arn:aws:s3:::cbers-pds/*",],
-        )
-        self.lambdas_["populate_reconcile_queue_lambda"].add_to_role_policy(
-            list_cbers_pds_permissions
-        )
-
         self.create_lambda(
             id="consume_reconcile_queue_lambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/consume_reconcile_queue"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/consume_reconcile_queue", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={
@@ -478,12 +482,28 @@ class CBERS2STACStack(core.Stack):
             description="Consume dirs from reconcile queue, populating "
             "new_scenes_queue with quicklooks to be processed",
         )
-        self.lambdas_["consume_reconcile_queue_lambda"].add_to_role_policy(
-            list_cbers_pds_permissions
-        )
         self.lambdas_["consume_reconcile_queue_lambda"].add_event_source(
             SqsEventSource(queue=self.queues_["reconcile_queue"], batch_size=5)
         )
+
+        # I'm using the bucket ARNs directly here just to make sure that I don't
+        # mess with the cbers-pds bucket... creating it from_bucket_name should
+        # be safe but I'll not take my chances
+        # cbers_pds_bucket = s3.Bucket.from_bucket_name(self, "cbers-pds", "cbers-pds")
+        for pds_bucket in ["cbers-pds", "amazonia-pds"]:
+            list_pds_permissions = iam.PolicyStatement(
+                actions=["s3:ListObjectsV2", "s3:ListBucket"],
+                resources=[
+                    f"arn:aws:s3:::{pds_bucket}",
+                    f"arn:aws:s3:::{pds_bucket}/*",
+                ],
+            )
+            self.lambdas_["populate_reconcile_queue_lambda"].add_to_role_policy(
+                list_pds_permissions
+            )
+            self.lambdas_["consume_reconcile_queue_lambda"].add_to_role_policy(
+                list_pds_permissions
+            )
 
         # Section with lambdas used to support STAC API. Specific lambdas integrated
         # with API GW are defined in create_api_lambdas()
@@ -491,7 +511,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="create_elastic_index_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/elasticsearch", exclude=["*~"]
+                ),
                 handler="es.create_stac_index_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={**self.lambdas_env_,},
@@ -503,7 +525,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="insert_into_elastic_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/elasticsearch", exclude=["*~"]
+                ),
                 handler="es.create_documents_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={
@@ -525,7 +549,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="consume_stac_reconcile_queue_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/reindex_stac_items", exclude=["*~"]
+                ),
                 handler="code.consume_stac_reconcile_queue_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment=self.lambdas_env_,
@@ -541,7 +567,9 @@ class CBERS2STACStack(core.Stack):
 
             self.create_lambda(
                 id="populate_stac_reconcile_queue_lambda",
-                code=aws_lambda.Code.from_asset(path="cbers2stac/reindex_stac_items"),
+                code=aws_lambda.Code.from_asset(
+                    path="cbers2stac/reindex_stac_items", exclude=["*~"]
+                ),
                 handler="code.populate_stac_reconcile_queue_handler",
                 runtime=aws_lambda.Runtime.PYTHON_3_7,
                 environment={**self.lambdas_env_,},
@@ -561,7 +589,9 @@ class CBERS2STACStack(core.Stack):
         # Section with lambdas integrated with API GW
         self.create_api_lambda(
             id="LandingEndpointLambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/stac_endpoint"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/stac_endpoint", exclude=["*~"]
+            ),
             handler="code.handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -572,7 +602,9 @@ class CBERS2STACStack(core.Stack):
         )
         self.create_api_lambda(
             id="SearchEndpointLambda",
-            code=aws_lambda.Code.from_asset(path="cbers2stac/elasticsearch"),
+            code=aws_lambda.Code.from_asset(
+                path="cbers2stac/elasticsearch", exclude=["*~"]
+            ),
             handler="es.stac_search_endpoint_handler",
             runtime=aws_lambda.Runtime.PYTHON_3_7,
             environment={**self.lambdas_env_,},
@@ -609,16 +641,25 @@ class CBERS2STACStack(core.Stack):
             ),
         )
         # Canary to check search endpoint
+        canary_artifacts_bucket = s3.Bucket(
+            self,
+            "canary_artifacts",
+            auto_delete_objects=True,
+            removal_policy=core.RemovalPolicy.DESTROY,
+        )
         canary = synthetics.Canary(
             self,
             "SearchEndpointCanary",
             schedule=synthetics.Schedule.rate(core.Duration.hours(1)),
             runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
             test=synthetics.Test.custom(
-                code=synthetics.Code.from_asset("cbers2stac/canary"),
+                code=synthetics.Code.from_asset("cbers2stac/canary", exclude=["*~"]),
                 handler="api_canary.handler",
             ),
             environment_variables={"ENDPOINT_URL": apigw.url_for_path() + "/search"},
+            artifacts_bucket_location=synthetics.ArtifactsBucketLocation(
+                bucket=canary_artifacts_bucket
+            ),
         )
         canary_alarm = cloudwatch.Alarm(
             self,
@@ -661,6 +702,7 @@ class CBERS2STACStack(core.Stack):
                     # No need to specify resource, the domain is implicit
                 )
             ],
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
 
         # Add environment for lambdas
@@ -726,7 +768,11 @@ class CBERS2STACStack(core.Stack):
 
         # Create and use internal STAC bucket
         stac_working_bucket = s3.Bucket(
-            self, "stac_working_bucket", bucket_name=settings.stac_bucket_name
+            self,
+            "stac_working_bucket",
+            bucket_name=settings.stac_bucket_name,
+            auto_delete_objects=True,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})
         self.lambdas_perms_.append(
@@ -755,13 +801,15 @@ class CBERS2STACStack(core.Stack):
             root_directory="stack/static_catalog_structure",
             bucket_name=settings.stac_bucket_name,
         )
-        s3_deployment.BucketDeployment(
-            self,
-            "static_catalog",
-            sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
-            destination_bucket=stac_working_bucket,
-            prune=settings.stac_bucket_prune,
-        )
+        # See #88
+        if settings.deploy_static_catalog_structure:
+            s3_deployment.BucketDeployment(
+                self,
+                "static_catalog",
+                sources=[s3_deployment.Source.asset("stack/static_catalog_structure")],
+                destination_bucket=stac_working_bucket,
+                prune=settings.stac_bucket_prune,
+            )
 
         # DynamoDB table
         db_table_schema = DBTable.schema()
@@ -772,6 +820,7 @@ class CBERS2STACStack(core.Stack):
                 name=DBTable.pk_attr_name_, type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
+            removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update(
             {"CATALOG_UPDATE_TABLE": catalog_update_table.table_name}

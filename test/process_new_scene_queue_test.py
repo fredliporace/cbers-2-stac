@@ -2,11 +2,13 @@
 
 import json
 import pathlib
+from test.utils import check_queue_size
 
 import pytest
 
 from cbers2stac.consume_reconcile_queue.code import populate_queue_with_quicklooks
 from cbers2stac.layers.common.dbtable import DBTable
+from cbers2stac.layers.common.utils import get_client
 from cbers2stac.process_new_scene_queue.code import (  # process_queue
     build_sns_topic_msg_attributes,
     convert_inpe_to_stac,
@@ -14,6 +16,7 @@ from cbers2stac.process_new_scene_queue.code import (  # process_queue
     parse_quicklook_key,
     process_message,
     process_queue,
+    process_trigger,
     sqs_messages,
 )
 
@@ -280,6 +283,7 @@ def test_process_queue(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
         sns_reconcile_target_arn=topic["TopicArn"],
         catalog_update_queue=catup_queue.url,
         catalog_update_table=DBTable.schema()["TableName"],
+        corrupted_xml_queue=None,
     )
     assert len(db_table.scan()["Items"]) == 1
     assert (
@@ -298,4 +302,60 @@ def test_process_queue(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
         item["assets"]["thumbnail"]["href"]
         == "https://s3.amazonaws.com/metadata/CBERS4A/MUX/222/116/"
         "CBERS_4A_MUX_20220810_222_116_L4/CBERS_4A_MUX_20220810_222_116.png"
+    )
+
+
+@pytest.mark.s3_buckets_args(["cog", "stac"])
+@pytest.mark.sqs_queues_args(["catup_queue", "corrupted_xml"])
+@pytest.mark.dynamodb_table_args({**(DBTable.schema())})
+def test_process_trigger(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
+    """
+    test_process_trigger.
+    """
+
+    s3_client, _ = s3_buckets
+    catup_queue = sqs_queues[0]
+    corrupted_xml_queue = sqs_queues[1]
+    _, topic = sns_topic
+    db_table = dynamodb_table
+
+    fixture_prefix = "test/fixtures/amazonia_pds_invalid_xml/"
+    paths = pathlib.Path(fixture_prefix).rglob("*")
+    files = [
+        str(f.relative_to(fixture_prefix))
+        for f in paths
+        if any(ext in f.suffix for ext in ["png", "xml"])
+    ]
+    for upfile in files:
+        s3_client.upload_file(
+            Filename=fixture_prefix + "/" + upfile, Bucket="cog", Key=upfile
+        )
+
+    process_trigger(
+        stac_bucket="stac",
+        cog_pds_meta_pds={"cog": "metadata"},
+        event={
+            "Records": [
+                {
+                    "body": '{"Message": "{\\"Records\\": '
+                    '[{\\"s3\\": {\\"bucket\\": {\\"name\\": \\"cog\\"}, '
+                    '\\"object\\": {\\"key\\": \\"AMAZONIA1/'
+                    "WFI/035/017/AMAZONIA_1_WFI_20210317_035_017_L4/"
+                    'AMAZONIA_1_WFI_20210317_035_017.png\\", \\"reconcile\\": 1}}}]}"}'
+                }
+            ]
+        },
+        sns_target_arn=topic["TopicArn"],
+        sns_reconcile_target_arn=topic["TopicArn"],
+        catalog_update_queue=catup_queue.url,
+        catalog_update_table=DBTable.schema()["TableName"],
+        corrupted_xml_queue=corrupted_xml_queue.url,
+    )
+    assert len(db_table.scan()["Items"]) == 0
+    check_queue_size(corrupted_xml_queue, 1)
+    response = get_client("sqs").receive_message(QueueUrl=corrupted_xml_queue.url)
+    assert (
+        response["Messages"][0]["Body"]
+        == "AMAZONIA1/WFI/035/017/AMAZONIA_1_WFI_20210317_035_017_L4/"
+        "AMAZONIA_1_WFI_20210317_035_017.png"
     )

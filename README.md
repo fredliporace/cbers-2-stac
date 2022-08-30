@@ -83,6 +83,18 @@ cbers2stac-prod.stacitemtopicoutput = arn:aws:sns:us-east-1:...:...
 
 ```
 
+## Static catalogs and collections
+
+Empty static stac catalogs and collections are created when the stack is deployed. Note that when these files are updated and a new deploy is executed to an already populated stac bucket the [deployment may fail](https://github.com/fredliporace/cbers-2-stac/issues/88).
+
+In order to overcome that you may set `STACK_DEPLOY_STATIC_CATALOG_STRUCTURE` to `false` in `.env` and manually copy the static files. From a prompy in the `stack/static_catalog_structure` dir:
+
+```bash
+$ aws s3 cp ./ s3://cbers-stac-1-0-0 --recursive
+```
+
+Replace `cbers-stac-1-0-0` with the given stac bucket name. The collections initially do not contain the links to the children, this is updated when a new scene is inserted at any level.
+
 ## Creating the Elasticsearch index
 
 If ```STACK_ENABLE_API``` is set in the configuration you should now create the Elasticsearch index. This needs to be executed only once, right after the first deploy that enables the API. The index is created by the lambda ```create_elastic_index_lambda```, which may be executed from the AWS console or awscli. The function requires no parameters.
@@ -91,7 +103,7 @@ It is recommended to change the cluster configuration to disable the automatic c
 
 ## Populate the catalog
 
-Once create the stack automatically listen to the SNS topics that publish new quicklooks. The stac item is automatically created as soon as the message is received.
+Once created the stack automatically listen to the SNS topics that publish new quicklooks. The stac item is automatically created as soon as the message is received.
 
 ### Reconciliation from INPE's original metadata
 
@@ -122,6 +134,14 @@ To index all CBERS-4A MUX scenes with path 120:
 {
   "bucket": "cbers-pds",
   "prefix": "CBERS4A/MUX/120/"
+}
+```
+
+To index all Amazonia-1 WFI scenes:
+```json
+{
+    "bucket": "amazonia-pds",
+    "prefix": "AMAZONIA1/WFI/"
 }
 ```
 
