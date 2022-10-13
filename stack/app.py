@@ -167,8 +167,9 @@ class CBERS2STACStack(core.Stack):
         ).add_subscription(
             sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
         )
-        # Subscription for CB4A (all cameras) and Amazonia1
-        for topic_arn in settings.cb4a_am1_topic:
+        # Subscription for CB4 (all cameras), CB4A (all cameras) and Amazonia1
+        # These are from the INPE catalog that creates quicklooks as .png
+        for topic_arn in settings.topics:
             sns.Topic.from_topic_arn(
                 self,
                 id=f"CB4A-AM1-{topic_arn.rsplit(':', maxsplit=1)[-1]}",
