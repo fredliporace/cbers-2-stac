@@ -7,7 +7,7 @@ import statistics
 import typing
 import xml.etree.ElementTree as ET
 from collections import OrderedDict
-from typing import List
+from typing import Any, Dict, List
 
 import utm
 
@@ -528,15 +528,23 @@ def candidate_xml_files(xml_file: str) -> List[str]:
     return xml_options
 
 
-def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets):
+def convert_inpe_to_stac(
+    inpe_metadata_filename: str,
+    stac_metadata_filename: str,
+    buckets: Dict[str, Any],
+    thumbnail_extension: str = None,
+):
     """
     Generate STAC item in stac_metadata from inpe_metadata.
 
     Input:
-    inpe_metadata(string): CBERS metadata (INPE format) file
-    stac_metadata(string): STAC item metadata file to be written, if None then
-                           no file is written.
+    inpe_metadata: CBERS metadata (INPE format) file
+    stac_metadata: STAC item metadata file to be written, if None then
+                   no file is written.
     buckets: buckets dictionary
+    thumbnail_extension: force the thumbnail extension to be the one
+                         defined, e.g., "png" or "jpg". Required to
+                         work with CBERS4 data which may have both extensions.
 
     Return:
     Dictionary based on INPE's metadata
@@ -544,6 +552,20 @@ def convert_inpe_to_stac(inpe_metadata_filename, stac_metadata_filename, buckets
 
     meta = get_keys_from_cbers_am(inpe_metadata_filename)
     stac_meta = build_stac_item_keys(meta, buckets)
+    if thumbnail_extension:
+        # Replace str after last "." with the override extension
+        pieces = stac_meta["assets"]["thumbnail"]["href"].split(".")
+        stac_meta["assets"]["thumbnail"]["href"] = ".".join(pieces[0:-1])
+        stac_meta["assets"]["thumbnail"]["href"] += f".{thumbnail_extension}"
+        # ... and check type also
+        ext_to_type: Dict[str, str] = {
+            "png": "image/png",
+            "jpg": "image/jpeg",
+        }
+        assert (
+            ext_to_type.get(thumbnail_extension) is not None
+        ), f"type unknown for {thumbnail_extension}"
+        stac_meta["assets"]["thumbnail"]["type"] = ext_to_type[thumbnail_extension]
     if stac_metadata_filename:
         create_json_item(stac_meta, stac_metadata_filename)
     return stac_meta

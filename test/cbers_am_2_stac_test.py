@@ -724,6 +724,19 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
     jsv.validate(output_filename)
     rescb4mux = diff_files(ref_output_filename, output_filename)
 
+    # MUX, CB4 with thumbnail extension override
+    output_filename = tmp_path / "CBERS_4_MUX_20170528_090_084_L2.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2_PNG.json"
+    convert_inpe_to_stac(
+        inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
+        "_090_084_L2_BAND6.xml",
+        stac_metadata_filename=output_filename,
+        buckets=buckets,
+        thumbnail_extension="png",
+    )
+    jsv.validate(output_filename)
+    rescb4mux = diff_files(ref_output_filename, output_filename)
+
     # AWFI, CB4
     output_filename = tmp_path / "CBERS_4_AWFI_20170409_167_123_L4.json"
     ref_output_filename = "test/fixtures/ref_CBERS_4_AWFI_20170409_167_123_L4.json"
