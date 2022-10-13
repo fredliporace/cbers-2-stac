@@ -284,6 +284,10 @@ def process_trigger(
     }
     for record in event["Records"]:
         message = json.loads(json.loads(record["body"])["Message"])
+        # Ignore s3:TestEvent messages (#45)
+        if message.get("Event") == "s3:TestEvent":
+            LOGGER.info("Skipping s3:TestEvent message.")
+            continue
         for rec in message["Records"]:
             if rec["s3"]["object"].get("reconcile"):
                 eff_sns_target_arn = sns_reconcile_target_arn

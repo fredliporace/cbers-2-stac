@@ -14,6 +14,7 @@
 * Deleting some resources that were kept after stack creation (https://github.com/fredliporace/cbers-2-stac/issues/67)
 * Alternative to update static catalogs and collections in populated buckets (https://github.com/fredliporace/cbers-2-stac/issues/88)
 * Queue to hold corrupted/inexistent XML files (https://github.com/fredliporace/cbers-2-stac/issues/89)
+* Ignoring `s3:TestEvent` events (https://github.com/fredliporace/cbers-2-stac/issues/45)
 
 ## 1.0.0 (2021-06-09)
 
