@@ -171,6 +171,7 @@ def process_message(
 
     LOGGER.info(msg["key"])
     metadata_keys = get_s3_keys(msg["key"])
+    thumbnail_extension = msg["key"].split(".")[-1]
 
     assert metadata_keys["quicklook_keys"]["camera"] in (
         "MUX",
@@ -208,6 +209,7 @@ def process_message(
         inpe_metadata_filename=local_inpe_metadata,
         stac_metadata_filename=local_stac_item,
         buckets=buckets,
+        thumbnail_extension=thumbnail_extension,
     )
     # Upload STAC item file
     with open(local_stac_item, "rb") as data:
@@ -284,6 +286,10 @@ def process_trigger(
     }
     for record in event["Records"]:
         message = json.loads(json.loads(record["body"])["Message"])
+        # Ignore s3:TestEvent messages (#45)
+        if message.get("Event") == "s3:TestEvent":
+            LOGGER.info("Skipping s3:TestEvent message.")
+            continue
         for rec in message["Records"]:
             if rec["s3"]["object"].get("reconcile"):
                 eff_sns_target_arn = sns_reconcile_target_arn
