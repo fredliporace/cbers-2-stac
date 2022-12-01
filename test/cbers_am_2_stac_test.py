@@ -51,6 +51,24 @@ def test_candidate_xml_files():
         "AMAZONIA_1_WFI_20220811_036_018_L4_RIGHT_BAND2.xml",
     ]
 
+    # CBERS4A WFI special case with multiple options
+    options = candidate_xml_files("CBERS_4A_WFI_20200626_222_148_L4_BAND14.xml")
+    assert len(options) == 3
+    assert options == [
+        "CBERS_4A_WFI_20200626_222_148_L4_BAND14.xml",
+        "CBERS_4A_WFI_20200626_222_148_L4_LEFT_BAND14.xml",
+        "CBERS_4A_WFI_20200626_222_148_L4_RIGHT_BAND14.xml",
+    ]
+
+    # CBERS4 AWFI special case with multiple options
+    options = candidate_xml_files("CBERS_4_AWFI_20220614_170_099_L4_BAND14.xml")
+    assert len(options) == 3
+    assert options == [
+        "CBERS_4_AWFI_20220614_170_099_L4_BAND14.xml",
+        "CBERS_4_AWFI_20220614_170_099_L4_LEFT_BAND14.xml",
+        "CBERS_4_AWFI_20220614_170_099_L4_RIGHT_BAND14.xml",
+    ]
+
 
 def test_get_keys_from_cbers4():
     """test_get_keys_from_cbers"""

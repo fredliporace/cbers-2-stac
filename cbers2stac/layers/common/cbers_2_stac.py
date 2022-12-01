@@ -520,7 +520,13 @@ def candidate_xml_files(xml_file: str) -> List[str]:
     assert match, f"Can't match {xml_file}"
     group = match.groupdict()
     xml_options = []
-    if group["satellite"] == "AMAZONIA":
+    if group["satellite"] == "AMAZONIA" or (
+        group["satellite"] == "CBERS"
+        and (
+            ((group["mission"], group["camera"]) == ("4A", "WFI"))
+            or ((group["mission"], group["camera"]) == ("4", "AWFI"))
+        )
+    ):
         for optics in ["", "_LEFT", "_RIGHT"]:
             xml_options.append(re.sub(r"_L(\d+)_", f"_L\\g<1>{optics}_", xml_file))
     else:

@@ -15,6 +15,8 @@
 * Alternative to update static catalogs and collections in populated buckets (https://github.com/fredliporace/cbers-2-stac/issues/88)
 * Queue to hold corrupted/inexistent XML files (https://github.com/fredliporace/cbers-2-stac/issues/89)
 * Ignoring `s3:TestEvent` events (https://github.com/fredliporace/cbers-2-stac/issues/45)
+* Tests with CBERS-4A WFI (https://github.com/fredliporace/cbers-2-stac/issues/92)
+* Checking _LEFT and _RIGHT xml files for CBERS-4A WFI (https://github.com/fredliporace/cbers-2-stac/issues/94)
 
 ## 1.0.0 (2021-06-09)
 
