@@ -69,6 +69,14 @@ def test_candidate_xml_files():
         "CBERS_4_AWFI_20220614_170_099_L4_RIGHT_BAND14.xml",
     ]
 
+    # CBERS4 PAN10M special case
+    options = candidate_xml_files("CBERS_4_PAN10M_20230301_092_100_L2_BAND4.xml")
+    assert len(options) == 2
+    assert options == [
+        "CBERS_4_PAN10M_20230301_092_100_L2_BAND4.xml",
+        "CBERS_4_PAN10M_20230301_092_100_L2_BAND3.xml",
+    ]
+
 
 def test_get_keys_from_cbers4():
     """test_get_keys_from_cbers"""

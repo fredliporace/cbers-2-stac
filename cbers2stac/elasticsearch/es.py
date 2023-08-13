@@ -9,7 +9,7 @@ import traceback
 from typing import Any, Dict, List, Tuple, Union
 
 from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
-from elasticsearch_dsl import Q, Search
+from elasticsearch_dsl import Q, Search  # pylint: disable=wrong-import-order
 
 from cbers2stac.layers.common.utils import (
     STAC_API_VERSION,
@@ -22,7 +22,9 @@ from cbers2stac.layers.common.utils import (
     static_to_api_collection,
 )
 from elasticsearch import Elasticsearch, RequestsHttpConnection
-from elasticsearch.helpers import bulk
+
+from elasticsearch.helpers import bulk  # isort: skip
+
 
 # Get rid of "Found credentials in environment variables" messages
 logging.getLogger("botocore.credentials").disabled = True
