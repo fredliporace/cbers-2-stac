@@ -13,7 +13,9 @@ repos:
           - "click==7.1.2"
 
   - repo: https://github.com/PyCQA/isort
-    rev: 5.4.2
+    # See https://stackoverflow.com/a/75295105/1259982 for
+    # rev value
+    rev: 5.11.5
     hooks:
       - id: isort
         args: ["--profile", "black"]

@@ -293,6 +293,7 @@ def build_asset(
     return asset
 
 
+@typing.no_type_check
 def build_stac_item_keys(cbers_am, buckets):
     """
     Builds a STAC item dict based on CBERS_AM metadata
@@ -529,6 +530,11 @@ def candidate_xml_files(xml_file: str) -> List[str]:
     ):
         for optics in ["", "_LEFT", "_RIGHT"]:
             xml_options.append(re.sub(r"_L(\d+)_", f"_L\\g<1>{optics}_", xml_file))
+    elif group["satellite"] == "CBERS" and group["camera"] == "PAN10M":
+        # CB4 PAN10M uses band4 for old INPE catalog and BAND3 for new
+        # catalog
+        xml_options.append(xml_file)
+        xml_options.append(re.sub(r"_BAND4", r"_BAND3", xml_file))
     else:
         xml_options.append(xml_file)
     return xml_options
