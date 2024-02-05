@@ -90,7 +90,7 @@ Empty static stac catalogs and collections are created when the stack is deploye
 In order to overcome that you may set `STACK_DEPLOY_STATIC_CATALOG_STRUCTURE` to `false` in `.env` and manually copy the static files. From a prompt in the `stack/static_catalog_structure` dir:
 
 ```bash
-$ aws s3 cp ./ s3://cbers-stac-1-0-0 --recursive
+$ aws s3 cp ./ s3://[REPLACE_WITH_STAC_BUCKET_NAME] --recursive
 ```
 
 Replace `cbers-stac-1-0-0` with the given stac bucket name. The collections initially do not contain the links to the children, this is updated when a new scene is inserted at any level.
