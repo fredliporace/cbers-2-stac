@@ -767,6 +767,11 @@ class CBERS2STACStack(core.Stack):
             "stac_working_bucket",
             bucket_name=settings.stac_bucket_name,
             auto_delete_objects=True,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_policy=False,
+                block_public_acls=False,
+                restrict_public_buckets=False,
+            ),
             removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})
