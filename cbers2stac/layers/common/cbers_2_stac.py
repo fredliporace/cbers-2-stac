@@ -366,7 +366,7 @@ def build_stac_item_keys(cbers_am, buckets):
     ][cbers_am["sensor"]]["summaries"]["gsd"][0]
 
     # Links
-    meta_prefix = f"https://s3.amazonaws.com/{buckets['metadata']}/"
+    meta_prefix = f"https://{buckets['metadata']}.s3.amazonaws.com/"
     main_prefix = f"s3://{buckets['cog']}/"
     stac_prefix = f"https://{buckets['stac']}.s3.amazonaws.com/"
     # https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/066/096/CBERS_4_MUX_20170522_066_096_L2/CBERS_4_MUX_20170522_066_096.jpg

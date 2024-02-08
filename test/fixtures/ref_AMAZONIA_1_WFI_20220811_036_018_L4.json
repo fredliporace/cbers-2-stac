@@ -77,7 +77,7 @@
   ],
   "assets": {
     "thumbnail": {
-      "href": "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/036/018/AMAZONIA_1_WFI_20220811_036_018_L4/AMAZONIA_1_WFI_20220811_036_018.png",
+      "href": "https://cbers-meta-pds.s3.amazonaws.com/AMAZONIA1/WFI/036/018/AMAZONIA_1_WFI_20220811_036_018_L4/AMAZONIA_1_WFI_20220811_036_018.png",
       "type": "image/png"
     },
     "metadata": {
