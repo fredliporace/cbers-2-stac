@@ -138,41 +138,41 @@ class CBERS2STACStack(core.Stack):
                 max_receive_count=1, queue=self.queues_["process_new_scenes_queue_dlq"]
             ),
         )
-        # Add subscriptions for each CB4 camera
-        sns.Topic.from_topic_arn(
-            self,
-            id="CB4MUX",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook",
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
-        sns.Topic.from_topic_arn(
-            self,
-            id="CB4AWFI",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook",
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
-        sns.Topic.from_topic_arn(
-            self,
-            id="CB4PAN10M",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook",
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
-        sns.Topic.from_topic_arn(
-            self,
-            id="CBPAN5M",
-            topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook",
-        ).add_subscription(
-            sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
-        )
+        # # Add subscriptions for each CB4 camera (old ingestion system)
+        # sns.Topic.from_topic_arn(
+        #     self,
+        #     id="CB4MUX",
+        #     topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4MUXQuicklook",
+        # ).add_subscription(
+        #     sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+        # )
+        # sns.Topic.from_topic_arn(
+        #     self,
+        #     id="CB4AWFI",
+        #     topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4AWFIQuicklook",
+        # ).add_subscription(
+        #     sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+        # )
+        # sns.Topic.from_topic_arn(
+        #     self,
+        #     id="CB4PAN10M",
+        #     topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN10MQuicklook",
+        # ).add_subscription(
+        #     sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+        # )
+        # sns.Topic.from_topic_arn(
+        #     self,
+        #     id="CBPAN5M",
+        #     topic_arn="arn:aws:sns:us-east-1:599544552497:NewCB4PAN5MQuicklook",
+        # ).add_subscription(
+        #     sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
+        # )
         # Subscription for CB4 (all cameras), CB4A (all cameras) and Amazonia1
         # These are from the INPE catalog that creates quicklooks as .png
         for topic_arn in settings.topics:
             sns.Topic.from_topic_arn(
                 self,
-                id=f"CB4A-AM1-{topic_arn.rsplit(':', maxsplit=1)[-1]}",
+                id=f"CB-AM-{topic_arn.rsplit(':', maxsplit=1)[-1]}",
                 topic_arn=topic_arn,
             ).add_subscription(
                 sns_subscriptions.SqsSubscription(self.queues_["new_scenes_queue"])
@@ -399,15 +399,6 @@ class CBERS2STACStack(core.Stack):
         self.lambdas_["process_new_scene_lambda"].add_event_source(
             SqsEventSource(queue=self.queues_["new_scenes_queue"], batch_size=10)
         )
-        # See comment below on using from_bucket_name to
-        # create a CDK bucket
-        read_cbers_pds_permissions = iam.PolicyStatement(
-            actions=["s3:ListObjectsV2", "s3:ListBucket", "s3:Get*"],
-            resources=["arn:aws:s3:::cbers-pds", "arn:aws:s3:::cbers-pds/*",],
-        )
-        self.lambdas_["process_new_scene_lambda"].add_to_role_policy(
-            read_cbers_pds_permissions
-        )
 
         self.create_lambda(
             id="generate_catalog_levels_to_be_updated_lambda",
@@ -488,22 +479,25 @@ class CBERS2STACStack(core.Stack):
         )
 
         # I'm using the bucket ARNs directly here just to make sure that I don't
-        # mess with the cbers-pds bucket... creating it from_bucket_name should
+        # mess with the pds buckets... creating it from_bucket_name should
         # be safe but I'll not take my chances
         # cbers_pds_bucket = s3.Bucket.from_bucket_name(self, "cbers-pds", "cbers-pds")
-        for pds_bucket in ["cbers-pds", "amazonia-pds"]:
-            list_pds_permissions = iam.PolicyStatement(
-                actions=["s3:ListObjectsV2", "s3:ListBucket"],
+        for pds_bucket in ["brazil-eosats"]:
+            pds_permissions = iam.PolicyStatement(
+                actions=["s3:ListObjectsV2", "s3:ListBucket", "s3:Get*"],
                 resources=[
                     f"arn:aws:s3:::{pds_bucket}",
                     f"arn:aws:s3:::{pds_bucket}/*",
                 ],
             )
             self.lambdas_["populate_reconcile_queue_lambda"].add_to_role_policy(
-                list_pds_permissions
+                pds_permissions
             )
             self.lambdas_["consume_reconcile_queue_lambda"].add_to_role_policy(
-                list_pds_permissions
+                pds_permissions
+            )
+            self.lambdas_["process_new_scene_lambda"].add_to_role_policy(
+                pds_permissions
             )
 
         # Section with lambdas used to support STAC API. Specific lambdas integrated
@@ -773,6 +767,11 @@ class CBERS2STACStack(core.Stack):
             "stac_working_bucket",
             bucket_name=settings.stac_bucket_name,
             auto_delete_objects=True,
+            block_public_access=s3.BlockPublicAccess(
+                block_public_policy=False,
+                block_public_acls=False,
+                restrict_public_buckets=False,
+            ),
             removal_policy=core.RemovalPolicy.DESTROY,
         )
         self.lambdas_env_.update({"STAC_BUCKET": stac_working_bucket.bucket_name})

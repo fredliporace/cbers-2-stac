@@ -77,8 +77,8 @@
   ],
   "assets": {
     "thumbnail": {
-      "href": "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084.jpg",
-      "type": "image/jpeg"
+      "href": "https://cbers-meta-pds.s3.amazonaws.com/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084.png",
+      "type": "image/png"
     },
     "metadata": {
       "href": "s3://cbers-pds/CBERS4/MUX/090/084/CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084_L2_BAND6.xml",

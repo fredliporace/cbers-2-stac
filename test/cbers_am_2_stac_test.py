@@ -298,7 +298,7 @@ def test_build_awfi_stac_item_keys():
 
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/AWFI/167/123/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/CBERS4/AWFI/167/123/"
         "CBERS_4_AWFI_20170409_167_123_L4/CBERS_4_AWFI_20170409_167_123.jpg"
     )
     assert (
@@ -382,7 +382,7 @@ def test_build_mux_stac_item_keys():
 
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/MUX/090/084/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/CBERS4/MUX/090/084/"
         "CBERS_4_MUX_20170528_090_084_L2/CBERS_4_MUX_20170528_090_084.jpg"
     )
     assert (
@@ -462,7 +462,7 @@ def test_build_pan10_stac_item_keys():
 
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN10M/180/125/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/CBERS4/PAN10M/180/125/"
         "CBERS_4_PAN10M_20190201_180_125_L2/CBERS_4_PAN10M_20190201_180_125.jpg"
     )
     assert (
@@ -538,7 +538,7 @@ def test_build_pan5_stac_item_keys():
     assert len(smeta["assets"]) == 3
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4/PAN5M/219/050/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/CBERS4/PAN5M/219/050/"
         "CBERS_4_PAN5M_20161009_219_050_L2/CBERS_4_PAN5M_20161009_219_050.jpg"
     )
     assert (
@@ -593,7 +593,7 @@ def test_build_cb4a_wfi_stac_item_keys():
 
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/CBERS4A/WFI/221/156/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/CBERS4A/WFI/221/156/"
         "CBERS_4A_WFI_20200801_221_156_L4/CBERS_4A_WFI_20200801_221_156.png"
     )
     assert (
@@ -645,7 +645,7 @@ def test_build_am1_wfi_stac_item_keys():
     # assets
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/036/018/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/AMAZONIA1/WFI/036/018/"
         "AMAZONIA_1_WFI_20220811_036_018_L4/AMAZONIA_1_WFI_20220811_036_018.png"
     )
     assert (
@@ -694,7 +694,7 @@ def test_build_am1_wfi_stac_item_keys():
     # assets
     assert (
         smeta["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/cbers-meta-pds/AMAZONIA1/WFI/033/018/"
+        == "https://cbers-meta-pds.s3.amazonaws.com/AMAZONIA1/WFI/033/018/"
         "AMAZONIA_1_WFI_20220810_033_018_L4/AMAZONIA_1_WFI_20220810_033_018.png"
     )
     assert (
@@ -739,20 +739,20 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
     resam1wfileft = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4
-    output_filename = tmp_path / "CBERS_4_MUX_20170528_090_084_L2.json"
-    ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
-    convert_inpe_to_stac(
-        inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
-        "_090_084_L2_BAND6.xml",
-        stac_metadata_filename=output_filename,
-        buckets=buckets,
-    )
-    jsv.validate(output_filename)
-    rescb4mux = diff_files(ref_output_filename, output_filename)
+    # output_filename = tmp_path / "CBERS_4_MUX_20170528_090_084_L2.json"
+    # ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
+    # convert_inpe_to_stac(
+    #     inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
+    #     "_090_084_L2_BAND6.xml",
+    #     stac_metadata_filename=output_filename,
+    #     buckets=buckets,
+    # )
+    # jsv.validate(output_filename)
+    # rescb4mux = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4 with thumbnail extension override
     output_filename = tmp_path / "CBERS_4_MUX_20170528_090_084_L2.json"
-    ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2_PNG.json"
+    ref_output_filename = "test/fixtures/ref_CBERS_4_MUX_20170528_090_084_L2.json"
     convert_inpe_to_stac(
         inpe_metadata_filename="test/fixtures/CBERS_4_MUX_20170528"
         "_090_084_L2_BAND6.xml",

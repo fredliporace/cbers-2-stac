@@ -27,11 +27,7 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     es_volume_size: int
     es_data_nodes: int
 
-    topics: Optional[List[str]] = [
-        "arn:aws:sns:us-east-1:599544552497:NewCB4Quicklook",
-        "arn:aws:sns:us-east-1:599544552497:NewCB4AQuicklook",
-        "arn:aws:sns:us-east-1:599544552497:NewAMQuicklook",
-    ]
+    topics: List[str]
 
     deploy_static_catalog_structure: Optional[bool] = True
 

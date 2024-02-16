@@ -300,7 +300,7 @@ def test_process_queue(s3_buckets, sqs_queues, sns_topic, dynamodb_table):
     )
     assert (
         item["assets"]["thumbnail"]["href"]
-        == "https://s3.amazonaws.com/metadata/CBERS4A/MUX/222/116/"
+        == "https://metadata.s3.amazonaws.com/CBERS4A/MUX/222/116/"
         "CBERS_4A_MUX_20220810_222_116_L4/CBERS_4A_MUX_20220810_222_116.png"
     )
 
