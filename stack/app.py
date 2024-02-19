@@ -359,7 +359,7 @@ class CBERS2STACStack(core.Stack):
             layer_dir="./cbers2stac/layers/common",
             prefix="python",
         )
-        common_layer_asset = aws_lambda.Code.asset("./stack/common.zip")
+        common_layer_asset = aws_lambda.Code.from_asset("./stack/common.zip")
         self.layers_["common_layer"] = aws_lambda.LayerVersion(
             self,
             "common_layer",
