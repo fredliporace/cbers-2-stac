@@ -906,7 +906,7 @@ for key, value in {
     "cost_center": settings.cost_center,
 }.items():
     if value:
-        core.Tag.add(app, key, value)
+        core.Tags.of(app).add(key, value)
 
 stackname = f"{settings.name}-{settings.stage}"
 CBERS2STACStack(
