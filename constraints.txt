@@ -37,6 +37,7 @@ aws-cdk.aws-kms==1.204.0
 aws-cdk.aws-lambda==1.204.0
 aws-cdk.aws-lambda-event-sources==1.204.0
 aws-cdk.aws-logs==1.204.0
+aws-cdk.aws-opensearchservice==1.204.0
 aws-cdk.aws-route53==1.204.0
 aws-cdk.aws-route53-targets==1.204.0
 aws-cdk.aws-s3==1.204.0
@@ -65,7 +66,7 @@ awscli-local==0.20
 boto3==1.24.48
 botocore==1.27.48
 cattrs==22.1.0
--e git+ssh://git@github.com/fredliporace/cbers-2-stac.git@2e9c09f56916c00ce61a7bea531dca2a359a0e21#egg=cbers_2_stac
+-e git+ssh://git@github.com/fredliporace/cbers-2-stac.git@85d5155e8899d4a335bbb3735b04079f3cd95b15#egg=cbers_2_stac
 certifi==2022.6.15
 cfgv==3.3.1
 charset-normalizer==2.1.0

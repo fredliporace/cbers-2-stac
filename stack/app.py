@@ -10,10 +10,10 @@ from aws_cdk import aws_apigateway as apigateway
 from aws_cdk import aws_cloudwatch as cloudwatch
 from aws_cdk import aws_cloudwatch_actions as cw_actions
 from aws_cdk import aws_dynamodb as dynamodb
-from aws_cdk import aws_elasticsearch as elasticsearch
 from aws_cdk import aws_events, aws_events_targets
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lambda
+from aws_cdk import aws_opensearchservice as elasticsearch
 from aws_cdk import aws_s3 as s3
 from aws_cdk import aws_s3_assets as s3_assets
 from aws_cdk import aws_s3_deployment as s3_deployment
@@ -682,7 +682,7 @@ class CBERS2STACStack(core.Stack):
             self,
             id="cbers2stac",
             # This is the version currently used by localstack
-            version=elasticsearch.ElasticsearchVersion.V7_7,
+            version=elasticsearch.EngineVersion.ELASTICSEARCH_7_7,
             ebs=elasticsearch.EbsOptions(
                 enabled=True, volume_size=settings.es_volume_size
             ),
