@@ -698,6 +698,7 @@ class CBERS2STACStack(core.Stack):
                 )
             ],
             removal_policy=core.RemovalPolicy.DESTROY,
+            enable_version_upgrade=False,
         )
 
         # Add environment for lambdas
