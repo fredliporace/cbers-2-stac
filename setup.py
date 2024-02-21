@@ -34,28 +34,7 @@ extra_reqs = {
         # Used in process_new_scene_queue lambda.
         "utm",
     ],
-    "deploy": [
-        "pydantic[dotenv]",
-        "aws-cdk.core",
-        "aws-cdk.aws-sqs",
-        "aws-cdk.aws-sns",
-        "aws-cdk.aws-sns-subscriptions",
-        "aws-cdk.aws-cloudwatch",
-        "aws-cdk.aws-cloudwatch-actions",
-        "aws-cdk.aws-lambda",
-        "aws-cdk.aws-s3",
-        "aws-cdk.aws-s3-deployment",
-        "aws-cdk.aws-s3-assets",
-        "aws-cdk.aws-iam",
-        "aws-cdk.aws-dynamodb",
-        "aws-cdk.aws-lambda-event-sources",
-        "aws-cdk.aws-events",
-        "aws-cdk.aws-events-targets",
-        "aws-cdk.aws-apigateway",
-        "aws-cdk.aws-elasticsearch",
-        "aws-cdk.aws-opensearchservice",
-        "aws-cdk.aws-synthetics",
-    ],
+    "deploy": ["pydantic[dotenv]", "aws-cdk-lib>=2.0.0", "constructs>=10.0.0",],
 }
 
 ENTRY_POINTS = """

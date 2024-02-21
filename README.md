@@ -34,15 +34,15 @@ Some lambdas require extra pip packages to be installed in the lambda directory 
 
 ## CDK bootstrap
 
-Deployment uses AWS CDK.
+Deployment uses AWS CDK2.
 
 Requirements:
 * node: Use [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/) to make sure a supported node is being used, tested with 18.0.0
 * AWS credentials configured
 
-To install and check AWS CDK:
+To install and check AWS CDK (tested with CDK 2.129.0):
 ```bash
-$ npm install -g aws-cdk@1.204.0
+$ npm install -g aws-cdk
 $ cdk --version
 
 $ cdk bootstrap # Deploys the CDK toolkit stack into an AWS environment
