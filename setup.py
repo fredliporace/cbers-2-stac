@@ -34,7 +34,11 @@ extra_reqs = {
         # Used in process_new_scene_queue lambda.
         "utm",
     ],
-    "deploy": ["pydantic[dotenv]", "aws-cdk-lib>=2.0.0", "constructs>=10.0.0",],
+    "deploy": [
+        "pydantic[dotenv]<=1.9.1",
+        "aws-cdk-lib>=2.129.0",
+        "constructs>=10.0.0",
+    ],
 }
 
 ENTRY_POINTS = """
@@ -45,11 +49,11 @@ cb2stac-redrive-sqs=utils.redrive_sqs_queue:main
 setup(
     name="cbers-2-stac",
     version="0.0.0",
-    description=u"",
+    description="STAC service for CBERS and Amazonia data on AWS",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires="==3.7.9",
-    author=u"Frederico Liporace (AMS Kepler)",
+    python_requires="==3.9.13",
+    author="Frederico Liporace (AMS Kepler)",
     author_email="liporace@amskepler.com",
     url="https://github.com/fredliporace/cbers-2-stac",
     packages=find_packages(exclude=["tests*"]),
