@@ -644,7 +644,7 @@ class CBERS2STACStack(Stack):
             self,
             "SearchEndpointCanary",
             schedule=synthetics.Schedule.rate(Duration.hours(1)),
-            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
+            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_2_0,
             test=synthetics.Test.custom(
                 code=synthetics.Code.from_asset("cbers2stac/canary", exclude=["*~"]),
                 handler="api_canary.handler",
