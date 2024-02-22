@@ -1,3 +1,6 @@
 {
-    "app": "(export PYTHONPATH=. && python stack/app.py)"
+  "app": "(export PYTHONPATH=. && python stack/app.py)",
+  "context":{
+    "@aws-cdk/customresources:installLatestAwsSdkDefault":false
+  }
 }
