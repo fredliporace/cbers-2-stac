@@ -3,13 +3,13 @@ repos:
     rev: 19.10b0
     hooks:
       - id: black
-        language_version: python3.7
+        language_version: python3.9
         args: ["--safe"]
         additional_dependencies:
           # To avoid
           # ImportError: cannot import name '_unicodefun' from 'click'
-          #   (/home/liporace/.cache/pre-commit/repoesurte4p/py_env-python3.7/
-          #   lib/python3.7/site-packages/click/__init__.py)
+          #   (/home/liporace/.cache/pre-commit/repoesurte4p/py_env-python3.9/
+          #   lib/python3.9/site-packages/click/__init__.py)
           - "click==7.1.2"
 
   - repo: https://github.com/PyCQA/isort
@@ -19,7 +19,7 @@ repos:
     hooks:
       - id: isort
         args: ["--profile", "black"]
-        language_version: python3.7
+        language_version: python3.9
 
   #- repo: https://github.com/PyCQA/pylint
   #  rev: pylint-2.6.0
@@ -32,7 +32,7 @@ repos:
         # Reference to .pylintrc to make sure it is being used.
         entry: pylint --rcfile=.pylintrc # added for local repo option
         # This is used for remote repo
-        #language_version: python3.7
+        #language_version: python3.9
         language: python
         types: [python]
         args: [
@@ -48,7 +48,7 @@ repos:
   #   rev: 5.1.1
   #   hooks:
   #     - id: pydocstyle
-  #       language_version: python3.7
+  #       language_version: python3.9
   #       args: [
   #           # Check for docstring presence only
   #           "--select=D1",
@@ -60,6 +60,6 @@ repos:
     rev: v0.770
     hooks:
       - id: mypy
-        language_version: python3.7
+        language_version: python3.9
         #args are defined in mypy.ini
         #args: ["--no-strict-optional", "--ignore-missing-imports"]
