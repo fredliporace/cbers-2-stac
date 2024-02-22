@@ -253,7 +253,7 @@ def catalog_update_request(table_name: str, stac_item_key: str):
     )
 
 
-def process_trigger(
+def process_trigger(  # pylint: disable=too-many-arguments
     *,
     stac_bucket: str,
     cog_pds_meta_pds: Dict[str, str],
@@ -319,7 +319,7 @@ def process_trigger(
                 )
 
 
-def process_queue(
+def process_queue(  # pylint: disable=too-many-arguments
     *,
     stac_bucket: str,
     cog_pds_meta_pds: Dict[str, str],

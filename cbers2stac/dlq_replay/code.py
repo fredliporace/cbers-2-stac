@@ -26,7 +26,7 @@ def gather_messages(queue):  # pylint: disable=missing-docstring
 
 def send_messages(messages, queue):  # pylint: disable=missing-docstring
     entries = [
-        dict(Id=str(i + 1), MessageBody=message.body)
+        {"Id": str(i + 1), "MessageBody": message.body}
         for i, message in enumerate(messages)
     ]
 
