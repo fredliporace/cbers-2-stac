@@ -215,9 +215,11 @@ $ pytest
 [act](https://github.com/nektos/act) may be used to test github actions locally. At the project's root directory:
 
 ```bash
-$ act -j tests
-$ act -r -j tests # To keep docker container's state
+$ act --env-file < /dev/null -j tests
+$ act --env-filr < /dev/null -r -j tests # To keep docker container's state
 ```
+
+The `env-file` option is used to make sure that the `.env` file is used only for CDK and not docker.
 
 # References
 

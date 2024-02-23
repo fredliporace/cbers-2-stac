@@ -38,6 +38,7 @@ class CBERS2STACStack(Stack):
     """CBERS2STACStack"""
 
     lambdas_env_: Dict[str, str] = {}
+    python_runtime_ = aws_lambda.Runtime.PYTHON_3_9
 
     def create_queue(self, **kwargs: Any) -> sqs.Queue:
         """
@@ -364,7 +365,7 @@ class CBERS2STACStack(Stack):
             self,
             "common_layer",
             code=common_layer_asset,
-            compatible_runtimes=[aws_lambda.Runtime.PYTHON_3_7],
+            compatible_runtimes=[self.python_runtime_],
             description="Common utils",
         )
 
@@ -378,7 +379,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/process_new_scene_queue", exclude=["*~"]
             ),
             handler="code.handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={
                 **self.lambdas_env_,
                 **{
@@ -406,7 +407,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/generate_catalog_levels_to_be_updated", exclude=["*~"]
             ),
             handler="code.handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={
                 **self.lambdas_env_,
                 **{
@@ -427,7 +428,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/update_catalog_tree", exclude=["*~"]
             ),
             handler="code.trigger_handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={**self.lambdas_env_,},
             timeout=Duration.seconds(55),
             dead_letter_queue=self.queues_["dead_letter_queue"],
@@ -446,7 +447,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/populate_reconcile_queue", exclude=["*~"]
             ),
             handler="code.handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={
                 **self.lambdas_env_,
                 **{"RECONCILE_QUEUE": self.queues_["reconcile_queue"].queue_url},
@@ -463,7 +464,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/consume_reconcile_queue", exclude=["*~"]
             ),
             handler="code.handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={
                 **self.lambdas_env_,
                 **{"NEW_SCENES_QUEUE": self.queues_["new_scenes_queue"].queue_url},
@@ -510,7 +511,7 @@ class CBERS2STACStack(Stack):
                     path="cbers2stac/elasticsearch", exclude=["*~"]
                 ),
                 handler="es.create_stac_index_handler",
-                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                runtime=self.python_runtime_,
                 environment={**self.lambdas_env_,},
                 layers=[self.layers_["common_layer"]],
                 timeout=Duration.seconds(30),
@@ -524,7 +525,7 @@ class CBERS2STACStack(Stack):
                     path="cbers2stac/elasticsearch", exclude=["*~"]
                 ),
                 handler="es.create_documents_handler",
-                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                runtime=self.python_runtime_,
                 environment={
                     **self.lambdas_env_,
                     **{"ES_STRIPPED": "YES", "BULK_CALLS": "1", "BULK_SIZE": "10"},
@@ -548,7 +549,7 @@ class CBERS2STACStack(Stack):
                     path="cbers2stac/reindex_stac_items", exclude=["*~"]
                 ),
                 handler="code.consume_stac_reconcile_queue_handler",
-                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                runtime=self.python_runtime_,
                 environment=self.lambdas_env_,
                 layers=[self.layers_["common_layer"]],
                 timeout=Duration.seconds(900),
@@ -566,7 +567,7 @@ class CBERS2STACStack(Stack):
                     path="cbers2stac/reindex_stac_items", exclude=["*~"]
                 ),
                 handler="code.populate_stac_reconcile_queue_handler",
-                runtime=aws_lambda.Runtime.PYTHON_3_7,
+                runtime=self.python_runtime_,
                 environment={**self.lambdas_env_,},
                 timeout=Duration.seconds(300),
                 dead_letter_queue=self.queues_["dead_letter_queue"],
@@ -588,7 +589,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/stac_endpoint", exclude=["*~"]
             ),
             handler="code.handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={**self.lambdas_env_,},
             layers=[self.layers_["common_layer"]],
             timeout=Duration.seconds(30),
@@ -601,7 +602,7 @@ class CBERS2STACStack(Stack):
                 path="cbers2stac/elasticsearch", exclude=["*~"]
             ),
             handler="es.stac_search_endpoint_handler",
-            runtime=aws_lambda.Runtime.PYTHON_3_7,
+            runtime=self.python_runtime_,
             environment={**self.lambdas_env_,},
             layers=[self.layers_["common_layer"]],
             timeout=Duration.seconds(55),
@@ -644,7 +645,7 @@ class CBERS2STACStack(Stack):
             self,
             "SearchEndpointCanary",
             schedule=synthetics.Schedule.rate(Duration.hours(1)),
-            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_1_0,
+            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_2_1,
             test=synthetics.Test.custom(
                 code=synthetics.Code.from_asset("cbers2stac/canary", exclude=["*~"]),
                 handler="api_canary.handler",

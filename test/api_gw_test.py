@@ -128,7 +128,7 @@ def test_root(api_gw_method, lambda_function):
     lambda_client, lambda_func = lambda_function  # pylint: disable=unused-variable
 
     url = api_gw_lambda_integrate_deploy(api_client, api, api_resource, lambda_func)
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200
 
 
@@ -183,14 +183,14 @@ def test_item_search_get(
     original_url = api_gw_lambda_integrate_deploy(
         api_client, api, api_resource, lambda_func
     )
-    req = requests.get(original_url)
+    req = requests.get(original_url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 2
 
     # Single collection, return single item
     url = f"{original_url}?collections=CBERS4-MUX"
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 1
@@ -198,27 +198,27 @@ def test_item_search_get(
 
     # Two collections, return all items
     url = f"{original_url}?collections=CBERS4-MUX,CBERS4-AWFI"
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 2
 
     # Paging, no next case
     url = f"{original_url}"
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" not in fcol.keys()
 
     # Paging, next page
     url = f"{original_url}?limit=1"
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" in fcol.keys()
     assert len(fcol["links"]) == 1
     next_href = to_localstack_url(api["id"], fcol["links"][0]["href"])
-    req = requests.get(next_href)
+    req = requests.get(next_href, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" not in fcol.keys()
@@ -226,7 +226,7 @@ def test_item_search_get(
 
     # ids
     url = f"{original_url}?ids=CBERS_4_MUX_20170528_090_084_L2"
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 1
@@ -235,7 +235,7 @@ def test_item_search_get(
     # query extension
     url = f"{original_url}?"
     url += urlencode({"query": '{"cbers:data_type": {"eq":"L4"}}'})
-    req = requests.get(url)
+    req = requests.get(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 1
@@ -299,6 +299,7 @@ def test_item_search_post(
                 "datetime": "2019-01-01T00:00:00Z/2019-01-01T23:59:59Z",
             }
         ),
+        timeout=30,
     )
     assert req.status_code == 400, req.text
     assert "First lon corner is not western" in req.text
@@ -314,25 +315,26 @@ def test_item_search_post(
                 "datetime": "2019-01-01T00:00:00Z/2019-01-01T23:59:59Z",
             }
         ),
+        timeout=30,
     )
     assert req.status_code == 200, req.text
 
     # Paging, no next case
-    req = requests.post(url)
+    req = requests.post(url, timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" not in fcol.keys()
 
     # Paging, next page
     body = {"limit": 1}
-    req = requests.post(url, data=json.dumps(body))
+    req = requests.post(url, data=json.dumps(body), timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert "links" in fcol.keys()
     assert len(fcol["links"]) == 1
     next_href = to_localstack_url(api["id"], fcol["links"][0]["href"])
     req = requests.post(
-        next_href, data=json.dumps({**body, **fcol["links"][0]["body"]})
+        next_href, data=json.dumps({**body, **fcol["links"][0]["body"]}), timeout=30
     )
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
@@ -341,7 +343,7 @@ def test_item_search_post(
 
     # ids
     body = {"ids": ["CBERS_4_MUX_20170528_090_084_L2"]}
-    req = requests.post(url, data=json.dumps(body))
+    req = requests.post(url, data=json.dumps(body), timeout=30)
     assert req.status_code == 200, req.text
     fcol = json.loads(req.text)
     assert len(fcol["features"]) == 1

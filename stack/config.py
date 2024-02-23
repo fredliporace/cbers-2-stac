@@ -9,7 +9,7 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
     """Application settings"""
 
     name: str = "cbers2stac"
-    description: Optional[str] = "CBERS 4/4A and Amazonia 1 STAC catalogs"
+    description: str = "CBERS 4/4A and Amazonia 1 STAC catalogs"
     stage: str = "production"
     operator_email: str
     cost_center: Optional[str]
