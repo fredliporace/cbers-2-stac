@@ -206,7 +206,7 @@ Requires localstack up to execute tests:
 Check before if `/tmp/localstack/es_backup` directory exists, this is required to start the ES service.
 
 ```bash
-$ cd test && docker-compose up # Starts localstack
+$ cd test && docker compose up # Starts localstack
 $ pytest
 ```
 
