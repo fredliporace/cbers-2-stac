@@ -3,7 +3,7 @@ version: '2.1'
 services:
   localstack:
     container_name: cbers2stac-localstack_main
-    image: localstack/localstack-full:1.0.3
+    image: localstack/localstack-full:1.4.0
     network_mode: bridge
     #networks:
     #  - internal
