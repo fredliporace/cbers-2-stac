@@ -1,9 +1,10 @@
-version: '2.1'
-
 services:
   localstack:
+    # Requred to avoid the "can't start thread" error
+    # when upgrading locastack
+    privileged: true
     container_name: cbers2stac-localstack_main
-    image: localstack/localstack
+    image: localstack/localstack:4.2.0
     network_mode: bridge
     #networks:
     #  - internal
@@ -16,12 +17,15 @@ services:
       - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=${PORT_WEB_UI- }
       - LAMBDA_EXECUTOR=docker
-      - LAMBDA_DOCKER_NETWORK=host
+      # host option not supported in localstack 4.2.0
+      - LAMBDA_DOCKER_NETWORK=bridge
       # Set to false to allow checking lambda logs after
       # execution
       - LAMBDA_REMOVE_CONTAINERS=true
       - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
       - DOCKER_HOST=unix:///var/run/docker.sock
+      # To remove "platform is not supported for API version < 1.41" error
+      - LAMBDA_IGNORE_ARCHITECTURE=1
       # See
       #  https://github.com/localstack/localstack/issues/6419
       #  for limitation in using "port" as strategy, connection to es does not

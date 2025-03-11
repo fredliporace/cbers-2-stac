@@ -169,7 +169,7 @@ def test_item_search_get(
         FunctionName=lambda_func["FunctionName"],
         Environment={
             "Variables": {
-                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                "ES_ENDPOINT": "http://localhost.localstack.cloud:4566/es/us-east-1/my-domain",
                 # ES_PORT not required if we are using complete URL as ES_ENDPOINT
                 # "ES_PORT": "4566",
                 "ES_SSL": "NO",
@@ -277,7 +277,7 @@ def test_item_search_post(
         FunctionName=lambda_func["FunctionName"],
         Environment={
             "Variables": {
-                "ES_ENDPOINT": "http://localhost:4566/es/us-east-1/my-domain",
+                "ES_ENDPOINT": "http://localhost.localstack.cloud:4566/es/us-east-1/my-domain",
                 "ES_SSL": "NO",
             }
         },

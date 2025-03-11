@@ -357,7 +357,7 @@ def lambda_function(request):  # pylint: disable=too-many-locals
         FunctionName=lambda_name,
         Runtime="python3.7",
         Handler=f"{lambda_handler}",
-        Role="role",
+        Role="arn:aws:iam::123456789012:role/EngineeringTeam/DataProcessorRole-2023@v1",
         # See above (deploy from ZIP file)
         # Code=dict(ZipFile=zipped_code),
         Code={"S3Bucket": deploy_bucket, "S3Key": lambda_zip.split("/")[-1]},
@@ -365,6 +365,8 @@ def lambda_function(request):  # pylint: disable=too-many-locals
         Timeout=lambda_timeout,
     )
     # print(lambda_func, file=sys.stderr)
+    # Wait until the function is active
+    lambda_client.get_waiter("function_active").wait(FunctionName=lambda_name)
     return lambda_client, lambda_func
 
 
