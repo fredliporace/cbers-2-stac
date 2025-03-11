@@ -9,7 +9,7 @@ on:
 jobs:
   tests:
     # if: github.event_name == 'push' || github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python-version: [3.9.13]
@@ -36,7 +36,7 @@ jobs:
         # localstack is not started for local testing using act
         if: github.actor != 'nektos/act'
         run: |
-            cd test && docker-compose up -d
+            cd test && docker compose up -d
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
@@ -45,7 +45,7 @@ jobs:
 
       - name: Check cache
         if: ${{ !env.ACT }}
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         env:
           cache-name: cache-pip-pre-commit
         with:
@@ -71,10 +71,10 @@ jobs:
 
       # Run tox using the version of Python in `PATH`
       # Always displays docker-compose logs for debugging
-      #   add || (cd test && docker-compose logs && false)
+      #   add || (cd test && docker compose logs && false)
       - name: Run Tox
         run: |
-          tox -e py || (cd test && docker-compose logs && false)
+          tox -e py || (cd test && docker compose logs && false)
 
       # - name: Upload Results
       #   if: success()

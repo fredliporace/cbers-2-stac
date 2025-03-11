@@ -655,15 +655,18 @@ class CBERS2STACStack(Stack):
                 bucket=canary_artifacts_bucket
             ),
         )
-        canary_alarm = cloudwatch.Alarm(
+        # Fail alarm
+        fail_canary_alarm = cloudwatch.Alarm(
             self,
-            "CanaryAlarm",
+            "FailCanaryAlarm",
             metric=canary.metric_failed(period=Duration.hours(1)),
             evaluation_periods=1,
             threshold=0,
             comparison_operator=ComparisonOperator.GREATER_THAN_THRESHOLD,
         )
-        canary_alarm.add_alarm_action(cw_actions.SnsAction(self.topics_["alarm_topic"]))
+        fail_canary_alarm.add_alarm_action(
+            cw_actions.SnsAction(self.topics_["alarm_topic"])
+        )
 
     def create_es_domain(self) -> None:
         """

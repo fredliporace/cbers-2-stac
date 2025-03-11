@@ -12,9 +12,9 @@ Implements STAC version 1.0.0 and STAC-API version 1.0.0-beta.1.
 
 A live version of the stack is deployed to AWS and serve its contents in:
 
-  * `arn:aws:s3:::cbers-stac-1-0-0` S3 bucket with static STAC content, including its [root catalog](https://cbers-stac-1-0-0.s3.amazonaws.com/catalog.json).
-  * STAC API [endpoint](https://stac.amskepler.com/v100) - please check this [**important notice**](https://github.com/fredliporace/cbers-2-stac/issues/77#issuecomment-1120330181).
-  * SNS topic for new scenes: `arn:aws:sns:us-east-1:769537946825:cbers2stac-prod-stacitemtopic4BCE3141-VI09VRB6LBEK`. This topic receive the complete STAC item for each ingested scene.
+  * `arn:aws:s3:::br-eo-stac-1-0-0` S3 bucket with static STAC content, including its [root catalog](https://br-eo-stac-1-0-0.s3.amazonaws.com/catalog.json).
+  * STAC API [endpoint](https://stac.scitekno.com/v100).
+  * SNS topic for new scenes: `arn:aws:sns:us-west-2:769537946825:br-eo-stac-prod-stacitemtopic4BCE3141-Z8he7LYjqXFe`. This topic receive the complete STAC item for each ingested scene.
 
 # Deployment to AWS
 
@@ -206,7 +206,7 @@ Requires localstack up to execute tests:
 Check before if `/tmp/localstack/es_backup` directory exists, this is required to start the ES service.
 
 ```bash
-$ cd test && docker-compose up # Starts localstack
+$ cd test && docker compose up # Starts localstack
 $ pytest
 ```
 

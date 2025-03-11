@@ -16,3 +16,5 @@
 /test/stac_endpoint.zip
 /test/elasticsearch.zip
 /.dir-locals.el
+cdk.context.json
+cbers-2-stac.code-workspace
