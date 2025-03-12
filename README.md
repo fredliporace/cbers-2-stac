@@ -13,7 +13,7 @@ Implements STAC version 1.0.0 and STAC-API version 1.0.0-beta.1.
 A live version of the stack is deployed to AWS and serve its contents in:
 
   * `arn:aws:s3:::br-eo-stac-1-0-0` S3 bucket with static STAC content, including its [root catalog](https://br-eo-stac-1-0-0.s3.amazonaws.com/catalog.json).
-  * STAC API [endpoint](https://stac.scitekno.com/v100).
+  * STAC API [endpoint](https://stac.scitekno.com.br/v100).
   * SNS topic for new scenes: `arn:aws:sns:us-west-2:769537946825:br-eo-stac-prod-stacitemtopic4BCE3141-Z8he7LYjqXFe`. This topic receive the complete STAC item for each ingested scene.
 
 # Deployment to AWS
