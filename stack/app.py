@@ -78,7 +78,7 @@ class CBERS2STACStack(Stack):
         """
 
         # General DLQs for lambdas (not API)
-        self.create_queue(id="dead_letter_queue")
+        self.create_queue(id="dead_letter_queue", retention_period=Duration.days(14))
         general_dlq_alarm = cloudwatch.Alarm(
             self,
             "DLQAlarm",
@@ -94,7 +94,9 @@ class CBERS2STACStack(Stack):
         )
 
         # DLQ for API lambdas
-        self.create_queue(id="api_dead_letter_queue")
+        self.create_queue(
+            id="api_dead_letter_queue", retention_period=Duration.days(14)
+        )
         api_dlq_alarm = cloudwatch.Alarm(
             self,
             "APIDLQAlarm",
