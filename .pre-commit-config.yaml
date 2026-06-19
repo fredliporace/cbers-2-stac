@@ -1,25 +1,28 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 19.10b0
-    hooks:
-      - id: black
-        language_version: python3.9
-        args: ["--safe"]
-        additional_dependencies:
-          # To avoid
-          # ImportError: cannot import name '_unicodefun' from 'click'
-          #   (/home/liporace/.cache/pre-commit/repoesurte4p/py_env-python3.9/
-          #   lib/python3.9/site-packages/click/__init__.py)
-          - "click==7.1.2"
 
+  # Execute isort before black and using black profile to avoid conflicts
   - repo: https://github.com/PyCQA/isort
     # See https://stackoverflow.com/a/75295105/1259982 for
     # rev value
-    rev: 5.11.5
+    rev: 8.0.1
     hooks:
       - id: isort
         args: ["--profile", "black"]
-        language_version: python3.9
+        language_version: python3.14
+
+  - repo: https://github.com/psf/black
+    # rev: 19.10b0
+    rev: 26.3.1
+    hooks:
+      - id: black
+        language_version: python3.14
+        args: ["--safe"]
+        # additional_dependencies:
+          # To avoid
+          # ImportError: cannot import name '_unicodefun' from 'click'
+          #   (/home/liporace/.cache/pre-commit/repoesurte4p/py_env-python3.14/
+          #   lib/python3.14/site-packages/click/__init__.py)
+          # - "click==7.1.2"
 
   #- repo: https://github.com/PyCQA/pylint
   #  rev: pylint-2.6.0
@@ -32,35 +35,42 @@ repos:
         # Reference to .pylintrc to make sure it is being used.
         entry: pylint --rcfile=.pylintrc # added for local repo option
         # This is used for remote repo
-        #language_version: python3.9
+        #language_version: python3.14
         language: python
         types: [python]
-        args: [
+        args:
+          - "--init-hook=import sys; sys.path.insert(0, '.')"
         #"--init-hook=\"from pylint.config import find_pylintrc; import os, sys; sys.path.append(os.path.dirname(find_pylintrc()))\""
         #     # E501 let black handle all line length decisions
         #     # W503 black conflicts with "line break before operator" rule
         #     # E203 black conflicts with "whitespace before ':'" rule
         #     "--ignore=E501,W503,E203",
-        ]
 
-  # This is already checked by pylint
-  # - repo: https://github.com/PyCQA/pydocstyle
-  #   rev: 5.1.1
-  #   hooks:
-  #     - id: pydocstyle
-  #       language_version: python3.9
-  #       args: [
-  #           # Check for docstring presence only
-  #           "--select=D1",
-  #           # Don't require docstrings for tests and third party files
-  #           '--match=(?!test).*\.py',
-  #         ]
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 5.1.1
+    hooks:
+      - id: pydocstyle
+        exclude: 'cbers2stac/canary/python/api_canary.py|cbers2stac/dlq_replay/code.py'
+        language_version: python3.14
+        args: [
+            # Check for docstring presence only
+            "--select=D1",
+            # Don't require docstrings for tests
+            '--match=(?!test).*\.py',
+          ]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    # rev: v0.770
-    rev: v0.790
+    # rev: v0.790
+    rev: v1.9.0
     hooks:
       - id: mypy
-        language_version: python3.9
-        #args are defined in mypy.ini
-        #args: ["--no-strict-optional", "--ignore-missing-imports"]
+        language_version: python3.14
+        additional_dependencies:
+          - pydantic
+          - types-retry
+          - types-requests
+          - types-python-dateutil
+          - elasticsearch==7.13.4
+          - elasticsearch-dsl==7.4.1
+        # args are defined in mypy.ini
+        # args: [--config-file=mypy.ini]

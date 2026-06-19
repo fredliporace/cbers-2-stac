@@ -1,7 +1,7 @@
 """App construction"""
 
-from test.conftest import (  # pylint: disable=no-name-in-module, import-error
-    create_lambda_layer_from_dir,
+from test.conftest import (
+    create_lambda_layer_from_dir,  # pylint: disable=no-name-in-module, import-error
 )
 from typing import Any, Dict, List
 
@@ -31,7 +31,7 @@ from cbers2stac.local.create_static_catalog_structure import (
 )
 from stack.config import StackSettings
 
-settings = StackSettings()
+settings = StackSettings()  # type: ignore
 
 
 class CBERS2STACStack(Stack):
@@ -59,7 +59,7 @@ class CBERS2STACStack(Stack):
         self.lambdas_[kwargs["id"]] = lfun
         return lfun
 
-    def create_api_lambda(self, **kwargs: Any) -> aws_lambda.Function:
+    def create_api_lambda(self, **kwargs: Any) -> None:
         """
         Create a lambda function that integrates with API gateway
         These lambdas are kept in a separate list with separate permissions,
@@ -69,7 +69,8 @@ class CBERS2STACStack(Stack):
         assert "_" not in kwargs["id"]
         lfun = aws_lambda.Function(self, **kwargs)
         lel_id = lfun.node.default_child
-        lel_id.override_logical_id(kwargs["id"])
+        assert lel_id is not None
+        lel_id.override_logical_id(kwargs["id"])  # type: ignore
         self.api_lambdas_[kwargs["id"]] = lfun
 
     def create_all_queues(self) -> None:
@@ -276,7 +277,7 @@ class CBERS2STACStack(Stack):
         self.create_queue(
             id="backup_insert_into_elasticsearch_queue",
             visibility_timeout=Duration.seconds(180),
-            retention_period=Duration.days(settings.backup_queue_retention_days),
+            retention_period=Duration.days(settings.backup_queue_retention_days),  # type: ignore
             dead_letter_queue=sqs.DeadLetterQueue(
                 max_receive_count=3, queue=self.queues_["dead_letter_queue"]
             ),
@@ -290,7 +291,8 @@ class CBERS2STACStack(Stack):
 
         # Queue for corrupted XML entries, see #89
         self.create_queue(
-            id="corrupted_xml_queue", retention_period=Duration.days(14),
+            id="corrupted_xml_queue",
+            retention_period=Duration.days(14),
         )
 
     def create_all_topics(self) -> None:
@@ -431,7 +433,9 @@ class CBERS2STACStack(Stack):
             ),
             handler="code.trigger_handler",
             runtime=self.python_runtime_,
-            environment={**self.lambdas_env_,},
+            environment={
+                **self.lambdas_env_,
+            },
             timeout=Duration.seconds(55),
             dead_letter_queue=self.queues_["dead_letter_queue"],
             layers=[self.layers_["common_layer"]],
@@ -514,7 +518,9 @@ class CBERS2STACStack(Stack):
                 ),
                 handler="es.create_stac_index_handler",
                 runtime=self.python_runtime_,
-                environment={**self.lambdas_env_,},
+                environment={
+                    **self.lambdas_env_,
+                },
                 layers=[self.layers_["common_layer"]],
                 timeout=Duration.seconds(30),
                 dead_letter_queue=self.queues_["dead_letter_queue"],
@@ -570,7 +576,9 @@ class CBERS2STACStack(Stack):
                 ),
                 handler="code.populate_stac_reconcile_queue_handler",
                 runtime=self.python_runtime_,
-                environment={**self.lambdas_env_,},
+                environment={
+                    **self.lambdas_env_,
+                },
                 timeout=Duration.seconds(300),
                 dead_letter_queue=self.queues_["dead_letter_queue"],
                 layers=[self.layers_["common_layer"]],
@@ -592,7 +600,9 @@ class CBERS2STACStack(Stack):
             ),
             handler="code.handler",
             runtime=self.python_runtime_,
-            environment={**self.lambdas_env_,},
+            environment={
+                **self.lambdas_env_,
+            },
             layers=[self.layers_["common_layer"]],
             timeout=Duration.seconds(30),
             dead_letter_queue=self.queues_["api_dead_letter_queue"],
@@ -605,7 +615,9 @@ class CBERS2STACStack(Stack):
             ),
             handler="es.stac_search_endpoint_handler",
             runtime=self.python_runtime_,
-            environment={**self.lambdas_env_,},
+            environment={
+                **self.lambdas_env_,
+            },
             layers=[self.layers_["common_layer"]],
             timeout=Duration.seconds(55),
             dead_letter_queue=self.queues_["api_dead_letter_queue"],
@@ -913,10 +925,10 @@ for key, value in {
     if value:
         Tags.of(app).add(key, value)
 
-stackname = f"{settings.name}-{settings.stage}"
+STACKNAME = f"{settings.name}-{settings.stage}"
 CBERS2STACStack(
     scope=app,
-    stack_id=stackname,
+    stack_id=STACKNAME,
     env=settings.additional_env,
     description=settings.description,
 )

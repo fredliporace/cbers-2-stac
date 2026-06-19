@@ -5,10 +5,13 @@ Definitions for base item, catalog and collections
 
 import os
 from collections import OrderedDict
-from typing import Any, Dict, KeysView, List
+from typing import TYPE_CHECKING, Any, Dict, KeysView, List
 from urllib.parse import urlencode
 
 import boto3
+
+if TYPE_CHECKING:
+    from types_boto3_account.literals import ResourceServiceName, ServiceName
 
 # TODO: This is a singleton, check for more elegant, pythonic way # pylint: disable=fixme
 # Dictionary for aws clients, service is the key
@@ -16,7 +19,7 @@ CLIENT = {}  # type: dict
 RESOURCE = {}  # type: dict
 
 
-def get_client(service: str) -> boto3.client:
+def get_client(service: ServiceName) -> Any:
     """
     Create localstack or production client
 
@@ -27,15 +30,15 @@ def get_client(service: str) -> boto3.client:
     if not CLIENT.get(service):
         if os.environ.get("LOCALSTACK_HOSTNAME"):
             CLIENT[service] = boto3.client(
-                service,
+                service_name=service,
                 endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:4566",
             )
         else:
-            CLIENT[service] = boto3.client(service)
+            CLIENT[service] = boto3.client(service_name=service)
     return CLIENT[service]
 
 
-def get_resource(service: str) -> boto3.client:
+def get_resource(service: ResourceServiceName) -> Any:
     """
     Create localstack or production resource
 
@@ -46,11 +49,11 @@ def get_resource(service: str) -> boto3.client:
     if not RESOURCE.get(service):
         if os.environ.get("LOCALSTACK_HOSTNAME"):
             RESOURCE[service] = boto3.resource(
-                service,
+                service_name=service,
                 endpoint_url=f"http://{os.environ['LOCALSTACK_HOSTNAME']}:4566",
             )
         else:
-            RESOURCE[service] = boto3.resource(service)
+            RESOURCE[service] = boto3.resource(service_name=service)
     return RESOURCE[service]
 
 
@@ -77,7 +80,11 @@ STAC_API_VERSION = "1.0.0-beta.1"
 
 # Common items for catalog and collection documents.
 BASE_CATALOG = OrderedDict(
-    {"stac_version": STAC_VERSION, "id": None, "description": None,}
+    {
+        "stac_version": STAC_VERSION,
+        "id": None,
+        "description": None,
+    }
 )
 
 COG_TYPE = "image/tiff; application=geotiff; profile=cloud-optimized"
@@ -145,7 +152,9 @@ CBERS_AM_MISSIONS: Dict[str, Any] = {
         "quicklook": {"extension": "png", "type": "png"},
         "instruments": ["WPM", "MUX", "WFI"],
         "band": {
-            "B0": {"common_name": "pan",},
+            "B0": {
+                "common_name": "pan",
+            },
             "B1": {
                 # gsd is only defined for values greater than
                 # what is defined at collection level
@@ -240,7 +249,9 @@ BASE_COLLECTION = OrderedDict(
         "license": "CC-BY-SA-3.0",
         "providers": None,
         "extent": {
-            "spatial": {"bbox": [[-180.0, -83.0, 180.0, 83.0]],},
+            "spatial": {
+                "bbox": [[-180.0, -83.0, 180.0, 83.0]],
+            },
             "temporal": {"interval": None},
         },
         "summaries": {
@@ -476,7 +487,7 @@ BASE_CAMERA = {
 }
 
 
-def build_collection_name(satellite: str, camera: str, mission: str = None):
+def build_collection_name(satellite: str, camera: str, mission: str | None = None):
     """
     Centralized method to build collection names. If mission is absent
     then we assume that it is already concatenated with satellite
@@ -550,15 +561,15 @@ def parse_api_gateway_event(event: dict):
         phost=parsed["phost"], path=event["requestContext"]["path"]
     )
     parsed["prefix"] = event["path"].split("/")[1]
-    parsed[
-        "vpath"
-    ] = "{phost}/{prefix}".format(  # pylint: disable=consider-using-f-string
-        phost=parsed["phost"], prefix=parsed["prefix"]
+    parsed["vpath"] = (
+        "{phost}/{prefix}".format(  # pylint: disable=consider-using-f-string
+            phost=parsed["phost"], prefix=parsed["prefix"]
+        )
     )
-    parsed[
-        "spath"
-    ] = "{phost}/{prefix}/stac".format(  # pylint: disable=consider-using-f-string
-        phost=parsed["phost"], prefix=parsed["prefix"]
+    parsed["spath"] = (
+        "{phost}/{prefix}/stac".format(  # pylint: disable=consider-using-f-string
+            phost=parsed["phost"], prefix=parsed["prefix"]
+        )
     )
     return parsed
 
@@ -567,7 +578,7 @@ def get_api_stac_root(
     event: dict,
     item_search: bool = False,
     static_catalog: bool = False,
-    static_bucket: str = None,
+    static_bucket: str | None = None,
 ) -> Dict[str, Any]:
     """
     Return STAC api root document
@@ -630,7 +641,10 @@ def get_api_stac_root(
 
 
 def build_absolute_prefix(
-    bucket: str, sat_sensor: str = None, path: str = None, row: str = None
+    bucket: str,
+    sat_sensor: str | None = None,
+    path: str | None = None,
+    row: str | None = None,
 ) -> str:
     """Returns the absolute prefix given the bucket/satellite/path/row"""
 

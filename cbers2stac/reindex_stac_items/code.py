@@ -73,7 +73,9 @@ def populate_queue_with_subdirs(bucket: str, prefix: str, queue: str) -> None:
     assert prefix[-1] == "/"
 
     dirs = get_client("s3").list_objects_v2(
-        Bucket=bucket, Prefix=prefix, Delimiter="/",
+        Bucket=bucket,
+        Prefix=prefix,
+        Delimiter="/",
     )
 
     # Paging is not supported here

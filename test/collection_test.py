@@ -17,7 +17,7 @@ def test_collection_json_schema(tmp_path):
     # Makes sure that a invalid file is flagged
     collection_filename = "test/fixtures/CBERS_4_MUX_bogus_collection.json"
     with pytest.raises(ValidationError) as context:
-        jsv.validate(collection_filename)
+        jsv.validate_all(collection_filename)
     assert "'stac_version' is a required property" in context.value.message
 
     # Checks all Amazonia-1 collections
@@ -30,7 +30,7 @@ def test_collection_json_schema(tmp_path):
         collection_filename = f"{str(tmp_path)}/{collection}_collection.json"
         with open(collection_filename, "w", encoding="utf-8") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
-        jsv.validate(collection_filename)
+        jsv.validate_all(collection_filename)
 
     # Checks all CBERS-4 collections
     collections = ["MUX", "AWFI", "PAN5M", "PAN10M"]
@@ -40,7 +40,7 @@ def test_collection_json_schema(tmp_path):
         collection_filename = f"{str(tmp_path)}/{collection}_collection.json"
         with open(collection_filename, "w", encoding="utf-8") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
-        jsv.validate(collection_filename)
+        jsv.validate_all(collection_filename)
 
     # Checks all CBERS-4A collections
     collections = ["MUX", "WFI", "WPM"]
@@ -50,4 +50,4 @@ def test_collection_json_schema(tmp_path):
         collection_filename = f"{str(tmp_path)}/{collection}_collection.json"
         with open(collection_filename, "w", encoding="utf-8") as out_filename:
             json.dump(col_dict, out_filename, indent=2)
-        jsv.validate(collection_filename)
+        jsv.validate_all(collection_filename)

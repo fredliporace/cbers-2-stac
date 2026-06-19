@@ -8,8 +8,11 @@ import os
 import traceback
 from typing import Any, Dict, List, Tuple, Union
 
-from aws_requests_auth.boto_utils import BotoAWSRequestsAuth
-from elasticsearch_dsl import Q, Search  # pylint: disable=wrong-import-order
+from aws_requests_auth.boto_utils import BotoAWSRequestsAuth  # type: ignore
+from elasticsearch_dsl import (  # type: ignore #pylint: disable=wrong-import-order
+    Q,
+    Search,
+)
 
 from cbers2stac.layers.common.utils import (
     STAC_API_VERSION,
@@ -24,7 +27,6 @@ from cbers2stac.layers.common.utils import (
 from elasticsearch import Elasticsearch, RequestsHttpConnection
 
 from elasticsearch.helpers import bulk  # isort: skip
-
 
 # Get rid of "Found credentials in environment variables" messages
 logging.getLogger("botocore.credentials").disabled = True
@@ -58,7 +60,9 @@ def api_gw_lambda_integration(func):
             retmsg = {
                 "statusCode": "400",
                 "body": json.dumps({"error": str(excp)}, indent=2),
-                "headers": {"Content-Type": "application/json",},
+                "headers": {
+                    "Content-Type": "application/json",
+                },
             }
             return retmsg
 
@@ -253,9 +257,9 @@ def parse_bbox(bbox: str) -> List[List[float]]:
     return bbox_to_es_envelope(els)
 
 
-def es_connect(  # pylint: disable=too-many-arguments
+def es_connect(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     endpoint: str,
-    port: int = None,
+    port: int | None = None,
     use_ssl: bool = True,
     verify_certs: bool = True,
     http_auth=None,
@@ -338,7 +342,10 @@ def create_stac_index(es_client, timeout: int = 30):
 
 
 def bulk_create_document_in_index(
-    es_client, stac_items: list, update_if_exists: bool = False, stripped: bool = False,
+    es_client,
+    stac_items: list,
+    update_if_exists: bool = False,
+    stripped: bool = False,
 ) -> int:
     """
     Create operation, bulk mode.
@@ -374,9 +381,10 @@ def bulk_create_document_in_index(
             bulk_item["upsert"] = dict_item
             stac_updates.append(bulk_item)
 
-    success, errors = bulk(es_client, stac_updates)
+    success, errors = bulk(client=es_client, actions=stac_updates, stats_only=False)
 
-    assert len(errors) == 0, errors
+    # stats_only=False above make sure we are dealing with an list here
+    assert len(errors) == 0, errors  # type: ignore
     return success
 
 
@@ -423,11 +431,11 @@ def create_document_in_index(
         )
 
 
-def stac_search(  # pylint: disable=too-many-arguments
+def stac_search(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     es_client,
-    start_date: str = None,
-    end_date: str = None,
-    bbox: list = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    bbox: list | None = None,
     limit: int = 10,
     page: int = 1,
 ) -> Search:
@@ -561,7 +569,9 @@ def process_ids_filter(dsl_query: Search, ids: List[str]) -> Search:
     """
 
     list_or = Q(
-        "bool", should=[Q("match", **{"id": id}) for id in ids], minimum_should_match=1,
+        "bool",
+        should=[Q("match", **{"id": id}) for id in ids],
+        minimum_should_match=1,
     )
     dsl_query = dsl_query.query(list_or)
     return dsl_query
@@ -813,9 +823,11 @@ def stac_search_endpoint_handler(
         endpoint=os.environ["ES_ENDPOINT"],
         # This is just to make sure we convert to int only if ES_PORT
         # is defined.
-        port=int(os.environ.get("ES_PORT"))
-        if os.environ.get("ES_PORT")
-        else os.environ.get("ES_PORT"),
+        port=(
+            int(os.environ.get("ES_PORT"))
+            if os.environ.get("ES_PORT")
+            else os.environ.get("ES_PORT")
+        ),
         use_ssl=(auth is not None),
         verify_certs=(auth is not None),
         http_auth=auth,
@@ -879,7 +891,9 @@ def stac_search_endpoint_handler(
                     "rel": "next",
                     "href": f"{parsed['ppath']}",
                     "method": "POST",
-                    "body": {"page": document["page"] + 1,},
+                    "body": {
+                        "page": document["page"] + 1,
+                    },
                     "merge": True,
                 }
             )
@@ -908,7 +922,8 @@ def wfs3_collections_endpoint_handler(
         collections["collections"].append(
             static_to_api_collection(
                 collection=stac_item_from_s3_key(
-                    bucket=os.environ["STAC_BUCKET"], key=get_collection_s3_key(cid),
+                    bucket=os.environ["STAC_BUCKET"],
+                    key=get_collection_s3_key(cid),
                 ),
                 event=event,
             )
@@ -916,7 +931,9 @@ def wfs3_collections_endpoint_handler(
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(collections, indent=2),
-        "headers": {"Content-Type": "application/json",},
+        "headers": {
+            "Content-Type": "application/json",
+        },
     }
 
     return retmsg
@@ -939,7 +956,9 @@ def wfs3_collectionid_endpoint_handler(
         "body": json.dumps(
             static_to_api_collection(collection=collection, event=event), indent=2
         ),
-        "headers": {"Content-Type": "application/json",},
+        "headers": {
+            "Content-Type": "application/json",
+        },
     }
 
     return retmsg
@@ -999,7 +1018,9 @@ def wfs3_collectionid_items_endpoint_handler(
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(results, indent=2),
-        "headers": {"Content-Type": "application/json",},
+        "headers": {
+            "Content-Type": "application/json",
+        },
     }
     return retmsg
 
@@ -1060,6 +1081,8 @@ def wfs3_collectionid_featureid_endpoint_handler(
     retmsg = {
         "statusCode": "200",
         "body": json.dumps(results, indent=2),
-        "headers": {"Content-Type": "application/json",},
+        "headers": {
+            "Content-Type": "application/json",
+        },
     }
     return retmsg

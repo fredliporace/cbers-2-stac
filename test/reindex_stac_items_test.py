@@ -25,7 +25,9 @@ def test_send_stac_items_to_queue(s3_bucket, sqs_queue):
         )
 
     send_stac_items_to_queue(
-        bucket="cbers-stac", queue=queue.url, prefix="CBERS4/AWFI/001/",
+        bucket="cbers-stac",
+        queue=queue.url,
+        prefix="CBERS4/AWFI/001/",
     )
     check_queue_size(sqs_queue, 4)
 

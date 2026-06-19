@@ -190,10 +190,10 @@ def get_base_collection(sat_mission: str, camera: str) -> Dict[str, Any]:
     assert camera is not None
 
     collection = deepcopy(BASE_CATALOG)
-    collection.update(BASE_COLLECTION)
-    collection["summaries"].update(BASE_CAMERA[sat_mission][camera]["summaries"])
-    collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]
-    collection["extent"]["temporal"]["interval"] = CBERS_AM_MISSIONS[sat_mission][
+    collection.update(BASE_COLLECTION)  # type: ignore
+    collection["summaries"].update(BASE_CAMERA[sat_mission][camera]["summaries"])  # type: ignore
+    collection["item_assets"] = BASE_CAMERA[sat_mission][camera]["item_assets"]  # type: ignore
+    collection["extent"]["temporal"]["interval"] = CBERS_AM_MISSIONS[sat_mission][  # type: ignore
         "interval"
     ]
     collection["providers"] = CBERS_AM_MISSIONS[sat_mission]["providers"]
@@ -231,13 +231,13 @@ def base_root_catalog(bucket: str) -> Dict[Any, Any]:
     return stac_catalog
 
 
-def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches, too-many-statements
+def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, too-many-branches, too-many-statements, too-many-positional-arguments
     bucket: str,
     satellite: str,
-    mission: str = None,
-    camera: str = None,
-    path: str = None,
-    row: str = None,
+    mission: str | None = None,
+    camera: str | None = None,
+    path: str | None = None,
+    row: str | None = None,
 ) -> Dict[Any, Any]:
     """JSON STAC catalog or collection with common items"""
 
@@ -277,10 +277,12 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     if mission:
         name += mission
         description += mission
+        assert sat_sensor is not None
         sat_sensor += mission
     if camera:
         name += f" {camera}"
         description += f" {camera} camera"
+        assert sat_sensor is not None
         sat_sensor += f"/{camera}"
     if path:
         name += f" {path}"
@@ -295,6 +297,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
     # @todo currently must support two cases: satellite concatenated
     # or not with mission. Clean up.
     if in_collection:
+        assert camera is not None
         stac_catalog["id"] = build_collection_name(
             satellite=satellite, mission=mission, camera=camera
         )
@@ -341,6 +344,7 @@ def base_stac_catalog(  # pylint: disable=too-many-arguments, too-many-locals, t
         # import pdb; pdb.set_trace()
         if stac_catalog["id"] in get_satmissions(use_hyphen=False):
             # This is a satellite catalog
+            assert mission is not None
             for collection in get_collections_for_satmission(satellite, mission):
                 child_link = OrderedDict()
                 child_link["rel"] = "child"

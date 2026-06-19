@@ -20,6 +20,8 @@ A live version of the stack is deployed to AWS and serve its contents in:
 
 ## Install
 
+This step is already executed in devcontainer setup.
+
 ```bash
 $ git clone git@github.com:fredliporace/cbers-2-stac.git
 $ cd cbers-2-stac
@@ -40,7 +42,10 @@ Requirements:
 * node: Use [nvm](https://heynode.com/tutorial/install-nodejs-locally-nvm/) to make sure a supported node is being used, tested with 18.0.0
 * AWS credentials configured
 
-To install and check AWS CDK (tested with CDK 2.129.0):
+To install and check AWS CDK (tested with CDK 2.1127.0):
+
+This step is already executed in devcontainer setup.
+
 ```bash
 $ npm install -g aws-cdk
 $ cdk --version
@@ -195,6 +200,8 @@ Use `cb2stac-redrive-sqs` (or `Start DLQ redrive` from AWS console) to transfer 
 
 This repo is set to use `pre-commit` to run *isort*, *pylint*, *pydocstring*, *black* ("uncompromising Python code formatter") and mypy when committing new code.
 
+This step is executed in the devcontainer initialization.
+
 ```bash
 $ pre-commit install
 ```
@@ -213,6 +220,10 @@ $ pytest
 ## Check CI integration testing before pushing
 
 [act](https://github.com/nektos/act) may be used to test github actions locally. At the project's root directory:
+
+Infrastructure is installed by devcontainer.json and Dockerfile.
+
+When running act select the "Medium" image.
 
 ```bash
 $ act --env-file < /dev/null -j tests

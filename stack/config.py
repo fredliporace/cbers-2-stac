@@ -2,17 +2,17 @@
 
 from typing import Dict, List, Optional
 
-import pydantic
+from pydantic_settings import BaseSettings
 
 
-class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-methods
+class StackSettings(BaseSettings):  # pylint: disable=too-few-public-methods
     """Application settings"""
 
     name: str = "cbers2stac"
     description: str = "CBERS 4/4A and Amazonia 1 STAC catalogs"
     stage: str = "production"
     operator_email: str
-    cost_center: Optional[str]
+    cost_center: str
 
     backup_queue_retention_days: Optional[int] = 1
 
@@ -38,3 +38,4 @@ class StackSettings(pydantic.BaseSettings):  # pylint: disable=too-few-public-me
 
         env_file = ".env"
         env_prefix = "STACK_"
+        case_sensitive = False

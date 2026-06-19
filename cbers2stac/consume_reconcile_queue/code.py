@@ -27,7 +27,9 @@ def populate_queue_with_quicklooks(bucket, prefix, suffix, queue):
                         "Records": [
                             {
                                 "s3": {
-                                    "bucket": {"name": bucket,},
+                                    "bucket": {
+                                        "name": bucket,
+                                    },
                                     "object": {
                                         "key": file["Key"],
                                         # This is an artificial key to indicate that the item

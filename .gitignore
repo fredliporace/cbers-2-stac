@@ -2,6 +2,7 @@
 *.pyc
 \#*\#
 .\#*
+*mypyc.cpython*
 /cbers_2_stac.egg-info/
 /.mypy_cache/
 /.coverage
@@ -18,3 +19,4 @@
 /.dir-locals.el
 cdk.context.json
 cbers-2-stac.code-workspace
+.devcontainer/dev.env
