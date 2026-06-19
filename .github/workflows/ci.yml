@@ -78,11 +78,11 @@ jobs:
         run: ./pip-on-lambdas.sh
 
       # Run tox using the version of Python in `PATH`
-      # Always displays docker-compose logs for debugging
-      #   add || (cd test && docker compose logs && false)
+      # To display docker-compose logs for debugging use
+      #  tox -e py || (cd test && docker compose logs && false)
       - name: Run Tox
         run: |
-          tox -e py || (cd test && docker compose logs && false)
+          tox -e py
 
       # - name: Upload Results
       #   if: success()

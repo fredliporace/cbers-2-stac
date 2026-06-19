@@ -139,6 +139,9 @@ def testing_env_var(monkeypatch):
     monkeypatch.delenv("AWS_PROFILE", raising=False)
     monkeypatch.setenv("AWS_CONFIG_FILE", "/tmp/noconfigheere")
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", "/tmp/noconfighereeither")
+    # Only set LOCALSTACK_HOSTNAME if it is not already set
+    if "LOCALSTACK_HOSTNAME" not in os.environ:
+        monkeypatch.setenv("LOCALSTACK_HOSTNAME", "localhost")
     monkeypatch.setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 
 
