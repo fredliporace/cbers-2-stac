@@ -38,7 +38,7 @@ class CBERS2STACStack(Stack):
     """CBERS2STACStack"""
 
     lambdas_env_: Dict[str, str] = {}
-    python_runtime_ = aws_lambda.Runtime.PYTHON_3_9
+    python_runtime_ = aws_lambda.Runtime.PYTHON_3_14
 
     def create_queue(self, **kwargs: Any) -> sqs.Queue:
         """
@@ -659,7 +659,7 @@ class CBERS2STACStack(Stack):
             self,
             "SearchEndpointCanary",
             schedule=synthetics.Schedule.rate(Duration.hours(1)),
-            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_2_1,
+            runtime=synthetics.Runtime.SYNTHETICS_PYTHON_SELENIUM_7_0,
             test=synthetics.Test.custom(
                 code=synthetics.Code.from_asset("cbers2stac/canary", exclude=["*~"]),
                 handler="api_canary.handler",
