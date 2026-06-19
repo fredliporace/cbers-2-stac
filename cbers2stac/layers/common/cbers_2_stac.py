@@ -9,7 +9,7 @@ import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from typing import Any, Dict, List
 
-import utm
+import utm  # type: ignore
 
 from cbers2stac.layers.common.utils import (
     BASE_CAMERA,
@@ -66,7 +66,7 @@ def get_keys_from_cbers_am(  # pylint: disable=too-many-statements,too-many-loca
     # satellite node information, checking for CBERS-04A/AMAZONIA1 WFI
     # special case
     left_root = original_root.find("x:leftCamera", nsp)
-    if left_root:
+    if left_root is not None:
         right_root = original_root.find("x:rightCamera", nsp)
         # We use the left camera for fields that are not camera
         # specific or are not used for STAC fields computation
@@ -125,7 +125,7 @@ def get_keys_from_cbers_am(  # pylint: disable=too-many-statements,too-many-loca
     metadata["sun_elevation"] = sun_position.find("x:elevation", nsp).text
     metadata["sun_azimuth"] = sun_position.find("x:sunAzimuth", nsp).text
 
-    if left_root:
+    if left_root is not None:
         # Update fields for CB04A / AMAZONIA WFI special case
         lidata = left_root.find("x:image", nsp).find("x:imageData", nsp)
         ridata = right_root.find("x:image", nsp).find("x:imageData", nsp)
@@ -249,9 +249,9 @@ def get_keys_from_cbers_am(  # pylint: disable=too-many-statements,too-many-loca
             ),
         )
     )
-    metadata[
-        "sat_sensor"
-    ] = f"{metadata['mission']}{metadata['number']}/{metadata['sensor']}"
+    metadata["sat_sensor"] = (
+        f"{metadata['mission']}{metadata['number']}/{metadata['sensor']}"
+    )
     metadata["sat_number"] = f"{metadata['mission']}-{metadata['number']}"
     metadata["meta_file"] = os.path.basename(cb_am_metadata)
 
@@ -270,7 +270,7 @@ def build_link(rel, href):
 
 def build_asset(
     href, sat_number, title=None, asset_type=None, band_id=None, properties=None
-):  # pylint: disable=too-many-arguments
+):  # pylint: disable=too-many-arguments, too-many-positional-arguments
     """
     Build a asset entry
     """
@@ -435,9 +435,9 @@ def build_stac_item_keys(cbers_am, buckets):
     stac_item["properties"]["proj:epsg"] = int(epsg_from_utm_zone(utm_zone))
 
     # SATELLITE extension
-    stac_item["properties"][
-        "sat:platform_international_designator"
-    ] = CBERS_AM_MISSIONS[cbers_am["sat_number"]]["international_designator"]
+    stac_item["properties"]["sat:platform_international_designator"] = (
+        CBERS_AM_MISSIONS[cbers_am["sat_number"]]["international_designator"]
+    )
     stac_item["properties"]["sat:orbit_state"] = (
         "descending" if float(cbers_am["vz"]) < 0 else "ascending"
     )
@@ -544,7 +544,7 @@ def convert_inpe_to_stac(
     inpe_metadata_filename: str,
     stac_metadata_filename: str,
     buckets: Dict[str, Any],
-    thumbnail_extension: str = None,
+    thumbnail_extension: str | None = None,
 ):
     """
     Generate STAC item in stac_metadata from inpe_metadata.

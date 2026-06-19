@@ -11,10 +11,13 @@ inst_reqs = [
 ]
 
 extra_reqs = {
-    "dev": ["awscli", "awscli-local",],
+    "dev": [
+        "awscli",
+        "awscli-local",
+    ],
     "test": [
-        "pydantic[dotenv]",
-        "importlib-metadata<2,>=0.12",  # This is required by tox 3.2.0
+        "pydantic",
+        "pydantic-settings",
         "pytest",
         "pytest-cov",
         "pre-commit",
@@ -28,17 +31,16 @@ extra_reqs = {
         # Used in elasticsearch lambda. This needs to be <7.14.0 to avoid the
         #   "The client noticed that the server is not a supported distribution of Elasticsearch"
         #   error message.
+        # Changes here must also be reflected in pre-commit mypy additional dependencies
         "elasticsearch>=7.0.0,<7.14.0",
         "elasticsearch-dsl>=7.0.0,<8.0.0",
+        # elasticsearch 7.13.4 requires urllib3<2,>=1.21.1
+        "urllib3<2,>=1.21.1",
         "aws-requests-auth",
         # Used in process_new_scene_queue lambda.
         "utm",
     ],
-    "deploy": [
-        "pydantic[dotenv]<=1.9.1",
-        "aws-cdk-lib>=2.129.0",
-        "constructs>=10.0.0",
-    ],
+    "deploy": ["pydantic", "pydantic-settings", "aws-cdk-lib", "constructs", "docker"],
 }
 
 ENTRY_POINTS = """
@@ -52,13 +54,13 @@ setup(
     description="STAC service for CBERS and Amazonia data on AWS",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires="==3.9.13",
-    author="Frederico Liporace (AMS Kepler)",
-    author_email="liporace@amskepler.com",
+    python_requires=">=3.14",
+    author="Frederico Liporace (Scitekno)",
+    author_email="liporace@scitekno.com.br",
     url="https://github.com/fredliporace/cbers-2-stac",
     packages=find_packages(exclude=["tests*"]),
     zip_safe=False,
     install_requires=inst_reqs,
-    extras_require=extra_reqs,
+    extras_require=extra_reqs,  # type: ignore[arg-type]
     entry_points=ENTRY_POINTS,
 )

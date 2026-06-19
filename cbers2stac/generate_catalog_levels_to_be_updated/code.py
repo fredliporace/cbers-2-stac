@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import List, Set
+from typing import Any
 
 from cbers2stac.layers.common.utils import get_client
 
@@ -12,7 +12,7 @@ LOGGER = logging.getLogger()
 LOGGER.setLevel(logging.INFO)
 
 
-def get_catalog_levels(item: str) -> List[str]:
+def get_catalog_levels(item: str) -> list[str]:
     """
     Return the levels to be updated given a STAC item key
     """
@@ -34,7 +34,12 @@ class GenerateCatalogLevelsToBeUpdated:
     """
 
     def __init__(  # pylint: disable=too-many-arguments
-        self, input_table, output_table, queue, limit=1000, iterations=100,
+        self,
+        input_table: str,
+        output_table: str,
+        queue: str,
+        limit: int = 1000,
+        iterations: int = 100,
     ):
         """
         Ctor.
@@ -43,8 +48,8 @@ class GenerateCatalogLevelsToBeUpdated:
         limit(int): number of items read from input table at each request.
         queue: URL for output SQS queue, where levels to be updated will be placed
         """
-        self._levels_to_be_updated: Set[str] = set()
-        self._items = []
+        self._levels_to_be_updated: set[str] = set()
+        self._items: list[Any] = []
         self._input_table = input_table
         self._output_table = output_table
         self._queue: str = queue

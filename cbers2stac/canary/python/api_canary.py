@@ -1,4 +1,6 @@
-# This is based on AWS blueprint code
+# noqa
+"""This is based on AWS blueprint code"""
+
 # pylint: disable-all
 
 import http.client

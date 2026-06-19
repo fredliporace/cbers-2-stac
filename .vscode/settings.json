@@ -1,4 +1,74 @@
 {
+    // Limit pylance workload
+    "files.watcherExclude": {
+        "**/cdk.out/**": true,
+        "**/__pycache__/**": true,
+        "**/.venv/**": true
+    },
+
+    "python.analysis.exclude": [
+        "**/node_modules",
+        "**/.venv",
+        "**/cdk.out",
+        "**/__pycache__",
+        "**/.git",
+        "**/dist",
+        "**/build",
+        "**/.*"
+    ],
+    "python.analysis.indexing": false,
+    "python.analysis.packageIndexDepths": [
+        { "name": "aws_cdk", "depth": 1 }
+    ],
+    "python.analysis.typeCheckingMode": "off",  // disables all type checking, use "basic" with more memory
+    "python.analysis.diagnosticMode": "openFilesOnly",  // only analyze files currently open, not entire workspace
+
+    "python.defaultInterpreterPath": "/usr/local/bin/python",
+
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestPath": "/home/vscode/.local/bin/pytest",
+
+    "pylint.enabled": true,
+    "pylint.importStrategy": "fromEnvironment",
+    "pylint.path": ["/home/vscode/.local/bin/pylint"],
+    "pylint.args": [
+        "--rcfile=${workspaceFolder}/.pylintrc",
+        "--init-hook=import sys; sys.path.insert(0, \".\")"
+    ],
+    "pylint.severity": {
+        "error": "Error",
+        "fatal": "Error",
+        "warning": "Warning",
+        "refactor": "Warning",
+        "convention": "Information",
+        "info": "Information"
+    },
+    // "pylint.ignorePatterns": ["**/tests/**"],
+
+    "mypy-type-checker.importStrategy": "fromEnvironment",
+    "mypy-type-checker.path": ["/home/vscode/.local/bin/mypy"],
+    "mypy-type-checker.args": ["--config-file=${workspaceFolder}/mypy.ini"],
+    // "mypy-type-checker.ignorePatterns": ["**/*.py"],
+    // "mypy-type-checker.ignorePatterns": ["**/tests/**"],
+    "mypy-type-checker.reportingScope": "file",
+    "mypy-type-checker.preferDaemon": false,
+
+    "black-formatter.importStrategy": "fromEnvironment",
+    "black-formatter.path": ["/home/vscode/.local/bin/black"],
+    "black-formatter.args": ["--safe"],
+
+    "isort.importStrategy": "fromEnvironment",
+    "isort.path": ["/home/vscode/.local/bin/isort"],
+    "isort.args": ["--profile", "black"],
+
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+        "editor.formatOnType": true,
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        }
+    }
 }

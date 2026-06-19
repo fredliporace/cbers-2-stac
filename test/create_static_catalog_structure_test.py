@@ -48,7 +48,7 @@ def test_create(tmp_path):
     ]
     catalog_files = []
     for c_file in catalog_files:
-        catv.validate(c_file)
+        catv.validate_all(c_file)
 
     collection_files = [
         f"{prefix}/CBERS4/AWFI/collection.json",
@@ -61,4 +61,4 @@ def test_create(tmp_path):
         f"{prefix}/AMAZONIA1/WFI/collection.json",
     ]
     for c_file in collection_files:
-        colv.validate(c_file)
+        colv.validate_all(c_file)

@@ -51,9 +51,12 @@ def api_gw_lambda_integrate_deploy(
         uri=lambda_integration_arn,
     )
     api_client.create_deployment(
-        restApiId=api["id"], stageName="dev",
+        restApiId=api["id"],
+        stageName="dev",
     )
-    return f"http://localhost:4566/restapis/{api['id']}/dev/_user_request_{api_resource['path']}"
+    return (
+        f"{ENDPOINT_URL}/restapis/{api['id']}/dev/_user_request_{api_resource['path']}"
+    )
 
 
 @pytest.fixture
@@ -97,15 +100,21 @@ def api_gw_method(request):
 
 @pytest.mark.api_gw_method_args(
     {
-        "put_method_args": {"httpMethod": "GET",},
-        "put_method_response_args": {"httpMethod": "GET",},
+        "put_method_args": {
+            "httpMethod": "GET",
+        },
+        "put_method_response_args": {
+            "httpMethod": "GET",
+        },
     }
 )
 @pytest.mark.lambda_function_args(
     {
         "name": "stac_endpoint",
         "handler": "code.handler",
-        "environment": {"STAC_BUCKET": "bucket",},
+        "environment": {
+            "STAC_BUCKET": "bucket",
+        },
         "timeout": 30,
         "layers": (
             {
@@ -125,7 +134,7 @@ def test_root(api_gw_method, lambda_function):
     # https://stackoverflow.com/questions/58859917/creating-aws-lambda-integrated-api-gateway-resource-with-boto3
 
     api_client, api, api_resource = api_gw_method
-    lambda_client, lambda_func = lambda_function  # pylint: disable=unused-variable
+    _, lambda_func = lambda_function
 
     url = api_gw_lambda_integrate_deploy(api_client, api, api_resource, lambda_func)
     req = requests.get(url, timeout=30)
@@ -134,8 +143,12 @@ def test_root(api_gw_method, lambda_function):
 
 @pytest.mark.api_gw_method_args(
     {
-        "put_method_args": {"httpMethod": "GET",},
-        "put_method_response_args": {"httpMethod": "GET",},
+        "put_method_args": {
+            "httpMethod": "GET",
+        },
+        "put_method_response_args": {
+            "httpMethod": "GET",
+        },
     }
 )
 @pytest.mark.lambda_function_args(
@@ -244,8 +257,12 @@ def test_item_search_get(
 
 @pytest.mark.api_gw_method_args(
     {
-        "put_method_args": {"httpMethod": "POST",},
-        "put_method_response_args": {"httpMethod": "POST",},
+        "put_method_args": {
+            "httpMethod": "POST",
+        },
+        "put_method_response_args": {
+            "httpMethod": "POST",
+        },
     }
 )
 @pytest.mark.lambda_function_args(

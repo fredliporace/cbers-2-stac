@@ -180,7 +180,9 @@ def process_message(
         "PAN5M",
         "WPM",
         "WFI",
-    ), ("Unrecognized key: " + metadata_keys["quicklook_keys"]["camera"])
+    ), (
+        "Unrecognized key: " + metadata_keys["quicklook_keys"]["camera"]
+    )
 
     local_stac_item = "/tmp/" + metadata_keys["stac"].split("/")[-1]
     found = False

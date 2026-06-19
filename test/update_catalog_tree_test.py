@@ -285,7 +285,8 @@ def test_get_base_collection():
 
 
 @pytest.mark.parametrize(
-    "satellite, mission, camera", [("CBERS", "4", "AWFI"), ("AMAZONIA", "1", "WFI")],
+    "satellite, mission, camera",
+    [("CBERS", "4", "AWFI"), ("AMAZONIA", "1", "WFI")],
 )
 def test_base_stac_catalog(
     satellite: str, mission: str, camera: str

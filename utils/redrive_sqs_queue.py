@@ -4,6 +4,7 @@ Move all the messages from one SQS queue to another.
 Credits to https://alexwlchan.net/2020/05/moving-messages-between-sqs-queues/
 
 """
+
 import argparse
 import sys
 
@@ -78,7 +79,7 @@ def main():
 
     sqs_client = boto3.client("sqs")
 
-    index: int = 0
+    index = 0
     for message in get_messages_from_queue(sqs_client, queue_url=src_queue_url):
         sqs_client.send_message(QueueUrl=dst_queue_url, MessageBody=message["Body"])
         index += 1

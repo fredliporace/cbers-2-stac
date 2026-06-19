@@ -9,10 +9,10 @@ on:
 jobs:
   tests:
     # if: github.event_name == 'push' || github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name != github.repository
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: [3.9.13]
+        python-version: [3.14]
 
     steps:
 
@@ -32,14 +32,22 @@ jobs:
 
       - uses: actions/checkout@v2
 
+      # Docker bridge gateway is always 172.17.0.1, use this
+      # when running on github
+      - name: Set LOCALSTACK_HOSTNAME on github environment
+        if: github.actor != 'nektos/act'
+        run: echo "LOCALSTACK_HOSTNAME=172.17.0.1" >> $GITHUB_ENV
+
       - name: Start localstack from docker-compose.yml
         # localstack is not started for local testing using act
         if: github.actor != 'nektos/act'
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
         run: |
             cd test && docker compose up -d
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -57,8 +65,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install tox codecov pre-commit
+          python -m pip install --upgrade pip -c constraints.txt
+          python -m pip install tox codecov pre-commit -c constraints.txt
           # Needed to install pylint and all imported packages
           python -m pip install .[dev,deploy,test] -c constraints.txt
 
@@ -70,11 +78,11 @@ jobs:
         run: ./pip-on-lambdas.sh
 
       # Run tox using the version of Python in `PATH`
-      # Always displays docker-compose logs for debugging
-      #   add || (cd test && docker compose logs && false)
+      # To display docker-compose logs for debugging use
+      #  tox -e py || (cd test && docker compose logs && false)
       - name: Run Tox
         run: |
-          tox -e py || (cd test && docker compose logs && false)
+          tox -e py
 
       # - name: Upload Results
       #   if: success()

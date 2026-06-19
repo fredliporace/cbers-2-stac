@@ -56,7 +56,10 @@ def test_process(dynamodb_table, sqs_queue):
 
     test_table_name = DBTable.schema()["TableName"]
     gcl = GenerateCatalogLevelsToBeUpdated(
-        input_table=test_table_name, output_table=None, queue=queue.url, iterations=11,
+        input_table=test_table_name,
+        output_table=None,
+        queue=queue.url,
+        iterations=11,
     )
     gcl.process()
 

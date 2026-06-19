@@ -4,7 +4,7 @@ services:
     # when upgrading locastack
     privileged: true
     container_name: cbers2stac-localstack_main
-    image: localstack/localstack:4.2.0
+    image: localstack/localstack
     network_mode: bridge
     #networks:
     #  - internal
@@ -13,7 +13,7 @@ services:
       - "4566:4566"
     environment:
       - SERVICES=sqs,s3,sns,lambda,cloudwatch,dynamodb,es,apigateway
-      - DEBUG=1
+      - DEBUG=0
       - DATA_DIR=${DATA_DIR- }
       - PORT_WEB_UI=${PORT_WEB_UI- }
       - LAMBDA_EXECUTOR=docker
@@ -24,13 +24,19 @@ services:
       - LAMBDA_REMOVE_CONTAINERS=true
       - KINESIS_ERROR_PROBABILITY=${KINESIS_ERROR_PROBABILITY- }
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN}
       # To remove "platform is not supported for API version < 1.41" error
       - LAMBDA_IGNORE_ARCHITECTURE=1
       # See
       #  https://github.com/localstack/localstack/issues/6419
       #  for limitation in using "port" as strategy, connection to es does not
       #  for from host neither from other container defined in the compose file.
-      - OPENSEARCH_ENDPOINT_STRATEGY=path
+      - OPENSEARCH_ENDPOINT_STRATEGY=path 
+      # Use this for debugging lambdas
+      # - LAMBDA_DOCKER_FLAGS=-e LOCALSTACK_HOSTNAME=${LOCALSTACK_HOSTNAME} -e LAMBDA_DEBUG=1 -p 5678:5678 --add-host host.docker.internal:host-gateway
+      - LAMBDA_DOCKER_FLAGS=-e LOCALSTACK_HOSTNAME=${LOCALSTACK_HOSTNAME} --add-host host.docker.internal:host-gateway
+      # keep container alive 10 min for debugging
+      - LAMBDA_KEEPALIVE_MS=600000
       # HOSTNAME should not be changed
       # https://github.com/localstack/localstack/issues/808#issuecomment-670186448
       # - HOSTNAME=localhost

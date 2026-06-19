@@ -724,7 +724,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     resam1wfi = diff_files(ref_output_filename, output_filename)
 
     # AWFI, Amazonia1, left optics only
@@ -735,7 +735,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     resam1wfileft = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4
@@ -747,7 +747,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
     #     stac_metadata_filename=output_filename,
     #     buckets=buckets,
     # )
-    # jsv.validate(output_filename)
+    # jsv.validate_all(output_filename)
     # rescb4mux = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4 with thumbnail extension override
@@ -760,7 +760,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         buckets=buckets,
         thumbnail_extension="png",
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4mux = diff_files(ref_output_filename, output_filename)
 
     # AWFI, CB4
@@ -772,7 +772,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4awfi = diff_files(ref_output_filename, output_filename)
 
     # PAN10M, CB4
@@ -786,7 +786,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4pan10 = diff_files(ref_output_filename, output_filename)
 
     # PAN5M, CB4
@@ -800,7 +800,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4pan5 = diff_files(ref_output_filename, output_filename)
 
     # PAN10M CB4, no gain
@@ -813,7 +813,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4pan10ng = diff_files(ref_output_filename, output_filename)
 
     # MUX, CB4A
@@ -825,7 +825,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4amux = diff_files(ref_output_filename, output_filename)
 
     # WPM, CB4A
@@ -837,7 +837,7 @@ def test_convert_inpe_to_stac(tmp_path):  # pylint: disable=too-many-statements
         stac_metadata_filename=output_filename,
         buckets=buckets,
     )
-    jsv.validate(output_filename)
+    jsv.validate_all(output_filename)
     rescb4awpm = diff_files(ref_output_filename, output_filename)
 
     # Check all diffs here to make bulk update for reference jsons
@@ -860,5 +860,5 @@ def test_json_schema():
     jsv = STACValidator(schema_filename="item.json")
     invalid_filename = "test/fixtures/CBERS_4_MUX_20170528_090_084_L2_error.json"
     with pytest.raises(ValidationError) as context:
-        jsv.validate(invalid_filename)
+        jsv.validate_all(invalid_filename)
     assert "'links' is a required property" in str(context)

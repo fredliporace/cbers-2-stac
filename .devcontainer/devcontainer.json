@@ -1,0 +1,113 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Python 3 - cbers-2-stac",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	// "image": "mcr.microsoft.com/devcontainers/python:3-3.14-trixie"
+	"build": {
+			"dockerfile": "Dockerfile",
+			"context": ".."
+	},
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	"mounts": [
+		// AWS credentials
+		{
+			"source": "aws-config",
+			"target": "/home/vscode/.aws",
+			"type": "volume"
+		},
+		// Shared: API keys and global Cline config (safe to share)
+		{
+			"source": "cline-config",
+			"target": "/home/vscode/.cline",
+			"type": "volume"
+		},
+		// Per-project: Task history + conversations (isolated)
+		{
+			"source": "cline-history-cbers-2-stac",
+			"target": "/home/vscode/.cline-history",
+			"type": "volume"
+		},
+		// SSH keys for git access
+		{
+		    "source": "ssh-keys",
+		    "target": "/home/vscode/.ssh",
+		    "type": "volume"
+		},
+		// Volume for transfers between docker containers (e.g., lambda packaging)
+		{
+			"source": "docker-transfer",
+			"target": "/docker-transfer",
+			"type": "volume"
+		},
+		// Docker socket for docker-in-docker
+		{
+			"source": "/var/run/docker.sock",
+			"target": "/var/run/docker.sock",
+			"type": "bind"
+		},
+		// Per-project: Kilo conversations/tasks (isolated)
+		{
+			"source": "kilo-history-cbers-2-stac",
+			"target": "/home/vscode/.local/share/kilo",
+			"type": "volume"
+		},
+		// Shared: Kilo config and cache (safe to share across devcontainers)
+		{
+			"source": "kilo-config",
+			"target": "/home/vscode/.config/kilo",
+			"type": "volume"
+		}
+
+	],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "bash .devcontainer/post-create.sh",
+
+	"runArgs": [
+		// Environment variables (--env-file)
+		"--env-file", "${localWorkspaceFolder}/.devcontainer/dev.env",
+		// Allow access to ports on the host machine (e.g., for localstack)
+		"--add-host=host.docker.internal:host-gateway",
+		// Override localhost.localstack.cloud to point to the host machine
+		"--add-host=localhost.localstack.cloud:host-gateway"
+		// Limits on container
+		// "--memory=3g",
+		// "--memory-swap=4g"
+	],
+
+	// This may be used to check if the code is running inside the devcontainer,
+	// for instance:
+	// os.environ.get("HOST_GATEWAY", "localhost")
+	"remoteEnv": {
+		"HOST_GATEWAY": "host.docker.internal",
+		"LOCALSTACK_HOSTNAME": "host.docker.internal"
+	},
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"ms-toolsai.jupyter",
+				"saoudrizwan.claude-dev",
+				"SanjulaGanepola.github-local-actions",
+				"GitHub.vscode-github-actions",
+				"ms-azuretools.vscode-docker",
+				"ms-python.pylint",
+				"ms-python.black-formatter",
+        		"ms-python.isort",
+				"ms-python.mypy-type-checker",
+				"kilocode.Kilo-Code"
+			]
+		}
+	}
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}

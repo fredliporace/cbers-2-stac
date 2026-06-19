@@ -9,10 +9,16 @@ from zipfile import ZipFile, ZipInfo
 
 import boto3
 import botocore
-import docker
-import pytest
 
-ENDPOINT_URL = "http://localhost:4566"
+# types-docker requires urllib3 >= 2
+import docker  # type: ignore
+import pytest
+import requests
+
+if os.environ.get("LOCALSTACK_HOSTNAME"):
+    ENDPOINT_URL = f"http://{os.environ['LOCALSTACK_HOSTNAME']}:4566"
+else:
+    ENDPOINT_URL = "http://localhost:4566"
 
 
 def lambda_filtered_paths(directory: str):
@@ -115,6 +121,13 @@ def create_lambda_layer_from_docker(output_dir: str, dockerfile: str, tag: str) 
     #                              stdout=layer_zip)
 
 
+@pytest.fixture(scope="session", autouse=True)
+def localstack_reset():
+    """Resets localstack"""
+    requests.post(f"{ENDPOINT_URL.rstrip('/')}/_localstack/state/reset", timeout=30)
+    yield
+
+
 @pytest.fixture(autouse=True)
 def testing_env_var(monkeypatch):
     """Environment for testing"""
@@ -126,7 +139,9 @@ def testing_env_var(monkeypatch):
     monkeypatch.delenv("AWS_PROFILE", raising=False)
     monkeypatch.setenv("AWS_CONFIG_FILE", "/tmp/noconfigheere")
     monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", "/tmp/noconfighereeither")
-    monkeypatch.setenv("LOCALSTACK_HOSTNAME", "localhost")
+    # Only set LOCALSTACK_HOSTNAME if it is not already set
+    if "LOCALSTACK_HOSTNAME" not in os.environ:
+        monkeypatch.setenv("LOCALSTACK_HOSTNAME", "localhost")
     monkeypatch.setenv("GDAL_DISABLE_READDIR_ON_OPEN", "EMPTY_DIR")
 
 
@@ -355,7 +370,7 @@ def lambda_function(request):  # pylint: disable=too-many-locals
     )
     lambda_func = lambda_client.create_function(
         FunctionName=lambda_name,
-        Runtime="python3.7",
+        Runtime="python3.14",
         Handler=f"{lambda_handler}",
         Role="arn:aws:iam::123456789012:role/EngineeringTeam/DataProcessorRole-2023@v1",
         # See above (deploy from ZIP file)

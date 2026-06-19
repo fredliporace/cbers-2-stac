@@ -10,7 +10,7 @@ from shutil import which
 from typing import Any, Dict, Union
 
 from jsonschema import RefResolver, validate
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from retry import retry
 
 
@@ -19,16 +19,18 @@ class STACValidator(BaseModel):
     Validates a JSON document against a schema
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     schema_filename: str
     schema_path: str = ""
-    resolver: RefResolver = None
+    resolver: RefResolver | None = None
     c_schema: Union[Dict[Any, Any], None] = None
     stac_node_validator_available: bool = False
 
-    class Config:  # pylint: disable=too-few-public-methods
-        """Required by RefResolver type"""
+    # class Config:  # pylint: disable=too-few-public-methods
+    #     """Required by RefResolver type"""
 
-        arbitrary_types_allowed = True
+    #     arbitrary_types_allowed = True
 
     def __init__(self, **data: Any):
         """
@@ -42,7 +44,9 @@ class STACValidator(BaseModel):
             f"json_schema/{fid}-spec/json-schema",
         )
         self.schema_path: str = os.path.join(json_schema_path, self.schema_filename)
-        self.resolver = RefResolver("file://" + json_schema_path + "/", None)
+        self.resolver = RefResolver(
+            base_uri="file://" + json_schema_path + "/", referrer={}
+        )
         with open(self.schema_path, encoding="utf-8") as fp_schema:
             self.c_schema = json.load(fp_schema)
 
@@ -54,10 +58,8 @@ class STACValidator(BaseModel):
         Validate against STAC schema
         """
         with open(filename, encoding="utf-8") as fp_in:
-            assert (
-                validate(json.load(fp_in), self.c_schema, resolver=self.resolver)
-                is None
-            )
+            assert self.c_schema is not None
+            validate(json.load(fp_in), self.c_schema, resolver=self.resolver)
 
     @staticmethod
     def validate_pystac(filename: str):
@@ -81,7 +83,7 @@ class STACValidator(BaseModel):
         # subprocess.run(["stac-node-validator", filename], check=True)
         subprocess.run(f"stac-node-validator {filename}", check=True, shell=True)
 
-    def validate(
+    def validate_all(
         self,
         filename: str,
         use_schema: bool = True,
@@ -114,4 +116,4 @@ class STACValidator(BaseModel):
         with tempfile.NamedTemporaryFile(delete=True) as tfile:
             with open(tfile.name, "w", encoding="utf-8") as tfl:
                 json.dump(item, tfl, indent=2)
-            self.validate(tfile.name, **kwargs)
+            self.validate_all(tfile.name, **kwargs)
